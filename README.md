@@ -76,7 +76,7 @@ Learn how to verify agents are truly collaborating:
 - Human-in-the-loop feedback integration
 - External monitoring with AgentOps
 
-### Complete Setup Guide
+### Setup Guide
 
 - Virtual environment setup in collaboration folder
 - VS Code configuration for Python development
@@ -291,10 +291,6 @@ This project uses:
 - [Google's Agent-to-Agent Protocol](https://research.google/blog/advancing-agent-collaboration-with-the-agent-to-agent-a2a-protocol/)
 - [Agentic AI in Operations](https://www.mckinsey.com/capabilities/operations/our-insights/the-next-frontier-of-operations-agentic-ai)
 - [Multi-Agent Systems Research](https://arxiv.org/abs/2308.10848)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Support
 
