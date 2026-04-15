@@ -1,6 +1,6 @@
 # Autonomous Artificial Intelligence
 
-A tutorial to autonomous artificial intelligence (AI) systems, AI agents, multi-agent collaboration, and their applications in software development and DevOps.
+A tutorial exploring autonomous artificial intelligence (AI) for software engineering, including AI agents, multi-agent collaboration, and their application in building and operating software systems.
 
 ## Table of Contents
 
