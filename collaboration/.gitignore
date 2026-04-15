@@ -1,0 +1,48 @@
+# Collaboration Folder - Git Ignore
+# ==================================
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# API Keys and Secrets
+.env
+.env.local
+*.key
+secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and Databases
+*.log
+*.sqlite
+*.db
+
+# Test Results
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
