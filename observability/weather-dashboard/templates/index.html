@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard - AI Agent Observability Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Weather Dashboard</h1>
+            <p class="subtitle">AI Agent Observability Demo with OpenTelemetry</p>
+        </header>
+
+        <main>
+            <section class="search-section">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="cityInput" 
+                        placeholder="Enter city name (e.g., London, Tokyo, New York)" 
+                        autocomplete="off"
+                    >
+                    <button id="searchBtn">Get Weather</button>
+                </div>
+            </section>
+
+            <section id="weatherDisplay" class="weather-section hidden">
+                <div class="weather-card">
+                    <div class="weather-header">
+                        <h2 id="cityName">City Name</h2>
+                        <span id="country" class="country-badge"></span>
+                    </div>
+                    
+                    <div class="weather-main">
+                        <div class="temperature-display">
+                            <span id="temperature" class="temperature">--</span>
+                            <span class="unit">°C</span>
+                        </div>
+                        <p id="description" class="weather-description">--</p>
+                    </div>
+                    
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Feels Like</span>
+                            <span id="feelsLike" class="detail-value">--°C</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Humidity</span>
+                            <span id="humidity" class="detail-value">--%</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Pressure</span>
+                            <span id="pressure" class="detail-value">-- hPa</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Wind Speed</span>
+                            <span id="windSpeed" class="detail-value">-- m/s</span>
+                        </div>
+                    </div>
+                    
+                    <div class="observability-info">
+                        <p class="info-text">
+                            <strong>Observability:</strong> This request was traced with OpenTelemetry.
+                            Check your observability platform to see spans for API calls, data processing, and response formatting.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="errorDisplay" class="error-section hidden">
+                <div class="error-card">
+                    <h3>Error</h3>
+                    <p id="errorMessage"></p>
+                </div>
+            </section>
+
+            <section id="loadingDisplay" class="loading-section hidden">
+                <div class="loader"></div>
+                <p>Fetching weather data with OpenTelemetry tracing...</p>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p>
+                    Built with Flask, OpenTelemetry, and OpenWeatherMap API
+                </p>
+                <p class="tech-stack">
+                    <span class="badge">Flask</span>
+                    <span class="badge">OpenTelemetry</span>
+                    <span class="badge">Python</span>
+                    <span class="badge">Langfuse</span>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

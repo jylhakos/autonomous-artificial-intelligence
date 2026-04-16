@@ -1,0 +1,15 @@
+flask==3.1.3
+opentelemetry-api==1.41.0
+opentelemetry-sdk==1.41.0
+opentelemetry-instrumentation==0.62b0
+opentelemetry-instrumentation-flask==0.62b0
+opentelemetry-exporter-otlp-proto-grpc==1.41.0
+requests==2.33.1
+python-dotenv==1.2.2
+langfuse==4.2.0
+anthropic==0.95.0
+werkzeug==3.1.8
+jinja2==3.1.6
+markupsafe==3.0.3
+click==8.3.2
+itsdangerous==2.2.0
