@@ -1,6 +1,6 @@
 # Weather Dashboard - AI Agent Observability Demo
 
-A Flask-based weather dashboard application demonstrating comprehensive observability patterns for AI agents using OpenTelemetry, suitable for monitoring autonomous agent actions in software development environments.
+A Flask-based weather dashboard application demonstrating observability patterns for AI agents using OpenTelemetry, suitable for monitoring autonomous agent actions in software development environments.
 
 ## Overview
 
@@ -406,12 +406,9 @@ Refer to the parent project's README.md for theoretical foundations and addition
 
 ## Contributing
 
-This is a demonstration project for educational purposes. To contribute:
+This is a demonstration project.
 
 1. Ensure all tests pass: `pytest tests/ -v`
-2. Follow Python PEP 8 style guidelines
-3. Add tests for new features
-4. Update documentation as needed
 
 ## License
 
@@ -423,4 +420,4 @@ MIT License - see parent project for details.
 - [Flask Documentation](https://flask.palletsprojects.com/)
 - [OpenWeatherMap API](https://openweathermap.org/api)
 - [Langfuse Documentation](https://langfuse.com/docs)
-- [Parent Project README](../README.md) - Comprehensive observability guide
+- [Parent Project README](../README.md) - Observability document
