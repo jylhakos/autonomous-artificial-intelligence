@@ -7,6 +7,13 @@ This project explores the orchestration of AI agents in autonomous artificial in
 - [What is Agent Orchestration?](#what-is-agent-orchestration)
 - [Key Concepts](#key-concepts)
 - [Orchestration Patterns](#orchestration-patterns)
+- [Multi-agent Orchestrators for Claude Code](#multi-agent-orchestrators-for-claude-code)
+  - [What Claude Code Can Do](#what-claude-code-can-do)
+  - [Agent Teams in VS Code](#agent-teams-in-vs-code)
+  - [Setting Up Agent Teams in VS Code](#setting-up-agent-teams-in-vs-code)
+  - [Gas Town: Multi-Agent Orchestration System](#gas-town-multi-agent-orchestration-system)
+  - [Docker Sandboxes for Claude Code](#docker-sandboxes-for-claude-code)
+  - [Ephemeral Environments](#ephemeral-environments-temporary-full-stack-testing-infrastructure)
 - [Multi-Agent Pipelines](#multi-agent-pipelines)
 - [Practical Example: Blog Writing with CrewAI](#practical-example-blog-writing-with-crewai)
 - [Setup Instructions](#setup-instructions)
@@ -85,6 +92,536 @@ Inline creation of sub-agents for specialized tasks, returning results before co
 The magentic orchestration pattern is designed for open-ended and complex problems that don't have a predetermined plan of approach. Agents in this pattern typically have tools that allow them to make direct changes in external systems. The focus is as much on building and documenting the approach to solve the problem as it is on implementing that approach. The task list is dynamically built and refined as part of the workflow through collaboration between specialized agents and a magentic manager agent. As the context evolves, the magentic manager agent builds a task ledger to develop the approach plan with goals and subgoals, which is eventually finalized, followed, and tracked to complete the desired outcome.
 
 For more details on orchestration patterns, see [AI agent orchestration patterns on Microsoft Azure](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns).
+
+## Multi-agent Orchestrators for Claude Code
+
+Claude Code is an AI coding assistant that runs directly in your development environment, providing capabilities that extend far beyond simple code completion. When combined with multi-agent orchestration systems, Claude Code becomes a powerful tool for autonomous software development, debugging, and infrastructure management.
+
+### What Claude Code Can Do
+
+Claude Code provides sophisticated capabilities for understanding and working with codebases:
+
+**Codebase Mapping**: Claude Code can analyze and map entire codebases, understanding the relationships between files, modules, and components. It uses agentic search to navigate project structures, identify dependencies, and architectural patterns without requiring manual indexing.
+
+**Agentic Search**: Instead of simple text search, Claude Code employs intelligent search strategies that understand code semantics, follow import chains, track function calls across files, and identify relevant code sections based on intent rather than just keywords.
+
+**Project Structure Understanding**: Claude Code analyzes project conventions, build configurations, testing frameworks, and deployment patterns to provide contextual assistance that respects your project's specific architecture and practices.
+
+**Autonomous Task Execution**: With appropriate safeguards, Claude Code can execute multi-step tasks autonomously, including refactoring large codebases, implementing features across multiple files, debugging complex issues, and maintaining code quality standards.
+
+**Tool Integration**: Claude Code integrates with development tools through the Model Context Protocol (MCP), enabling it to interact with terminals, file systems, databases, version control systems, and external APIs.
+
+### Agent Teams in VS Code
+
+Agent Teams represent a paradigm shift in how AI assists with software development. Instead of a single AI agent handling all tasks, specialized agents collaborate to solve complex problems more effectively.
+
+**How Agent Teams Work**:
+
+1. **Supervisor Agent**: Coordinates work distribution among specialized agents, manages task dependencies, and integrates results from multiple agents.
+
+2. **Specialized Workers**: Different agents focus on specific domains:
+   - **Research Agent**: Gathers information, analyzes documentation, and explores codebases
+   - **Implementation Agent**: Writes code, implements features, and handles refactoring
+   - **Testing Agent**: Creates tests, validates functionality, and ensures quality
+   - **Debugging Agent**: Investigates issues, traces execution flows, and proposes fixes
+   - **Documentation Agent**: Updates documentation, writes comments, and explains code
+
+3. **Shared Context**: Agents communicate through a shared workspace, passing information through files, logs, and structured data formats.
+
+4. **Parallel Execution**: Multiple agents can work simultaneously on independent tasks, significantly reducing total completion time for complex projects.
+
+**Benefits of Agent Teams**:
+- Reduced cognitive load by distributing complex tasks
+- Faster completion through parallel execution
+- Higher quality output from specialized expertise
+- Better error detection through multi-agent validation
+- Improved maintainability with dedicated documentation agents
+
+### Setting Up Agent Teams in VS Code
+
+To enable and configure Agent Teams for coding and debugging workflows:
+
+**Step 1: Install Claude Code**
+
+Claude Code integrates with VS Code as an AI coding assistant. Installation details are available at [Anthropic Claude Code](https://www.anthropic.com/claude/code).
+
+**Step 2: Configure Agent Customization Files**
+
+Create agent configuration files in your workspace:
+
+```bash
+# VS Code agent customization files
+.claude/                    # Claude-specific configurations
+├── agents.md              # Agent definitions and roles
+├── settings.json          # Runtime settings and preferences
+└── instructions.md        # Project-specific instructions
+
+.github/
+└── hooks/
+    └── gastown.json       # Lifecycle hooks for agent coordination
+```
+
+**Step 3: Define Agent Roles**
+
+Create specialized agent definitions in your project. Example configuration:
+
+```yaml
+# .claude/agents.md
+agents:
+  - name: researcher
+    role: Research and analysis
+    capabilities: [codebase_search, documentation_reading, api_exploration]
+    
+  - name: developer
+    role: Feature implementation
+    capabilities: [code_writing, refactoring, test_creation]
+    
+  - name: reviewer
+    role: Code review and quality assurance
+    capabilities: [code_analysis, test_execution, security_scanning]
+```
+
+**Step 4: Enable Multi-Agent Coordination**
+
+Use orchestration frameworks that support Agent Teams:
+
+- **Gas Town**: Multi-agent workspace manager for coordinating Claude Code and GitHub Copilot
+- **Custom Harness**: Build your own coordination layer using the Model Context Protocol
+
+**Step 5: Configure Permission and Safety Settings**
+
+For autonomous agent operation, configure appropriate safety boundaries:
+
+```json
+{
+  "agent_teams": {
+    "enabled": true,
+    "max_concurrent_agents": 5,
+    "permission_mode": "supervised",
+    "sandbox_enabled": true
+  }
+}
+```
+
+### Gas Town: Multi-Agent Orchestration System
+
+Gas Town is a multi-agent orchestration system designed specifically for coordinating AI coding agents like Claude Code and GitHub Copilot. It provides infrastructure for managing multiple agents working on different tasks while maintaining context and coordination.
+
+**Repository**: [https://github.com/gastownhall/gastown](https://github.com/gastownhall/gastown)
+
+**Key Features**:
+
+1. **Persistent Work State**: Unlike typical agent sessions that lose context on restart, Gas Town persists work state in git-backed hooks, enabling reliable long-running workflows.
+
+2. **Multi-Agent Coordination**: Gas Town can comfortably scale to 20-30 agents working simultaneously on different aspects of a project, with built-in coordination to prevent conflicts.
+
+3. **Workspace Management**: Organizes work into "rigs" (project containers), "polecats" (worker agents), and "convoys" (work tracking units) with clear hierarchies and responsibilities.
+
+4. **The Mayor**: A primary AI coordinator that serves as the main interface for directing work to specialized agents and monitoring progress across the entire workspace.
+
+5. **Built-in Monitoring**: Three-tier watchdog system (Witness, Deacon, Dogs) keeps agents healthy, detects stuck operations, and triggers recovery procedures.
+
+6. **Merge Queue Processing**: Automated refinery system that batches completed work, runs verification gates, and merges changes using a Bors-style bisecting queue.
+
+**Core Concepts**:
+
+- **Town**: Your workspace directory containing all projects, agents, and configuration
+- **Rigs**: Project containers that wrap git repositories and manage associated agents
+- **Crew Members**: Personal workspace within a rig for hands-on development work
+- **Polecats**: Worker agents with persistent identity that can be spawned for specific tasks
+- **Hooks**: Git worktree-based persistent storage that survives crashes and restarts
+- **Convoys**: Work tracking units that bundle multiple tasks assigned to agents
+- **Beads**: Git-backed issue tracking that stores work state as structured data
+
+**Installation and Setup**:
+
+```bash
+# Install Gas Town
+brew install gastown                                    # macOS/Linux
+npm install -g @gastown/gt                              # npm alternative
+
+# Create workspace with git initialization
+gt install ~/gt --git
+cd ~/gt
+
+# Add your first project
+gt rig add myproject https://github.com/you/repo.git
+
+# Create your crew workspace
+gt crew add yourname --rig myproject
+cd myproject/crew/yourname
+
+# Start the Mayor session (primary interface)
+gt mayor attach
+```
+
+**Basic Workflow**:
+
+```bash
+# 1. Tell the Mayor what you want to accomplish
+# The Mayor analyzes and breaks down into tasks
+
+# 2. Create a convoy with work items
+gt convoy create "Feature X" gt-abc12 gt-def34 --notify
+
+# 3. Assign work to agents
+gt sling gt-abc12 myproject
+
+# 4. Track progress
+gt convoy list
+gt agents
+
+# 5. Monitor with activity feed
+gt feed
+```
+
+**Runtime Configuration**:
+
+Gas Town supports multiple AI coding runtimes including Claude Code, GitHub Copilot, Codex, and others. Configure per-rig runtime settings:
+
+```json
+{
+  "runtime": {
+    "provider": "claude",
+    "command": "claude",
+    "args": [],
+    "prompt_mode": "none"
+  }
+}
+```
+
+**Advanced Features**:
+
+- **Session Discovery (Seance)**: Query previous agent sessions to recover context and decisions
+- **Escalation System**: Severity-routed issue escalation when agents encounter blockers
+- **Scheduler**: Config-driven capacity governor to prevent API rate limit exhaustion
+- **Wasteland Federation**: Federated work coordination network linking multiple Gas Towns
+
+**Use Cases**:
+
+- Large-scale refactoring across multiple repositories
+- Parallel feature development with multiple agents
+- Automated testing and quality assurance workflows
+- Infrastructure maintenance and monitoring
+- Documentation generation and updates
+
+**Documentation**: [Gas Town Documentation](https://github.com/gastownhall/gastown/tree/main/docs)
+
+### Docker Sandboxes for Claude Code
+
+Running Claude Code in production environments or in fully autonomous mode requires proper isolation to prevent potential issues. Docker Sandboxes provide secure, isolated environments specifically designed for running coding agents safely.
+
+**What are Docker Sandboxes?**
+
+Docker Sandboxes are isolated execution environments that run in lightweight microVMs, providing a harder security boundary than standard containers. Each sandbox runs independently, containing the blast radius of any dangerous or malicious commands.
+
+Key characteristics:
+- **MicroVM Isolation**: Stronger isolation than containers, using dedicated virtual machines
+- **Local Execution**: Designed to run on your local machine for development workflows
+- **Ephemeral Nature**: Easy to create, destroy, and recreate without affecting your host system
+- **Network Policies**: Configurable network access (open, balanced, or locked down)
+- **Agent-Optimized**: Purpose-built for coding agent workflows and long-running tasks
+
+**Why Use Docker Sandboxes?**
+
+When running Claude Code in autonomous mode (YOLO mode with `--dangerously-skip-permissions`), it has access to your filesystem, credentials, and active processes. Docker Sandboxes provide:
+
+1. **Safety**: Protects your main system from unintended file deletions, configuration changes, or security issues
+2. **Isolation**: Separates agent actions from your personal development environment
+3. **Reproducibility**: Fresh sandboxes ensure consistent starting conditions for tasks
+4. **Overnight Execution**: Run agents safely while you're away without risking your main machine
+5. **Testing Ground**: Experiment with new workflows without consequences
+
+**Setting Up Docker Sandboxes on Linux**:
+
+**Step 1: Install the sbx CLI**
+
+```bash
+# Add Docker's package repository if not already present
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install sbx
+sudo apt-get update
+sudo apt-get install docker-sbx
+
+# Alternatively, use the installation script
+curl -fsSL https://get.docker.com/sbx | sh
+```
+
+**Step 2: Authenticate with Docker**
+
+```bash
+sbx login
+```
+
+**Step 3: Choose Network Policy**
+
+Select an appropriate network policy based on your requirements:
+
+- **open**: All traffic allowed (useful for development requiring broad internet access)
+- **balanced**: Common development sites allowed, everything else blocked (recommended)
+- **locked down**: All traffic blocked unless explicitly permitted (maximum security)
+
+```bash
+# Set network policy during first run or configure in settings
+sbx config network-policy balanced
+```
+
+**Step 4: Run Claude Code in a Sandbox**
+
+```bash
+# Launch Claude Code in a sandbox for a specific task
+sbx run claude -- "write unit tests for the user authentication module"
+
+# The sandbox automatically:
+# - Provisions a fresh microVM
+# - Launches Claude Code in YOLO mode (permissions skipped)
+# - Executes the task
+# - Tears down when complete
+
+# Shell into a running sandbox to observe mid-task
+sbx shell
+```
+
+**Step 5: Persistent Sandboxes for Long-Running Tasks**
+
+For ongoing work that spans multiple sessions:
+
+```bash
+# Create a named persistent sandbox
+sbx create myproject-sandbox
+
+# Start Claude Code in the persistent sandbox
+sbx exec myproject-sandbox -- claude
+
+# Later, reconnect to the same sandbox
+sbx attach myproject-sandbox
+
+# Destroy when no longer needed
+sbx destroy myproject-sandbox
+```
+
+**Working with Project Files**:
+
+Mount your local project directory into the sandbox:
+
+```bash
+# Mount current directory into sandbox
+sbx run claude --mount $(pwd):/workspace -- "refactor the API client"
+
+# Project files are accessible inside the sandbox at /workspace
+```
+
+**Monitoring Sandbox Activity**:
+
+```bash
+# List running sandboxes
+sbx list
+
+# View sandbox logs
+sbx logs <sandbox-id>
+
+# Monitor resource usage
+sbx stats <sandbox-id>
+```
+
+**Configuration Options**:
+
+Create a configuration file for consistent sandbox settings:
+
+```yaml
+# ~/.config/sbx/config.yaml
+default_network_policy: balanced
+default_mounts:
+  - source: ~/projects
+    target: /workspace
+resource_limits:
+  cpu: 4
+  memory: 8G
+  storage: 50G
+```
+
+**Best Practices**:
+
+1. **Use Network Policies**: Start with "balanced" policy and adjust based on needs
+2. **Regular Cleanup**: Remove inactive sandboxes to free resources
+3. **Monitor Resource Usage**: Track CPU and memory to prevent resource exhaustion
+4. **Backup Important Work**: While sandboxes are persistent, always commit to git regularly
+5. **Test in Sandbox First**: Use sandboxes to test risky operations before running on host
+
+**Comparison with Claude Code's `/sandbox` Command**:
+
+Claude Code has a built-in `/sandbox` slash command that provides lightweight sandboxing. However, Docker Sandboxes offer stronger isolation:
+
+| Feature | Claude `/sandbox` | Docker Sandboxes |
+|---------|-------------------|------------------|
+| Isolation Level | Process-level | MicroVM (stronger) |
+| Execution Location | Host machine | Dedicated VM |
+| Resource Limits | Limited | Configurable |
+| Network Control | Basic | Granular policies |
+| Persistence | Session-only | Configurable |
+
+**Documentation and Resources**:
+
+- **Docker Sandboxes Documentation**: [https://docs.docker.com/ai/sandboxes/](https://docs.docker.com/ai/sandboxes/)
+- **Claude Code in Docker Sandboxes**: [https://docs.docker.com/ai/sandboxes/agents/claude-code/](https://docs.docker.com/ai/sandboxes/agents/claude-code/)
+- **Shipyard Blog Post**: [https://shipyard.build/blog/docker-sandboxes-claude-code/](https://shipyard.build/blog/docker-sandboxes-claude-code/)
+
+### Ephemeral Environments: Temporary Full-Stack Testing Infrastructure
+
+Ephemeral environments are temporary, isolated, full-stack environments that are automatically created for specific purposes and then destroyed when no longer needed. Unlike traditional staging or development servers that persist indefinitely, ephemeral environments follow a lifecycle tied to specific events like pull requests, feature branches, or testing sessions.
+
+**What Are Ephemeral Environments?**
+
+Ephemeral environments are on-demand, short-lived copies of your entire application stack, including:
+
+- **Frontend**: Web applications, user interfaces, and static assets
+- **Backend**: APIs, microservices, and application servers
+- **Databases**: Populated with test data or production snapshots
+- **External Services**: Mocked or sandboxed versions of third-party integrations
+- **Infrastructure**: Load balancers, caching layers, message queues
+
+Each environment is completely isolated, allowing multiple developers or AI agents to work on different features simultaneously without conflicts.
+
+**Key Characteristics**:
+
+1. **Automatic Provisioning**: Created automatically based on triggers (git push, PR creation, manual request)
+2. **Isolated**: Each environment is completely independent with its own resources and data
+3. **Production-Like**: Mirrors production architecture for realistic testing
+4. **Temporary**: Automatically destroyed after a defined period or when work is complete
+5. **Unique URLs**: Each environment gets its own accessible URL for testing and review
+
+**Why Ephemeral Environments Matter**:
+
+Traditional development workflows rely on shared staging environments where multiple developers compete for resources, leading to:
+- Merge conflicts and broken builds
+- "Works on my machine" problems
+- Difficulty testing features in isolation
+- Long feedback loops waiting for environment availability
+- Risk of data contamination from parallel tests
+
+Ephemeral environments solve these problems by providing each developer or feature with its own complete environment.
+
+**Use Cases for Ephemeral Environments**:
+
+1. **Feature Development**: Test new features in isolation before merging to main branch
+2. **Pull Request Reviews**: Stakeholders can interact with changes before approval
+3. **QA and Testing**: Run automated tests in production-like environments
+4. **AI Agent Workflows**: Claude Code and other agents can test changes end-to-end
+5. **Customer Demos**: Show specific features without affecting production
+6. **Staging Replacements**: Eliminate bottlenecks of shared staging environments
+
+**Ephemeral Environments vs Traditional Environments**:
+
+| Aspect | Traditional Staging | Ephemeral Environments |
+|--------|---------------------|------------------------|
+| Lifecycle | Permanent | Temporary (hours to days) |
+| Quantity | One or few shared | One per feature/PR |
+| Creation | Manual setup | Automatic on git events |
+| Isolation | Shared resources | Fully isolated |
+| Cost | Always running | Only when needed |
+| Conflicts | Frequent | None |
+| Testing Fidelity | May drift from production | Always matches production |
+
+**Integration with Docker Sandboxes and AI Agents**:
+
+Combining ephemeral environments with Docker Sandboxes creates a powerful workflow for AI-assisted development:
+
+1. **Agent Writes Code in Sandbox**: Claude Code runs safely in a Docker Sandbox, implementing features without risk to your host machine
+2. **Automatic Environment Creation**: When Claude Code commits changes, an ephemeral environment is automatically provisioned
+3. **End-to-End Testing**: Claude Code can interact with the ephemeral environment through MCP or CLI to verify the feature works in a full-stack context
+4. **Validation and Review**: AI agents or human reviewers can test the feature in a production-like setting
+5. **Merge and Cleanup**: Once validated, code merges and the ephemeral environment automatically destroys
+
+**Example Workflow with Claude Code and Ephemeral Environments**:
+
+```bash
+# 1. Claude Code works in a Docker Sandbox
+sbx run claude -- "implement user authentication API"
+
+# 2. Agent commits changes to a feature branch
+# Git push triggers automatic ephemeral environment creation
+
+# 3. Claude Code interacts with the ephemeral environment
+# Using Model Context Protocol (MCP) or CLI commands
+claude mcp shipyard get-environment-url feature/auth-api
+# Returns: https://auth-api-pr-123.shipyard.run
+
+# 4. Claude Code runs integration tests against live environment
+claude mcp shipyard run-tests feature/auth-api
+
+# 5. Human or AI reviewer validates the feature
+# - Test authentication flow in browser
+# - Run automated test suites
+# - Check logs and metrics
+
+# 6. Merge PR - ephemeral environment automatically destroyed
+```
+
+**Tools and Platforms for Ephemeral Environments**:
+
+- **Shipyard**: Purpose-built for ephemeral environments with AI agent integration ([https://shipyard.build/](https://shipyard.build/))
+- **Preview Deployments**: Vercel, Netlify for frontend applications
+- **Kubernetes Namespaces**: Self-managed ephemeral environments using Kubernetes
+- **Cloud Provider Tools**: AWS Amplify, Google Cloud Build, Azure DevOps
+- **Self-Hosted Solutions**: Docker Compose with automation scripts
+
+**Benefits for Multi-Agent Orchestration**:
+
+When orchestrating multiple AI agents working on different features:
+
+1. **Parallel Development**: Each agent gets its own environment, no conflicts
+2. **Real Testing**: Agents validate work in production-like settings, not just local
+3. **Faster Feedback**: Agents detect integration issues immediately
+4. **Better Quality**: Full-stack validation catches issues before merging
+5. **Cost Efficiency**: Pay only for actively used environments
+
+**Cost Considerations**:
+
+Ephemeral environments are cost-effective because:
+- They only run when needed (not 24/7 like traditional staging)
+- Automatic cleanup prevents forgotten environments consuming resources
+- Resource limits prevent runaway costs
+- Shared infrastructure optimizes utilization
+
+**Getting Started with Ephemeral Environments**:
+
+For projects using Claude Code with multi-agent orchestration:
+
+```bash
+# Example with Shipyard
+# 1. Install Shipyard CLI
+npm install -g @shipyard/cli
+
+# 2. Connect your repository
+shipyard connect https://github.com/yourorg/yourproject
+
+# 3. Configure environment template
+shipyard config create --template production
+
+# 4. Enable automatic PR environments
+shipyard config set auto-create-pr-envs true
+
+# 5. Integrate with Claude Code via MCP
+# Claude can now query environment status, URLs, and logs
+```
+
+**Best Practices**:
+
+1. **Set TTL Policies**: Automatically destroy after 24-48 hours or when PR closes
+2. **Resource Limits**: Cap CPU, memory, and storage to control costs
+3. **Data Seeding**: Use consistent test data for reproducible testing
+4. **Monitoring**: Track environment creation, usage, and costs
+5. **Security**: Implement authentication for accessing ephemeral environments
+6. **Documentation**: Maintain clear instructions for accessing and using environments
+
+**Further Reading**:
+
+- **Ephemeral Environments Guide**: [https://ephemeralenvironments.io/](https://ephemeralenvironments.io/)
+- **Shipyard Documentation**: [https://docs.shipyard.build/](https://docs.shipyard.build/)
+- **Environment-as-a-Service**: [https://shipyard.build/environment-as-a-service](https://shipyard.build/environment-as-a-service)
 
 ## Multi-Agent Pipelines
 
@@ -216,7 +753,7 @@ Some common problems in agentic AI orchestration include:
 ```
 orchestration/
 ├── .gitignore                    # Git ignore configuration
-├── README.md                     # This documentation file  
+├── README.md                     # This documentation
 ├── QUICKSTART.md                 # Quick reference guide
 ├── multi-agent-pipeline.png      # Architecture diagram
 ├── requirements.txt              # Python dependencies
@@ -1455,15 +1992,15 @@ Some of the key tools and platforms available for AI orchestration include:
 
 ### Workflow Management
 
-- **Apache Airflow**: [https://airflow.apache.org/](https://airflow.apache.org/)  
+- **Apache Airflow**: [https://airflow.apache.org/](https://airflow.apache.org/)
   Popular choice for workflow management and data pipeline orchestration
 
 ### Machine Learning Pipelines
 
-- **Kubeflow**: [https://www.kubeflow.org/](https://www.kubeflow.org/)  
+- **Kubeflow**: [https://www.kubeflow.org/](https://www.kubeflow.org/)
   Well-suited for machine learning pipelines on Kubernetes
 
-- **MLflow**: [https://mlflow.org/](https://mlflow.org/)  
+- **MLflow**: [https://mlflow.org/](https://mlflow.org/)
   Platform for managing the ML lifecycle, including experimentation, reproducibility, and deployment
 
 ### Cloud Providers
@@ -1482,22 +2019,45 @@ You can use Apache Airflow to define a workflow that includes tasks such as data
 
 ### Key Articles and Documentation
 
-1. **Scaling Managed Agents: Decoupling the brain from the hands** - Anthropic Engineering  
+1. **Scaling Managed Agents: Decoupling the brain from the hands** - Anthropic Engineering
    [https://www.anthropic.com/engineering/managed-agents](https://www.anthropic.com/engineering/managed-agents)
 
-2. **AI Agent Orchestration Patterns** - Microsoft Azure Architecture  
+2. **AI Agent Orchestration Patterns** - Microsoft Azure Architecture
    [https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns)
 
-3. **Design Multi-Agent Orchestration with Reasoning using Amazon Bedrock** - AWS Blog  
+3. **Design Multi-Agent Orchestration with Reasoning using Amazon Bedrock** - AWS Blog
    [https://aws.amazon.com/blogs/machine-learning/design-multi-agent-orchestration-with-reasoning-using-amazon-bedrock-and-open-source-frameworks/](https://aws.amazon.com/blogs/machine-learning/design-multi-agent-orchestration-with-reasoning-using-amazon-bedrock-and-open-source-frameworks/)
 
-4. **Multi-agent Orchestration with Claude Code**  
+4. **Multi-agent Orchestration with Claude Code**
    [https://mintlify.wiki/saurav-shakya/Claude_Code-_Source_Code/advanced/multi-agent](https://mintlify.wiki/saurav-shakya/Claude_Code-_Source_Code/advanced/multi-agent)
+
+5. **Docker Sandboxes for Claude Code** - Shipyard Blog
+   [https://shipyard.build/blog/docker-sandboxes-claude-code/](https://shipyard.build/blog/docker-sandboxes-claude-code/)
+
+6. **Docker Sandboxes Documentation** - Docker AI
+   [https://docs.docker.com/ai/sandboxes/](https://docs.docker.com/ai/sandboxes/)
+
+7. **Claude Code in Docker Sandboxes** - Docker Documentation
+   [https://docs.docker.com/ai/sandboxes/agents/claude-code/](https://docs.docker.com/ai/sandboxes/agents/claude-code/)
+
+8. **Ephemeral Environments Guide** - EphemeralEnvironments.io
+   [https://ephemeralenvironments.io/](https://ephemeralenvironments.io/)
+
+9. **Shipyard - Ephemeral Environments Platform**
+   [https://shipyard.build/](https://shipyard.build/)
+
+10. **Environment-as-a-Service (EaaS)** - Shipyard
+    [https://shipyard.build/environment-as-a-service](https://shipyard.build/environment-as-a-service)
+
+11. **Shipyard Documentation**
+    [https://docs.shipyard.build/](https://docs.shipyard.build/)
 
 ### GitHub Repositories
 
 - **Agentic Orchestration Samples**: [https://github.com/aws-samples/agentic-orchestration](https://github.com/aws-samples/agentic-orchestration)
 - **Amazon Bedrock Agent Samples**: [https://github.com/awslabs/amazon-bedrock-agent-samples](https://github.com/awslabs/amazon-bedrock-agent-samples)
+- **Gas Town - Multi-Agent Orchestration System**: [https://github.com/gastownhall/gastown](https://github.com/gastownhall/gastown)
+- **Gas Town Documentation**: [https://github.com/gastownhall/gastown/tree/main/docs](https://github.com/gastownhall/gastown/tree/main/docs)
 - **CrewAI Framework**: [https://github.com/joaomdmoura/crewAI](https://github.com/joaomdmoura/crewAI)
 
 ---
