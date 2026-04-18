@@ -11,9 +11,11 @@ This project explores the orchestration of AI agents in autonomous artificial in
   - [What Claude Code Can Do](#what-claude-code-can-do)
   - [Agent Teams in VS Code](#agent-teams-in-vs-code)
   - [Setting Up Agent Teams in VS Code](#setting-up-agent-teams-in-vs-code)
+  - [Claude Code Auto Mode: Safely Skip Permissions](#claude-code-auto-mode-safely-skip-permissions)
   - [Gas Town: Multi-Agent Orchestration System](#gas-town-multi-agent-orchestration-system)
   - [Docker Sandboxes for Claude Code](#docker-sandboxes-for-claude-code)
   - [Ephemeral Environments](#ephemeral-environments-temporary-full-stack-testing-infrastructure)
+  - [Multi-Agent AI Orchestration for Claude Code](#multi-agent-ai-orchestration-for-claude-code)
 - [Multi-Agent Pipelines](#multi-agent-pipelines)
 - [Practical Example: Blog Writing with CrewAI](#practical-example-blog-writing-with-crewai)
 - [Setup Instructions](#setup-instructions)
@@ -115,6 +117,24 @@ Claude Code provides sophisticated capabilities for understanding and working wi
 
 Agent Teams represent a paradigm shift in how AI assists with software development. Instead of a single AI agent handling all tasks, specialized agents collaborate to solve complex problems more effectively.
 
+**Use Cases for Agent Teams**:
+
+- **Simultaneous frontend and backend development with cross-layer coordination**: Multiple teammates can work on different parts of the stack (frontend, backend, tests) in parallel, with each agent focusing on their specialized layer while coordinating changes that span multiple components.
+
+- **Complex code reviews requiring specialized security, performance, and test auditors**: Different agents can simultaneously review code from their specialized perspectives - one checking security vulnerabilities, another analyzing performance implications, and a third validating test coverage.
+
+- **Adversarial debugging where multiple agents investigate competing hypotheses**: When facing a difficult bug, multiple agents can test different theories in parallel and converge on the answer faster by exploring various potential root causes simultaneously.
+
+**Agent Types**:
+
+Claude Code supports multiple approaches to multi-agent orchestration, each suited to different use cases:
+
+**Sub-agents via AgentTool**: Sub-agents are created automatically when Claude uses the AgentTool internally. These are separate agent instances that your main agent can spawn to handle focused subtasks. Subagents are workers that run in separate context windows, each with their own prompt, tool access, permissions, and optional memory.
+
+**Teams via TeamCreateTool**: A team consists of a lead and one or more teammates, each with their own system prompt and role. Teammates share a task list, claim work, and communicate directly with each other to coordinate on complex multi-step projects.
+
+**Swarm mode**: Fully autonomous multi-agent networks defined in `utils/swarm/` for advanced orchestration scenarios requiring dynamic agent coordination and decision-making.
+
 **How Agent Teams Work**:
 
 1. **Supervisor Agent**: Coordinates work distribution among specialized agents, manages task dependencies, and integrates results from multiple agents.
@@ -136,6 +156,73 @@ Agent Teams represent a paradigm shift in how AI assists with software developme
 - Higher quality output from specialized expertise
 - Better error detection through multi-agent validation
 - Improved maintainability with dedicated documentation agents
+
+**Subagents in the SDK**:
+
+Subagents are separate agent instances that your main agent can spawn to handle focused subtasks. They run in separate context windows, each with their own:
+- **System prompt**: Defines the subagent's role and expertise
+- **Tool access**: Restricted to only the tools they need for their specific task
+- **Permissions**: Configurable access controls for file and system operations
+- **Optional memory**: Can maintain context across multiple invocations
+
+**Subagents vs. Agent Teams**:
+
+Choose based on whether your workers need to communicate with each other:
+
+- **Subagents**: Only report results back to the main agent and never talk to each other. Best for independent, parallel tasks where workers don't need to coordinate.
+
+- **Agent Teams**: Teammates share a task list, claim work, and communicate directly with each other. Best for complex workflows requiring coordination and collaboration.
+
+![Subagents vs Agent Teams](subagents-vs-agent-teams.jpg)
+
+*Both agent teams and subagents let you parallelize work, but they operate differently. Source: [Claude Code Agent Teams Documentation](https://code.claude.com/docs/en/agent-teams)*
+
+**When to Use Agent Teams**:
+
+Agent teams excel in scenarios requiring coordination between multiple specialized agents:
+
+- **Debugging with competing hypotheses**: Teammates test different theories in parallel and converge on the answer faster by exploring various debugging approaches simultaneously.
+
+- **Research and review**: Multiple teammates can investigate different aspects of a problem simultaneously, such as one reviewing security implications while another checks performance impacts.
+
+- **Cross-layer coordination**: Changes that span frontend, backend, and tests, each owned by a different teammate who specializes in that layer of the stack.
+
+**How to Utilize Subagents with the SDK**:
+
+When defining and invoking subagents in VS Code + terminal (Linux), follow these practices:
+
+1. **Define Roles**: Use specific system prompts to give subagents unique roles.
+   ```python
+   # Example: Creating a specialized security researcher subagent
+   security_agent = agent.fork_session(
+       system_prompt="You are a senior security researcher specialized in identifying vulnerabilities."
+   )
+   ```
+
+2. **Assign Specialized Tools**: Restrict subagents to only the tools they need.
+   ```python
+   # Example: Grant read-only access for analysis
+   analysis_agent = agent.fork_session(
+       tools=["read_file", "grep_search"],  # Read-only tools
+       allow_write=False
+   )
+   ```
+
+3. **Use forkSession**: Branch from an existing session in the SDK to try different approaches or refactors without losing the primary session's state.
+   ```python
+   # Fork session to explore alternative implementation
+   experimental_agent = main_agent.fork_session(
+       system_prompt="Explore an alternative architecture using microservices"
+   )
+   ```
+
+**Claude Code Recommendations**:
+
+| Use Case | Recommended Approach | Description |
+|----------|---------------------|-------------|
+| **External tools or data sources** | MCP (Model Context Protocol) | Connect to databases, APIs, web search, or custom tools via standardized protocol |
+| **Delegated work where only the result matters** | Subagents | Spawn workers for focused subtasks that report back results without needing coordination |
+| **Multiple sessions coordinating as peers** | Agent Teams | Teammates share task lists and communicate directly for complex collaborative work |
 
 ### Setting Up Agent Teams in VS Code
 
@@ -202,6 +289,54 @@ For autonomous agent operation, configure appropriate safety boundaries:
   }
 }
 ```
+
+### Claude Code Auto Mode: Safely Skip Permissions
+
+**What is Auto Mode?**
+
+Claude Code's auto mode is a new permissions mode that runs approval decisions through a separate language model. Instead of manually approving every file edit, terminal command, or tool invocation, auto mode uses an AI model to evaluate whether each action is safe and aligned with your intent.
+
+Auto mode enables faster iteration while maintaining safety guardrails by having a secondary AI model review and approve Claude's proposed actions automatically.
+
+**How to Use Auto Mode**:
+
+You can launch a Claude Code auto mode session by running this command in your terminal (Linux):
+
+```bash
+# Start Claude Code in auto mode
+claude --auto-approve
+
+# Or use the environment variable
+export CLAUDE_AUTO_APPROVE=true
+claude
+```
+
+**Security Considerations**:
+
+When considering whether to set "auto mode" for permissions in VS Code for Claude Code, it's important to understand the security implications:
+
+**Safe to use auto mode when**:
+- Working in isolated development environments (Docker sandboxes, VMs)
+- Operating on non-production code with version control
+- Tasks are well-defined with clear boundaries
+- Using with appropriate tool restrictions and permission scopes
+
+**Exercise caution with auto mode when**:
+- Working with production systems or sensitive data
+- Operating on your main development machine without isolation
+- Tasks involve system-level changes or credential access
+- Working with unfamiliar codebases where side effects are unclear
+
+**Best Practices for Auto Mode**:
+1. **Use with Docker Sandboxes**: Combine auto mode with Docker Sandboxes or isolated environments to contain any unintended actions
+2. **Version Control**: Always work with git or other version control to easily revert changes
+3. **Scope Limitations**: Define clear task boundaries and tool restrictions
+4. **Monitor Activity**: Review auto-approved actions in logs periodically
+5. **Start Conservative**: Test auto mode with low-risk tasks before using for critical work
+
+**Note on Orchestration Security**: When orchestrating multiple AI agents with auto mode enabled, implement additional safety measures such as deterministic hooks (pre- and post-tool use checks), test-driven development workflows, and automated quality gates to ensure agents don't introduce breaking changes.
+
+For more information, see the [Claude Code Auto Mode guide](https://shipyard.build/blog/claude-code-auto-mode/).
 
 ### Gas Town: Multi-Agent Orchestration System
 
@@ -622,6 +757,69 @@ shipyard config set auto-create-pr-envs true
 - **Ephemeral Environments Guide**: [https://ephemeralenvironments.io/](https://ephemeralenvironments.io/)
 - **Shipyard Documentation**: [https://docs.shipyard.build/](https://docs.shipyard.build/)
 - **Environment-as-a-Service**: [https://shipyard.build/environment-as-a-service](https://shipyard.build/environment-as-a-service)
+
+### Multi-Agent AI Orchestration for Claude Code
+
+**Ruflo** enables teams to deploy, coordinate, and optimize AI agents working together on software engineering tasks. It provides a framework for multi-agent orchestration specifically designed to work with Claude Code and other AI coding assistants.
+
+**Claude Code + Ruflo**: Agents collaborate via swarms with shared memory and consensus mechanisms, enabling sophisticated coordination patterns beyond simple sequential workflows.
+
+**Key Features**:
+
+- **Agent Swarms**: Deploy multiple Claude Code agents that work together with shared context and collaborative decision-making
+- **Shared Memory**: Agents maintain collective knowledge across sessions, learning from each iteration
+- **Consensus Mechanisms**: Multiple agents vote or reach agreement on implementation decisions
+- **Task Distribution**: Intelligent work allocation based on agent specialization and availability
+- **Quality Gates**: Built-in validation and review processes across agent outputs
+
+**Use Cases**:
+
+**Code Review**: Get thorough reviews with security, performance, and style checks
+- Deploy specialized agents for security scanning, performance analysis, and code style validation
+- Each agent reviews code from their perspective and provides detailed findings
+- Consensus mechanism combines insights for a review
+
+**Test Generation**: Auto-generate unit, integration, and e2e tests for existing code
+- One agent analyzes code structure and identifies test scenarios
+- Another generates unit tests with full coverage
+- A third creates integration tests for component interactions
+- E2E test agent validates complete user workflows
+
+**Bug Fixing**: Diagnose and fix bugs with full context analysis
+- Research agent investigates symptoms and gathers context
+- Analysis agent identifies root cause using debugging tools
+- Implementation agent proposes and applies fixes
+- Validation agent verifies the fix resolves the issue without regressions
+
+**Repository**: [https://github.com/ruvnet/ruflo](https://github.com/ruvnet/ruflo)
+
+**Getting Started with Ruflo**:
+
+```bash
+# Clone the repository
+git clone https://github.com/ruvnet/ruflo.git
+cd ruflo
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure Claude Code integration
+export CLAUDE_API_KEY='your-api-key'
+
+# Deploy an agent swarm
+ruflo deploy --swarm code-review --agents 3
+
+# Assign a task to the swarm
+ruflo task create "Review the authentication module for security issues"
+```
+
+**Integration with Claude Code**:
+
+Ruflo complements Claude Code's native agent capabilities by providing:
+- Advanced orchestration patterns beyond simple supervisor-worker models
+- Persistent agent state and memory across sessions
+- Complex coordination logic for large-scale refactoring
+- Production-ready monitoring and observability
 
 ## Multi-Agent Pipelines
 
@@ -2052,6 +2250,27 @@ You can use Apache Airflow to define a workflow that includes tasks such as data
 11. **Shipyard Documentation**
     [https://docs.shipyard.build/](https://docs.shipyard.build/)
 
+12. **Claude Code Agent SDK Overview**
+    [https://code.claude.com/docs/en/agent-sdk/overview](https://code.claude.com/docs/en/agent-sdk/overview)
+
+13. **Claude Code Subagents Documentation**
+    [https://code.claude.com/docs/en/agent-sdk/subagents](https://code.claude.com/docs/en/agent-sdk/subagents)
+
+14. **Claude Code Agent Teams Documentation**
+    [https://code.claude.com/docs/en/agent-teams](https://code.claude.com/docs/en/agent-teams)
+
+15. **When to Use Agent Teams**
+    [https://code.claude.com/docs/en/agent-teams#when-to-use-agent-teams](https://code.claude.com/docs/en/agent-teams#when-to-use-agent-teams)
+
+16. **Agent Teams Orchestrator Tool**
+    [https://mcpmarket.com/tools/skills/agent-teams-orchestrator-1](https://mcpmarket.com/tools/skills/agent-teams-orchestrator-1)
+
+17. **Claude Code Auto Mode** - Shipyard Blog
+    [https://shipyard.build/blog/claude-code-auto-mode/](https://shipyard.build/blog/claude-code-auto-mode/)
+
+18. **Ruflo - Multi-Agent AI Orchestration for Claude Code**
+    [https://github.com/ruvnet/ruflo](https://github.com/ruvnet/ruflo)
+
 ### GitHub Repositories
 
 - **Agentic Orchestration Samples**: [https://github.com/aws-samples/agentic-orchestration](https://github.com/aws-samples/agentic-orchestration)
@@ -2059,6 +2278,7 @@ You can use Apache Airflow to define a workflow that includes tasks such as data
 - **Gas Town - Multi-Agent Orchestration System**: [https://github.com/gastownhall/gastown](https://github.com/gastownhall/gastown)
 - **Gas Town Documentation**: [https://github.com/gastownhall/gastown/tree/main/docs](https://github.com/gastownhall/gastown/tree/main/docs)
 - **CrewAI Framework**: [https://github.com/joaomdmoura/crewAI](https://github.com/joaomdmoura/crewAI)
+- **Ruflo - Multi-Agent Orchestration**: [https://github.com/ruvnet/ruflo](https://github.com/ruvnet/ruflo)
 
 ---
 
