@@ -11,7 +11,8 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 observability/       # Monitoring and analysis tools
-└── 📂 orchestration/       # Workflow orchestration and coordination
+├── 📂 orchestration/       # Workflow orchestration and coordination
+└── 📂 security/            # AI agent security and threat protection
 ```
 
 ### 📂 autonomous/
@@ -121,6 +122,28 @@ Autonomous agents often need to execute complex, multi-step workflows that invol
 - Task coordination and dependency management
 - Test suite for workflow validation
 - Quickstart guides for rapid deployment
+
+### 📂 security/
+
+**Key Points:**
+- A security framework for AI agents in production
+- Protection against prompt injection, data poisoning, and adversarial attacks
+- Layered security approach combining traditional and AI-specific methods
+- Identity and access management with least privilege principles
+- Guardrails for input/output inspection and content safety
+
+**Importance for Autonomous AI:**
+Autonomous AI agents execute code, manage files, and access multiple applications with minimal human oversight. This autonomy introduces significant security risks including prompt injection attacks, memory poisoning, and unauthorized access to sensitive systems. A robust security framework is essential to ensure agents operate within safe boundaries, protect against malicious manipulation, and maintain trust in production environments. Without proper security measures, autonomous agents can be exploited to bypass controls, leak sensitive data, or perform unintended actions.
+
+**Key Features:**
+- Identity and Access Management (IAM) with service accounts and short-lived credentials
+- Input/output inspection using guard models like Llama Guard and ShieldGemma
+- Network and infrastructure security with isolated networks and traffic inspection
+- Data and secret security using cloud secrets managers and encryption
+- Monitoring and governance with real-time agent activity tracking
+- Protection against prompt injections, indirect attacks, and AI memory poisoning
+- Practical implementations with Ollama and Google Agent Development Kit
+- Use cases for securing Amazon Bedrock Agents and GKE deployments
 
 ---
 
