@@ -68,7 +68,7 @@ Deploying autonomous AI agents to production requires careful consideration of i
 - Azure AI Foundry integration with Microsoft 365 ecosystem and enterprise tools
 - Docker-based local deployment with open-source models via Ollama
 - Sample agents demonstrating customer support, mortgage assistance, research, and local processing
-- Deployment scripts and utilities for rapid environment setup
+- Deployment scripts and utilities for an environment setup
 - Security best practices for cloud and local deployments
 
 ### 📂 evaluation/
