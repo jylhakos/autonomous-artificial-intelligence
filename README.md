@@ -8,6 +8,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 📁 autonomous-artificial-intelligence/
 ├── 📂 autonomous/          # Core autonomous AI agent framework
 ├── 📂 collaboration/       # Multi-agent collaboration patterns
+├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 observability/       # Monitoring and analysis tools
 └── 📂 orchestration/       # Workflow orchestration and coordination
@@ -47,6 +48,28 @@ Autonomous agents rarely operate in isolation. This folder provides patterns and
 - Hybrid agent collaboration (combining different AI frameworks)
 - Code collaboration and review workflows
 - Human feedback integration for guided autonomy
+
+### 📂 deployment/
+
+**Key Points:**
+- Production-ready deployment strategies for AI agents
+- Model Context Protocol (MCP) for standardized tool and data source integration
+- Agent2Agent (A2A) Protocol for inter-agent communication
+- Cloud deployment options (GCP, AWS, Azure) with managed infrastructure
+- Local deployment with Docker and Ollama for privacy and cost efficiency
+- Sample agent implementations for each deployment platform
+
+**Importance for Autonomous AI:**
+Deploying autonomous AI agents to production requires careful consideration of infrastructure, security, scalability, and cost. This folder demonstrates multiple deployment approaches, each with distinct trade-offs. Cloud deployments (GCP Vertex AI, AWS Bedrock AgentCore, Azure AI Foundry) offer managed infrastructure with automatic scaling, built-in security, and zero operations overhead, making them ideal for enterprise applications requiring high availability and integration with cloud ecosystems. Local deployments using Docker and Ollama provide complete data privacy, zero inference costs, and offline capabilities, suitable for organizations with strict data residency requirements or cost constraints. The Model Context Protocol (MCP) standardizes how agents connect to tools and data sources across all platforms, while the Agent2Agent (A2A) Protocol enables cross-framework agent collaboration. Understanding these deployment patterns is essential for building autonomous AI systems that are reliable, secure, and production-ready.
+
+**Key Features:**
+- Tutorials for Google Cloud Platform (Vertex AI Agent Engine, Cloud Run, ADK)
+- AWS deployment patterns with Amazon Bedrock AgentCore and serverless architectures
+- Azure AI Foundry integration with Microsoft 365 ecosystem and enterprise tools
+- Docker-based local deployment with open-source models via Ollama
+- Sample agents demonstrating customer support, mortgage assistance, research, and local processing
+- Deployment scripts and utilities for rapid environment setup
+- Security best practices for cloud and local deployments
 
 ### 📂 evaluation/
 
