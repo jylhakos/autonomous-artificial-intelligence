@@ -1,4 +1,4 @@
-# Collaboration of AI Agents in Autonomous Artificial Intelligence
+# Collaboration of AI Agents
 
 This document provides step-by-step instructions for collaborative AI agents, practical examples like Microsoft AutoGen, and testing methods to help you understand how intelligent, autonomous agents work together to solve complex tasks through communication, shared context, and distributed work.
 
@@ -7,6 +7,16 @@ This document provides step-by-step instructions for collaborative AI agents, pr
 - [Introduction](#introduction)
 - [What are Collaborative AI Agents?](#what-are-collaborative-ai-agents)
 - [How Collaborative AI Systems Work](#how-collaborative-ai-systems-work)
+- [Agent Communication and Messaging Architecture](#agent-communication-and-messaging-architecture)
+  - [Message Structure and Payload Format](#message-structure-and-payload-format)
+  - [Communication Protocols for AI Agents](#communication-protocols-for-ai-agents)
+    - [Model Context Protocol (MCP)](#model-context-protocol-mcp)
+    - [Agent-to-Agent (A2A) Protocol](#agent-to-agent-a2a-protocol)
+    - [Agent Communication Protocol (ACP)](#agent-communication-protocol-acp)
+  - [Message Flow and Information Exchange Patterns](#message-flow-and-information-exchange-patterns)
+  - [VS Code Agent Integration and Messaging](#vs-code-agent-integration-and-messaging)
+  - [Claude Code Agent Teams](#claude-code-agent-teams)
+  - [Practical Multi-Agent Communication Example](#practical-multi-agent-communication-example)
 - [Key Aspects of Collaborative AI Agent Systems](#key-aspects-of-collaborative-ai-agent-systems)
 - [Real-World Examples](#real-world-examples)
 - [Challenges](#challenges)
@@ -68,6 +78,786 @@ Agents exchange information using structured communication protocols, often empl
 - **Shared language and syntax**: Common vocabularies and message formats (e.g., JSON schemas)
 - **Established protocols**: Standardized interaction patterns
 - **Emerging tools**: Solutions like [Google's Agent-to-Agent (A2A) protocol](https://research.google/blog/advancing-agent-collaboration-with-the-agent-to-agent-a2a-protocol/) simplify connections between different frameworks
+
+## Agent Communication and Messaging Architecture
+
+Understanding how agents communicate is fundamental to building effective multi-agent systems. This section explores the messaging patterns, protocols, and infrastructure that enable agents to exchange information, coordinate actions, and collaborate on complex tasks.
+
+### Message Structure and Payload Format
+
+AI agents exchange information through structured messages that contain context, intent, and actionable data. A typical agent message includes:
+
+**Core Message Components:**
+
+```json
+{
+  "message_id": "msg_abc123",
+  "timestamp": "2026-04-20T12:00:00Z",
+  "sender": {
+    "agent_id": "researcher_agent_01",
+    "role": "researcher",
+    "capabilities": ["web_search", "data_analysis"]
+  },
+  "recipient": {
+    "agent_id": "writer_agent_01",
+    "role": "writer"
+  },
+  "message_type": "task_result",
+  "payload": {
+    "task_id": "task_456",
+    "status": "completed",
+    "content": "Research findings on AI agent protocols...",
+    "metadata": {
+      "sources": ["url1", "url2"],
+      "confidence": 0.92
+    }
+  },
+  "context": {
+    "conversation_id": "conv_789",
+    "parent_message_id": "msg_xyz456",
+    "session_id": "session_001"
+  },
+  "routing": {
+    "priority": "normal",
+    "requires_response": true,
+    "timeout_ms": 30000
+  }
+}
+```
+
+**Message Types:**
+
+1. **Task Definition**: Instructions for an agent to perform specific actions
+2. **State Updates**: Changes in agent or system state
+3. **Query/Response**: Information requests and answers
+4. **Handover**: Transfer of responsibility between agents
+5. **Status Notifications**: Progress updates and completion signals
+6. **Error Reports**: Failure notifications and debugging information
+
+### Communication Protocols for AI Agents
+
+Modern multi-agent systems leverage standardized protocols to ensure interoperability across different frameworks and platforms.
+
+#### Model Context Protocol (MCP)
+
+**Purpose**: MCP provides a standard interface for AI models to access external tools, data sources, and services.
+
+**Key Features:**
+- Standardized context delivery to LLMs
+- Secure access to external resources
+- Tool and data source discovery
+- Stateless communication model
+
+**Use Case**: An agent using MCP can query databases, access APIs, or retrieve documents through a unified interface without custom integrations for each data source.
+
+**Implementation Example:**
+```python
+from mcp import MCPServer, Tool
+
+# Define a tool accessible via MCP
+@Tool(name="search_knowledge_base")
+async def search_kb(query: str) -> dict:
+    """Search internal knowledge base."""
+    results = await knowledge_base.search(query)
+    return {"results": results, "count": len(results)}
+
+# Agent uses MCP to access the tool
+response = await agent.use_tool("search_knowledge_base", 
+                                query="AI agent protocols")
+```
+
+**Official Resource**: [Introducing Model Context Protocol](https://www.anthropic.com/news/model-context-protocol)
+
+#### Agent-to-Agent (A2A) Protocol
+
+**Purpose**: A2A defines a universal language enabling agents from different frameworks to discover, communicate, and orchestrate actions regardless of their origin.
+
+**Key Features:**
+- Cross-framework agent discovery via "Agent Cards"
+- Capability advertisement and negotiation
+- Secure peer-to-peer messaging
+- Dynamic team formation
+
+**Agent Card Example:**
+```json
+{
+  "agent_id": "researcher_v1",
+  "name": "Research Specialist",
+  "capabilities": [
+    {"name": "web_search", "version": "2.0"},
+    {"name": "document_analysis", "version": "1.5"}
+  ],
+  "endpoints": {
+    "message": "https://api.example.com/agents/researcher/message",
+    "status": "https://api.example.com/agents/researcher/status"
+  },
+  "protocols": ["A2A/1.0", "HTTP/JSON"],
+  "authentication": "Bearer"
+}
+```
+
+**Communication Flow:**
+```
+1. Agent A publishes Agent Card to registry
+2. Agent B discovers Agent A via card
+3. Agent B sends task request to Agent A
+4. Agent A processes and responds
+5. Both agents maintain session state
+```
+
+**Official Resource**: [Google's A2A Protocol Blog](https://research.google/blog/advancing-agent-collaboration-with-the-agent-to-agent-a2a-protocol/)
+
+#### Agent Communication Protocol (ACP)
+
+**Purpose**: ACP facilitates peer-to-peer or broker-based interactions between agents from different frameworks using natural language-driven messages.
+
+**Key Features:**
+- RESTful API structure
+- MIME-type extensibility for diverse formats
+- Conversational messaging paradigm
+- Framework-agnostic design
+
+**Message Exchange Pattern:**
+```http
+POST /agents/writer/message HTTP/1.1
+Content-Type: application/json
+
+{
+  "from": "manager_agent",
+  "intent": "write_report",
+  "content": {
+    "topic": "AI Trends 2026",
+    "format": "markdown",
+    "length": "1500-2000 words",
+    "sources": ["research_agent_findings.json"]
+  },
+  "reply_to": "https://api.example.com/agents/manager/receive"
+}
+```
+
+#### Protocol Comparison
+
+| Feature | MCP | A2A | ACP |
+|---------|-----|-----|-----|
+| **Focus** | Model-to-tool integration | Agent discovery & orchestration | Peer communication |
+| **Architecture** | Client-server | Distributed registry | Peer-to-peer or broker |
+| **Message Format** | JSON-RPC | JSON with Agent Cards | HTTP/JSON, extensible |
+| **Discovery** | Static configuration | Dynamic via cards | Directory service |
+| **Best For** | Tool/data access | Cross-framework teams | Conversational agents |
+
+**Official Resource**: [Developer's Guide to AI Agent Protocols](https://developers.googleblog.com/developers-guide-to-ai-agent-protocols/)
+
+### Message Flow and Information Exchange Patterns
+
+Understanding how information flows between agents is critical for designing effective collaboration patterns.
+
+#### Hierarchical Message Flow
+
+In supervisor-based systems, messages flow through a central coordinator:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     User / Application                      │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+              ┌──────────────────────┐
+              │  Supervisor Agent    │
+              │  - Route messages    │
+              │  - Aggregate results │
+              │  - Manage state      │
+              └──────────┬───────────┘
+                         │
+           ┌─────────────┼─────────────┐
+           │             │             │
+           ▼             ▼             ▼
+    ┌──────────┐  ┌──────────┐  ┌──────────┐
+    │Research  │  │ Writer   │  │ Critic   │
+    │ Agent    │  │ Agent    │  │ Agent    │
+    └──────────┘  └──────────┘  └──────────┘
+         │             │             │
+         └─────────────┴─────────────┘
+                       │
+                  Shared Memory
+                  (Vector DB / Cache)
+```
+
+**Message Flow Steps:**
+1. User sends task to Supervisor
+2. Supervisor decomposes task → sends subtask to Research Agent
+3. Research Agent queries tools via MCP → returns results to Supervisor
+4. Supervisor forwards results to Writer Agent
+5. Writer creates draft → sends to Supervisor
+6. Supervisor routes draft to Critic Agent
+7. Critic reviews → sends feedback through Supervisor
+8. Supervisor aggregates final result → returns to user
+
+#### Peer-to-Peer Message Flow
+
+In decentralized systems, agents communicate directly:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Message Bus / Broker                    │
+│              (RabbitMQ, Kafka, Redis Pub/Sub)               │
+└──────┬──────────────┬──────────────┬──────────────┬─────────┘
+       │              │              │              │
+       ▼              ▼              ▼              ▼
+  ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐
+  │Research│    │ Writer │    │ Critic │    │Manager │
+  │ Agent  │◄──►│ Agent  │◄──►│ Agent  │◄──►│ Agent  │
+  └────────┘    └────────┘    └────────┘    └────────┘
+       │              │              │           │
+       └──────────────┴──────────────┴───────────┘
+                      │
+                 Shared State
+             (Distributed Cache)
+```
+
+**Message Flow Steps:**
+1. Manager publishes task to message bus
+2. Research & Writer agents subscribe to relevant topics
+3. Research agent publishes findings
+4. Writer agent consumes research → publishes draft
+5. Critic agent consumes draft → publishes review
+6. Writer agent refines based on feedback
+7. Manager receives final output
+
+#### Sequential Workflow Pattern
+
+```
+User Task
+   │
+   ▼
+┌──────────────┐     Message      ┌──────────────┐
+│   Agent A    │─────────────────►│   Agent B    │
+│  (Analyze)   │    "Analysis     │  (Synthesize)│
+└──────────────┘     Complete"    └──────────────┘
+                                          │
+                                  Message │
+                                          ▼
+                                   ┌──────────────┐
+                                   │   Agent C    │
+                                   │  (Validate)  │
+                                   └──────────────┘
+                                          │
+                                          ▼
+                                    Final Result
+```
+
+#### Parallel Processing Pattern
+
+```
+                    ┌──────────────┐
+    ┌──────────────►│   Agent A    │─────────────┐
+    │               │ (Perspective │             │
+    │               │      1)      │             │
+    │               └──────────────┘             │
+    │                                            │
+    │               ┌──────────────┐             ▼
+User Task──────────►│   Agent B    │────────►Aggregator
+    │               │ (Perspective │             ▲
+    │               │      2)      │             │
+    │               └──────────────┘             │
+    │                                            │
+    │               ┌──────────────┐             │
+    └──────────────►│   Agent C    │─────────────┘
+                    │ (Perspective │
+                    │      3)      │
+                    └──────────────┘
+```
+
+### VS Code Agent Integration and Messaging
+
+VS Code leverages agents through extensions and Language Server Protocol (LSP), with GitHub Copilot being a prominent example.
+
+#### How GitHub Copilot Communicates with Sub-Agents
+
+**Architecture Overview:**
+
+```
+┌───────────────────────────────────────────────────────┐
+│              VS Code Editor (Client)                  │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │     GitHub Copilot Extension                    │  │
+│  │  - Chat Interface                               │  │
+│  │  - Code Suggestions                             │  │
+│  │  - Context Gathering                            │  │
+│  └─────────────────┬───────────────────────────────┘  │
+└────────────────────┼──────────────────────────────────┘
+                     │ JSON-RPC / WebSocket
+                     ▼
+┌──────────────────────────────────────────────────────┐
+│          Copilot Agent Orchestrator (Server)         │
+│  ┌──────────────────────────────────────────────────┐│
+│  │  Primary Agent (Claude Sonnet 4.5 / GPT-4o)      ││
+│  │  - Receives user messages                        ││
+│  │  - Spawns specialized sub-agents                 ││
+│  │  - Aggregates responses                          ││
+│  └────────┬─────────────────────────────────────────┘│
+│           │                                          │
+│  ┌────────┼────────────────────────────────┐         │
+│  │        │  Sub-Agent Pool                │         │
+│  │        ▼                                │         │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  │         │
+│  │  │Explorer │  │ Coder   │  │Explainer│  │         │
+│  │  │ Agent   │  │ Agent   │  │ Agent   │  │         │
+│  │  └─────────┘  └─────────┘  └─────────┘  │         │
+│  │       │            │            │       │         │
+│  └───────┼────────────┼────────────┼───────┘         │
+│          │            │            │                 │
+│  ┌───────┴────────────┴────────────┴────────┐        │
+│  │        Tool & Context Providers          │        │
+│  │  - File System Access                    │        │
+│  │  - Search Capabilities                   │        │
+│  │  - Language Servers (Pylance, etc.)      │        │
+│  └──────────────────────────────────────────┘        │
+└──────────────────────────────────────────────────────┘
+```
+
+**Message Exchange Flow:**
+
+1. **User Interaction**: User types a request in Copilot Chat interface
+2. **Context Collection**: Extension gathers:
+   - Open files and visible code
+   - Cursor position and selected text
+   - Workspace structure
+   - Active errors and diagnostics
+3. **Message Serialization**: Request packaged as JSON:
+   ```json
+   {
+     "type": "chat_request",
+     "message": "Refactor this function for better performance",
+     "context": {
+       "activeFile": "src/utils.py",
+       "selection": {"start": 45, "end": 78},
+       "diagnostics": [],
+       "workspaceFiles": ["list", "of", "relevant", "files"]
+     },
+     "history": [/* previous conversation */]
+   }
+   ```
+4. **Agent Processing**: Primary agent analyzes request and determines if sub-agents are needed
+5. **Sub-Agent Invocation**: If complex, spawns specialized agents:
+   ```python
+   # Conceptual flow (not actual Copilot code)
+   if task_needs_exploration:
+       results = await explorer_agent.search_codebase(query)
+   if task_needs_code_generation:
+       code = await coder_agent.generate(spec, context=results)
+   if task_needs_explanation:
+       explanation = await explainer_agent.explain(code)
+   ```
+6. **Response Aggregation**: Primary agent combines sub-agent outputs
+7. **Streaming Response**: Sends response back to VS Code as streaming JSON/SSE
+8. **UI Rendering**: Extension displays response with syntax highlighting, code blocks, file references
+
+**Agent Teams in VS Code (Experimental):**
+
+Enable multi-agent teams in VS Code settings:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+**Defining Agent Roles:**
+```
+User: "Spawn a researcher, a writer, and an editor agent"
+```
+
+**How This Works:**
+- Primary agent creates ephemeral sub-agents with specific system prompts
+- Sub-agents persist for session duration
+- Communication happens through structured message passing
+- Each agent maintains conversation history and context
+- Handoffs include state serialization
+
+**Agent Skills in VS Code:**
+
+Agent Skills provide modular capabilities:
+- Loaded from `.md` files with YAML frontmatter
+- Available to agents via tool search
+- Can be domain-specific (e.g., testing, API design, performance)
+- Agent reads skill file before applying specialized knowledge
+
+**Example Skill Definition:**
+```markdown
+---
+name: code-review
+description: Perform code reviews
+applyTo: ["*.py", "*.ts"]
+---
+
+# Code Review Skill
+
+When reviewing code, check for:
+1. Correctness and logic errors
+2. Performance bottlenecks
+3. Security vulnerabilities
+...
+```
+
+#### VS Code Agent Communication Patterns
+
+**Pattern 1: Tool Calling**
+```
+User → Copilot Agent → [Tool Search] → File System Tool
+                    → [Tool Execute] → Read files
+                    → [Tool Result] → Generate response
+```
+
+**Pattern 2: Multi-Agent Collaboration**
+```
+User → Orchestrator Agent
+         ├→ Search Agent (find relevant code)
+         ├→ Analysis Agent (understand codebase)
+         ├→ Writer Agent (generate solution)
+         └→ Validator Agent (check correctness)
+       → Orchestrator aggregates
+       → Response to User
+```
+
+**Pattern 3: Human-in-the-Loop**
+```
+User → Agent → Proposes solution → User provides feedback
+            ↓                            ↓
+       Adjusts approach ←────────────────┘
+            ↓
+       Refined solution → User
+```
+
+### Claude Code Agent Teams
+
+Claude Code (via Anthropic) supports experimental agent teams for complex workflows.
+
+**Setup Process:**
+
+1. **Enable Experimental Features** in VS Code `settings.json`:
+   ```json
+   {
+     "env": {
+       "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+     }
+   }
+   ```
+
+2. **Define Agent Roles**: Conversationally describe the team:
+   ```
+   "Spawn a researcher to find information on AI protocols,
+    a writer to draft documentation,
+    and an editor to refine the content."
+   ```
+
+3. **Configure MCP Servers**: Provide tools for agents to use:
+   ```json
+   {
+     "mcpServers": {
+       "brave-search": {
+         "command": "npx",
+         "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+         "env": {
+           "BRAVE_API_KEY": "your-key"
+         }
+       },
+       "filesystem": {
+         "command": "npx",
+         "args": ["-y", "@modelcontextprotocol/server-filesystem"]
+       }
+     }
+   }
+   ```
+
+**Agent Team Lifecycle:**
+
+```
+User Request → Claude orchestrator evaluates complexity
+             ↓
+      Spawns specialized agents with context
+             ↓
+      ┌──────┴──────┐
+      │             │
+   Research      Writer
+   Agent         Agent
+      │             │
+      └──────┬──────┘
+             ↓
+     Results aggregated by orchestrator
+             ↓
+      Presented to user
+             ↓
+      Agents discarded (ephemeral)
+```
+
+**Communication Within Agent Teams:**
+
+Agents communicate via structured JSON messages managed by the orchestrator:
+
+```json
+{
+  "team_id": "team_xyz",
+  "from_agent": "researcher",
+  "to_agent": "writer",
+  "message_type": "task_handover",
+  "content": {
+    "research_findings": "...",
+    "sources": ["url1", "url2"],
+    "key_points": ["point1", "point2"]
+  },
+  "metadata": {
+    "timestamp": "2026-04-20T14:30:00Z",
+    "conversation_turn": 3
+  }
+}
+```
+
+**Key Characteristics:**
+- **Ephemeral by Design**: Agents exist only for session duration
+- **Conversational Setup**: No configuration files needed
+- **Context Sharing**: All agents access shared conversation memory
+- **Tool Access**: Agents use MCP to access external resources
+- **Transparent to User**: User sees aggregated results, not individual agent interactions
+
+### Practical Multi-Agent Communication Example
+
+Here's a complete example demonstrating agent communication with message tracking:
+
+```python
+"""
+Multi-Agent Research and Reporting System
+Demonstrates message passing, context sharing, and collaboration.
+"""
+
+import asyncio
+import json
+from datetime import datetime
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+
+class MessageTracker:
+    """Track messages exchanged between agents."""
+    
+    def __init__(self):
+        self.messages = []
+    
+    def log_message(self, sender: str, recipient: str, 
+                    msg_type: str, content: str):
+        """Log a message."""
+        message = {
+            "id": f"msg_{len(self.messages)}",
+            "timestamp": datetime.now().isoformat(),
+            "from": sender,
+            "to": recipient,
+            "type": msg_type,
+            "content": content[:200]  # Truncate for display
+        }
+        self.messages.append(message)
+        
+    def print_summary(self):
+        """Print communication summary."""
+        print("\n" + "="*70)
+        print("MESSAGE EXCHANGE SUMMARY")
+        print("="*70)
+        
+        for msg in self.messages:
+            print(f"\n[{msg['timestamp']}]")
+            print(f"  {msg['from']} → {msg['to']}")
+            print(f"  Type: {msg['type']}")
+            print(f"  Content: {msg['content']}...")
+        
+        print(f"\nTotal messages: {len(self.messages)}")
+        
+        # Analyze communication patterns
+        from collections import Counter
+        senders = Counter(msg['from'] for msg in self.messages)
+        
+        print("\nMessages sent by agent:")
+        for agent, count in senders.items():
+            print(f"  {agent}: {count}")
+
+
+async def multi_agent_research_example():
+    """Demonstrate multi-agent communication for research task."""
+    
+    print("="*70)
+    print("MULTI-AGENT RESEARCH AND REPORTING SYSTEM")
+    print("="*70)
+    
+    # Initialize message tracker
+    tracker = MessageTracker()
+    
+    # Setup model
+    model_client = OpenAIChatCompletionClient(model="gpt-4o-mini")
+    
+    # Define specialized agents
+    manager = AssistantAgent(
+        "manager",
+        model_client=model_client,
+        system_message="""You are a project manager. Break down tasks 
+        and coordinate team members. Start by analyzing the request 
+        and delegating to appropriate agents."""
+    )
+    
+    searcher = AssistantAgent(
+        "searcher",
+        model_client=model_client,
+        system_message="""You are a research specialist. When given 
+        a topic, outline key information sources and findings. 
+        Be specific and cite sources."""
+    )
+    
+    writer = AssistantAgent(
+        "writer",
+        model_client=model_client,
+        system_message="""You are a technical writer. Take research
+        findings and create clear, structured content. Use markdown
+        formatting."""
+    )
+    
+    reviewer = AssistantAgent(
+        "reviewer",
+        model_client=model_client,
+        system_message="""You are a quality assurance reviewer.
+        Check content for accuracy, clarity, and completeness.
+        Provide specific feedback."""
+    )
+    
+    # Create team
+    team = RoundRobinGroupChat(
+        participants=[manager, searcher, writer, reviewer],
+        max_turns=12
+    )
+    
+    # Define task
+    task = """
+    Create a brief report on Agent Communication Protocols (A2A, MCP, ACP).
+    Include definitions, use cases, and comparisons.
+    """
+    
+    print(f"\nTask: {task}\n")
+    print("-"*70)
+    
+    # Execute task
+    result = await team.run(task=task)
+    
+    # Simulate message tracking from conversation history
+    if hasattr(team, '_history'):
+        for i, turn in enumerate(team._history):
+            sender = turn.get('name', f'agent_{i}')
+            content = turn.get('content', '')
+            
+            # Infer recipient (next in line)
+            recipient = "next_agent"
+            msg_type = "task_instruction" if i == 0 else "task_result"
+            
+            tracker.log_message(sender, recipient, msg_type, content)
+    
+    # Print results
+    print("\n" + "="*70)
+    print("FINAL REPORT")
+    print("="*70)
+    print(result)
+    
+    # Print communication analysis
+    tracker.print_summary()
+    
+    return result
+
+
+# Message flow diagram (ASCII)
+def print_message_flow_diagram():
+    """Print ASCII diagram of message flow."""
+    diagram = """
+    
+MESSAGE FLOW IN MULTI-AGENT SYSTEM:
+
+User: "Research AI agent protocols"
+  │
+  ▼
+┌─────────────────────┐
+│  Manager Agent      │  Message Type: TASK_DECOMPOSITION
+│  - Analyzes request │  Payload: {topic, requirements, roles}
+│  - Creates plan     │
+└──────────┬──────────┘
+           │
+           ▼ (Message: "Search for A2A, MCP, ACP protocols")
+     ┌─────────────┐
+     │  Searcher   │  Message Type: RESEARCH_TASK
+     │  - Queries  │  Payload: {query, sources_required}
+     │  - Compiles │
+     └──────┬──────┘
+            │
+            ▼ (Message: "Findings: [research data]")
+     ┌─────────────┐
+     │   Writer    │  Message Type: WRITING_TASK
+     │  - Drafts   │  Payload: {content, format, length}
+     │  - Formats  │
+     └──────┬──────┘
+            │
+            ▼ (Message: "Draft: [document]")
+     ┌─────────────┐
+     │  Reviewer   │  Message Type: REVIEW_TASK
+     │  - Checks   │  Payload: {document, criteria}
+     │  - Suggests │
+     └──────┬──────┘
+            │
+            ▼ (Message: "Approved with edits")
+        Manager
+            │
+            ▼
+        User receives final report
+
+COMMUNICATION SUMMARY:
+- 5 message exchanges
+- 4 agents collaborated
+- 12 conversation turns
+- Task completed successfully
+    """
+    print(diagram)
+
+
+if __name__ == "__main__":
+    # Run the example
+    asyncio.run(multi_agent_research_example())
+    
+    # Print message flow diagram
+    print_message_flow_diagram()
+```
+
+**Save as:** `multi_agent_messaging_example.py`
+
+**Run:**
+```bash
+source venv/bin/activate
+export OPENAI_API_KEY='your-key-here'
+python multi_agent_messaging_example.py
+```
+
+**Expected Output Shows:**
+1. Task delegation messages
+2. Research findings exchange
+3. Draft document handover
+4. Review feedback transmission
+5. Final report aggregation
+6. Communication statistics and patterns
+
+### Key Takeaways: Agent Messaging
+
+1. **Standardized Protocols**: MCP, A2A, and ACP provide interoperability
+2. **Structured Payloads**: JSON messages with context, metadata, and routing
+3. **Multiple Patterns**: Hierarchical, peer-to-peer, sequential, and parallel flows
+4. **VS Code Integration**: Agents communicate via JSON-RPC and tool calling
+5. **Ephemeral Teams**: Modern systems spawn specialized agents dynamically
+6. **Message Tracking**: Essential for debugging and optimizing collaboration
+7. **Context Sharing**: Shared memory ensures alignment across agents
+8. **Protocol Selection**: Choose based on architecture (centralized vs decentralized)
+
+Effective agent communication is the foundation of robust multi-agent systems. Understanding these patterns enables you to design systems that scale, adapt, and collaborate efficiently.
 
 ## Key Aspects of Collaborative AI Agent Systems
 
@@ -1083,9 +1873,9 @@ async def test_with_monitoring():
     model_client = OpenAIChatCompletionClient(model="gpt-4o-mini")
     
     # Create agents
-    planner = AssistantAgent("planner", model_client, 
+    planner = AssistantAgent("planner", model_client,
                             system_message="You plan tasks.")
-    worker = AssistantAgent("worker", model_client, 
+    worker = AssistantAgent("worker", model_client,
                            system_message="You execute tasks.")
     
     # Create monitored team
@@ -1287,6 +2077,7 @@ pip list | grep autogen
 ├── 📄 autogen_multi_agent_collaboration.py    # Multi-agent team example
 ├── 📄 hybrid_agent_collaboration.py           # Software development team simulation
 ├── 📄 claude_agent_basic.py                   # Claude Agent SDK examples
+├── 📄 multi_agent_messaging_example.py        # ✨ Agent communication demonstration
 │
 ├── 📄 test_code_collaboration.py              # Code generation & correction test
 ├── 📄 test_human_feedback.py                  # Human-in-the-loop test
@@ -1317,6 +2108,8 @@ pip list | grep autogen
 ### Research and Articles
 
 - [Google's Agent-to-Agent (A2A) Protocol](https://research.google/blog/advancing-agent-collaboration-with-the-agent-to-agent-a2a-protocol/) - Advancing agent collaboration
+- [Developer's Guide to AI Agent Protocols](https://developers.googleblog.com/developers-guide-to-ai-agent-protocols/) - An overview of MCP, A2A, and ACP
+- [Introducing Model Context Protocol](https://www.anthropic.com/news/model-context-protocol) - Anthropic's MCP announcement
 - [Agentic AI in Operations](https://www.mckinsey.com/capabilities/operations/our-insights/the-next-frontier-of-operations-agentic-ai) - McKinsey analysis
 - [The Rise of Multi-Agent Systems](https://arxiv.org/abs/2308.10848) - Academic perspective on collaborative agents
 
