@@ -12,6 +12,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
+├── 📂 pipelines/           # SDLC integration with Vibe Coding and Foundry Local
 └── 📂 security/            # AI agent security and threat protection
 ```
 
@@ -122,6 +123,28 @@ Autonomous agents often need to execute complex, multi-step workflows that invol
 - Task coordination and dependency management
 - Test suite for workflow validation
 - Quickstart guides for rapid deployment
+
+### 📂 pipelines/
+
+**Key Points:**
+- SDLC integration with Vibe Coding methodology for AI-assisted development
+- Foundry Local framework for running AI models entirely on local devices
+- Natural language-based code generation through conversational AI agents
+- Practical scripts including prompt assistant for optimized vibe coding workflows
+- Virtual environment setup and management for isolated Python development
+
+**Importance for Autonomous AI:**
+The software development life cycle is being fundamentally transformed by autonomous AI agents that generate code through natural language descriptions, automate routine tasks, and provide intelligent assistance throughout development workflows. This folder demonstrates how traditional SDLC frameworks integrate with AI-assisted programming tools like GitHub Copilot, Claude Code, and Foundry Local to enable developers to act as orchestrators rather than manual coders. Vibe Coding represents a paradigm shift from write-then-test to interact-and-verify, where developers describe intent and AI agents generate implementation. Understanding this integration is essential for building modern development pipelines that leverage autonomous agents while maintaining code quality, security, and maintainability standards.
+
+**Key Features:**
+- SDLC documentation covering planning, design, implementation, testing, deployment, and maintenance with AI agents
+- Foundry Local setup guides for Linux environments with VS Code integration
+- Prompt assistant tool for generating optimized vibe coding prompts using locally-running models
+- Virtual environment management scripts for isolated Python development
+- Project structure templates and best practices for AI-assisted workflows
+- Integration patterns for autonomous coding agents within traditional SDLC phases
+- Offline-capable AI development with complete data privacy and zero cloud dependencies
+- AGENTS.md format documentation for guiding coding agents with project-specific conventions
 
 ### 📂 security/
 
