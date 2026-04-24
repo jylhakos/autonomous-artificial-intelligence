@@ -148,9 +148,9 @@ python check_venv.py
 
 ```
 ✓ Virtual environment is active
-  VIRTUAL_ENV: /home/laptop/.../pipelines/venv
+  VIRTUAL_ENV: /home/laptop/.../workflows/venv
   Python: 3.12.3
-  Location: /home/laptop/.../pipelines/venv/bin/python
+  Location: /home/laptop/.../workflows/venv/bin/python
 ```
 
 **Output when not active:**
@@ -227,7 +227,7 @@ Internet connection: OK (200)
 **Step 1: Navigate to project root**
 
 ```bash
-cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/pipelines
+cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/workflows
 ```
 
 **Step 2: Verify virtual environment exists**
@@ -255,7 +255,7 @@ python scripts/check_venv.py
 
 # Option 3: Manual check
 which python
-# Should output: .../pipelines/venv/bin/python
+# Should output: .../workflows/venv/bin/python
 ```
 
 **Step 5: Install/update dependencies (if needed)**
@@ -293,7 +293,7 @@ If using VS Code integrated terminal, the workspace settings automatically activ
 ```bash
 # Prompt should show (venv) prefix
 echo $VIRTUAL_ENV
-# Should output: /home/laptop/.../pipelines/venv
+# Should output: /home/laptop/.../workflows/venv
 ```
 
 **Run scripts directly:**
@@ -334,7 +334,7 @@ python scripts/prompt_assistant.py
 deactivate
 
 # Navigate to project root
-cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/pipelines
+cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/workflows
 
 # Activate with full path
 source venv/bin/activate
@@ -432,7 +432,7 @@ python -c "import requests; print(requests.get('http://localhost:8080/health').s
 1. **Activate environment:**
 
    ```bash
-   cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/pipelines
+   cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/workflows
    source venv/bin/activate
    ```
 
@@ -568,11 +568,11 @@ deactivate
 
 ### File Locations
 
-- **Scripts**: `pipelines/scripts/`
-- **Virtual Environment**: `pipelines/venv/`
-- **Dependencies**: `pipelines/requirements.txt`
-- **Documentation**: `pipelines/*.md`
-- **VS Code Config**: `pipelines/.vscode/`
+- **Scripts**: `workflows/scripts/`
+- **Virtual Environment**: `workflows/venv/`
+- **Dependencies**: `workflows/requirements.txt`
+- **Documentation**: `workflows/*.md`
+- **VS Code Config**: `workflows/.vscode/`
 
 ---
 

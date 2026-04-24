@@ -5,7 +5,7 @@ This document visualizes the structure of the Vibe Coding with Foundry Local pro
 ## Directory Tree
 
 ```
-pipelines/
+workflows/
 ├── 📄 README.md                          #  SDLC + Vibe Coding documentation
 ├── 📄 FOUNDRY_LOCAL_SETUP.md             # Step-by-step Linux setup guide
 ├── 📄 VENV_SETUP.md                      # Virtual environment setup documentation

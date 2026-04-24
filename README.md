@@ -12,7 +12,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
-├── 📂 pipelines/           # SDLC integration with Vibe Coding and Foundry Local
+├── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
 └── 📂 security/            # AI agent security and threat protection
 ```
 
@@ -124,7 +124,7 @@ Autonomous agents often need to execute complex, multi-step workflows that invol
 - Test suite for workflow validation
 - Quickstart guides for rapid deployment
 
-### 📂 pipelines/
+### 📂 workflows/
 
 **Key Points:**
 - SDLC integration with Vibe Coding methodology for AI-assisted development
@@ -134,7 +134,7 @@ Autonomous agents often need to execute complex, multi-step workflows that invol
 - Virtual environment setup and management for isolated Python development
 
 **Importance for Autonomous AI:**
-The software development life cycle is being fundamentally transformed by autonomous AI agents that generate code through natural language descriptions, automate routine tasks, and provide intelligent assistance throughout development workflows. This folder demonstrates how traditional SDLC frameworks integrate with AI-assisted programming tools like GitHub Copilot, Claude Code, and Foundry Local to enable developers to act as orchestrators rather than manual coders. Vibe Coding represents a paradigm shift from write-then-test to interact-and-verify, where developers describe intent and AI agents generate implementation. Understanding this integration is essential for building modern development pipelines that leverage autonomous agents while maintaining code quality, security, and maintainability standards.
+The software development life cycle is being fundamentally transformed by autonomous AI agents that generate code through natural language descriptions, automate routine tasks, and provide intelligent assistance throughout development workflows. This folder demonstrates how traditional SDLC frameworks integrate with AI-assisted programming tools like GitHub Copilot, Claude Code, and Foundry Local to enable developers to act as orchestrators rather than manual coders. Vibe Coding represents a paradigm shift from write-then-test to interact-and-verify, where developers describe intent and AI agents generate implementation. Understanding this integration is essential for building modern development workflows that leverage autonomous agents while maintaining code quality, security, and maintainability standards.
 
 **Key Features:**
 - SDLC documentation covering planning, design, implementation, testing, deployment, and maintenance with AI agents

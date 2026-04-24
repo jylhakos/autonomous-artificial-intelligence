@@ -25,11 +25,13 @@ deactivate
 Two scripts are provided to check if the virtual environment is active:
 
 ### Bash Script
+
 ```bash
 ./check_venv.sh
 ```
 
 ### Python Script
+
 ```bash
 python check_venv.py
 ```
@@ -100,6 +102,7 @@ python -m module_name
 ## Git Configuration
 
 The `.gitignore` file has been configured to exclude:
+
 - Virtual environment directories (`venv/`, `.venv/`, `env/`)
 - Python cache files (`__pycache__/`, `*.pyc`)
 - Compiled binaries (`*.so`, `*.egg`)
@@ -148,16 +151,19 @@ mypy .
 ## Troubleshooting
 
 ### Virtual Environment Not Activating
+
 - Ensure you're in the project root directory
 - Check that `venv/bin/activate` exists
 - Try recreating: `rm -rf venv && python3 -m venv venv`
 
 ### Package Installation Fails
+
 - Upgrade pip: `pip install --upgrade pip`
 - Check Python version compatibility
 - Verify internet connection
 
 ### Wrong Python Version
+
 - Deactivate and reactivate the virtual environment
 - Verify with: `python --version`
 - Check executable: `which python`
@@ -177,7 +183,7 @@ echo 'export MY_VAR="value"' >> venv/bin/activate
 ## Project Structure
 
 ```
-pipelines/
+workflows/
 ├── venv/                    # Virtual environment (excluded from git)
 ├── .gitignore              # Git ignore rules
 ├── README.md               # Project documentation

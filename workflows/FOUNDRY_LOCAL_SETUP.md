@@ -148,7 +148,7 @@ foundry model run qwen2.5-0.5b
 
 ```bash
 # Navigate to your workspace
-cd ~/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/pipelines
+cd ~/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/workflows
 
 # Verify virtual environment
 source venv/bin/activate
