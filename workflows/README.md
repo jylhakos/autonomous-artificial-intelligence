@@ -55,6 +55,23 @@
   - [Hardware Optimization and Edge Computing](#hardware-optimization-and-edge-computing)
   - [Production-Ready AI Applications](#production-ready-ai-applications)
   - [Practical Implementation: Prompt Assistant for Vibe Coding](#practical-implementation-prompt-assistant-for-vibe-coding)
+- [Prompt Engineering for Vibe Coding with Microsoft Foundry Local](#prompt-engineering-for-vibe-coding-with-microsoft-foundry-local)
+  - [The Art and Science of Prompt Construction](#the-art-and-science-of-prompt-construction)
+  - [Prompt Structure and Components](#prompt-structure-and-components)
+  - [Structured Prompting for Code Generation](#structured-prompting-for-code-generation)
+  - [Prompt Strategies for AI-Assisted Development](#prompt-strategies-for-ai-assisted-development)
+  - [Optimizing Prompts for Local Context Windows](#optimizing-prompts-for-local-context-windows)
+- [Prompty Integration with Microsoft Foundry Local](#prompty-integration-with-microsoft-foundry-local)
+  - [Overview of Prompty](#overview-of-prompty)
+  - [The Prompty File Format](#the-prompty-file-format)
+  - [Can Microsoft Foundry Local Utilize Prompty?](#can-microsoft-foundry-local-utilize-prompty)
+  - [Prompty as a Vibe Coding Enhancement](#prompty-as-a-vibe-coding-enhancement)
+  - [Structured Prompting with Prompty in Practice](#structured-prompting-with-prompty-in-practice)
+- [Model Optimization with Microsoft Olive](#model-optimization-with-microsoft-olive)
+  - [Overview of Microsoft Olive](#overview-of-microsoft-olive)
+  - [Hardware-Aware Optimization Pipeline](#hardware-aware-optimization-pipeline)
+  - [Deploying Custom Models with Olive and Foundry Local](#deploying-custom-models-with-olive-and-foundry-local)
+  - [Local LLM Optimization for Interactive Vibe Coding](#local-llm-optimization-for-interactive-vibe-coding)
 - [AGENTS.md for Guiding Coding Agents](#agentsmd-for-guiding-coding-agents)
   - [Understanding AGENTS.md Format](#understanding-agentsmd-format)
   - [Benefits for AI-Assisted Development](#benefits-for-ai-assisted-development)
@@ -2055,6 +2072,269 @@ Local AI processing addresses several critical concerns:
 
 The Prompt Assistant implementation demonstrates that sophisticated AI-powered development tools can operate entirely on-device while delivering user experiences comparable to cloud-based alternatives. This pattern enables organizations to embrace vibe coding practices without compromising security posture or regulatory compliance, expanding AI-assisted development accessibility to contexts previously excluded due to data privacy requirements.
 
+## Prompt Engineering for Vibe Coding with Microsoft Foundry Local
+
+### The Art and Science of Prompt Construction
+
+Prompt engineering constitutes one of the most consequential skills in AI-assisted development. As documented in the Microsoft Azure Foundry prompt engineering guidelines, "prompt construction can be difficult. In practice, the prompt acts to help the model complete the desired task, but it's more of an art than a science, often requiring experience and intuition to craft a successful prompt." This observation carries particular significance within vibe coding workflows powered by Microsoft Foundry Local, where prompt quality directly determines the effectiveness of locally-running models such as Phi and Qwen family models.
+
+The fundamental mechanism by which large language models process prompts is grounded in statistical continuation: a model produces the next series of words most likely to follow from the provided text. Consequently, the structure, specificity, and ordering of prompt components significantly influence the quality of generated outputs. This understanding informs every dimension of effective prompt engineering for local AI-assisted development, particularly when employing compact models with smaller context windows than their cloud-hosted counterparts.
+
+### Prompt Structure and Components
+
+Microsoft's Azure Foundry documentation identifies four primary prompt components whose careful composition determines output quality.
+
+**Instructions** constitute the most commonly employed component, directing the model toward specific tasks. Effective instructions progress from simple directives to complex, multi-faceted specifications. Simple instructions such as "Write an introduction for a weekly newsletter" generate adequate results; complex instructions incorporating persona, tone, specific constraints, and output formatting requirements yield substantially superior outputs tailored to the task context.
+
+**Primary Content** refers to text being processed or transformed by the model. In code generation contexts, primary content includes existing code provided for refactoring, error messages submitted for debugging, or specification documents provided for implementation.
+
+**Examples** represent what is termed "one-shot" or "few-shot" learning—the inclusion of one or more exemplary input-output pairs that condition the model to respond in desired patterns without permanently modifying model parameters. Successful prompts often rely on the practice of one-shot or few-shot learning. Few-shot prompting proves especially valuable when working with local models such as Phi-4-mini or Qwen2.5, which may require more explicit guidance than larger cloud-hosted models due to their more compact architectures.
+
+**Supporting Content** encompasses contextual information that influences the model's output without constituting the primary task. For vibe coding scenarios, supporting content includes architectural preferences, technology stack specifications, and coding conventions that guide the model toward project-aligned implementations.
+
+### Structured Prompting for Code Generation
+
+For more technical or structured coding tasks, precise prompt engineering techniques tailored to local models such as Phi and Qwen yield substantially improved results. The adoption of structured prompting employs clear, well-defined sections for instructions, constraints, and examples. Consider the following representative structure:
+
+```
+Goal: Build a Python web scraper.
+Framework: FastAPI.
+Constraints: No external API keys, must run locally.
+Output: Return only the code block.
+```
+
+This structured approach communicates intent unambiguously, reducing the likelihood of outputs misaligned with project requirements. The `PromptTemplate` dataclass in `scripts/prompt_assistant.py` implements this methodology by organizing prompts into discrete fields for category, intent, context, requirements, constraints, and expected output. The `PromptAssistant.generate_prompt_template()` method in `scripts/prompt_assistant.py` generates these structured templates from natural language user requests through local AI analysis, automating the translation from informal descriptions to structured prompts suitable for use with AI coding assistants.
+
+### Prompt Strategies for AI-Assisted Development
+
+Microsoft's Foundry developer blog and Azure Foundry documentation identify several evidence-based prompt strategies particularly effective for AI-assisted development with local models.
+
+**Context and Constraints First**: Define the goal, technical environment, and limitations at the outset of the prompt. Local models with smaller context windows benefit particularly from front-loaded constraints, as they cannot always maintain awareness of specifications introduced later in longer prompts.
+
+**Functional Requirements**: Describe user actions and desired behaviors rather than implementation mechanisms. This outcome-focused specification allows models to select appropriate implementation patterns based on training.
+
+**Iterative Refinement**: Request the model to fix or change specific parts of output rather than regenerating complete implementations. The `PromptAssistant.refine_prompt()` method in `scripts/prompt_assistant.py` exemplifies this pattern by enabling conversational prompt improvement through targeted feedback.
+
+**Chain of Thought Prompting**: Instruct the model to "think step-by-step" before generating complex code to reduce logical errors. As documented in Azure Foundry guidelines, chain of thought prompting "reduces the possibility of inaccuracy of outcomes and makes assessing the model response easier." This technique constitutes a variation on task decomposition, wherein the model presents all reasoning steps before producing the final output, making errors easier to identify and correct.
+
+**Be Specific**: Even when expressing prompts in conversational English, specific details about functionality, aesthetic requirements, and technical constraints improve results. Ambiguous prompts directed at local models may yield generic implementations that fail to account for project-specific requirements.
+
+**Break Down Tasks**: Rather than requesting complete applications at once, decompose requests into individual components—user interface, database connection, API endpoints—and compose them iteratively. This decomposition reduces the contextual complexity the model must manage simultaneously and aligns with the code-level workflow described earlier in this document.
+
+**Use Feedback Loops**: When generated code produces errors, providing the error message back to the model with a request for correction yields targeted, accurate fixes. This pattern is fundamental to the interact-and-verify paradigm and is directly supported by the `PromptAssistant.interactive_session()` method in `scripts/prompt_assistant.py`, which accepts both new requests and refinement instructions in a continuous conversational loop.
+
+These strategies collectively operationalize vibe coding principles within the specific context of local AI models running through Microsoft Foundry Local. When applied consistently through the `PromptAssistant` workflow, they substantially improve the quality and project-relevance of prompts generated for subsequent use with AI coding assistants.
+
+### Optimizing Prompts for Local Context Windows
+
+Local models operating through Microsoft Foundry Local often work with smaller context windows than large cloud-hosted models. This architectural characteristic necessitates specific prompt optimization strategies to maximize output quality.
+
+**Conciseness**: Local models benefit from highly specific, focused prompts that minimize unnecessary context. Rather than providing extensive background, prompts should contain precisely the information required for the task at hand. Verbose preambles reduce the effective space available for code generation within the model's context window.
+
+**Single-File Focus**: Where possible, scope prompts to single-file functionality. This reduces contextual complexity and improves output coherence, a practice particularly important for compact models such as Qwen2.5-0.5B operating within constrained token budgets.
+
+**Progressive Elaboration**: Rather than supplying all context upfront in a single large prompt, build context progressively through iterative interactions. Each exchange refines the model's understanding without overwhelming its context capacity. The interactive session mode of `scripts/prompt_assistant.py` is designed precisely for this progressive elaboration pattern.
+
+**Temperature Calibration**: Temperature settings between 0 and 2 significantly influence output characteristics. For code generation requiring precision and correctness, lower temperatures (0.2–0.4) produce more focused, deterministic outputs. For creative or exploratory tasks, higher temperatures introduce useful variation. The `FoundryLocalClient.generate_completion()` method in `scripts/prompt_assistant.py` exposes the `temperature` parameter, enabling task-appropriate calibration based on the nature of the development request.
+
+**Local-First Model Selection**: For better vibe coding interactivity, employing local models such as Mistral AI 7B or Llama 3.1 8B running through Microsoft Foundry Local minimizes latency compared to cloud-based API calls. The absence of network round-trips ensures that prompt responses arrive with the speed necessary to maintain creative flow during iterative development sessions, preserving the interactive quality that distinguishes effective vibe coding from conventional AI-assisted workflows.
+
+## Prompty Integration with Microsoft Foundry Local
+
+### Overview of Prompty
+
+Prompty is an open-source prompt management framework developed by Microsoft that introduces a structured approach to authoring, executing, and evaluating prompts for AI applications. As described in the official Prompty documentation, Prompty is "a markdown file format for LLM prompts—define model config, inputs, tools, and templates in YAML frontmatter, then execute across Python and TypeScript." The framework is designed to enhance observability, understandability, and portability for developers working with large language models, making it a particularly valuable complement to vibe coding workflows powered by Microsoft Foundry Local.
+
+Prompty addresses a fundamental challenge in prompt-driven development: the coupling of prompt logic with application code creates maintenance burdens, reduces testability, and complicates iterative prompt improvement. By separating prompt definitions into dedicated `.prompty` files, developers achieve clean separation of concerns that enables independent prompt evolution, version control, and systematic evaluation—principles that align with software engineering disciplines applied to code throughout the SDLC. The Prompty framework is available at [https://prompty.ai/](https://prompty.ai/) and maintained as an open-source project at [https://github.com/microsoft/prompty](https://github.com/microsoft/prompty).
+
+### The Prompty File Format
+
+A `.prompty` file comprises two structural components: YAML frontmatter containing model configuration, input schema, tool definitions, and template settings; followed by a markdown body containing the prompt with role markers and template syntax.
+
+```yaml
+---
+name: vibe-coding-assistant
+model:
+  id: qwen2.5-0.5b
+  provider: foundry
+  connection:
+    kind: local
+    endpoint: http://localhost:8080/v1
+  options:
+    temperature: 0.7
+inputs:
+  - name: user_request
+    kind: string
+    default: Create a Python function
+template:
+  format:
+    kind: jinja2
+  parser:
+    kind: prompty
+---
+system:
+You are an expert software development assistant specializing in vibe coding.
+Generate optimized prompts suitable for AI-assisted development.
+
+user:
+{{user_request}}
+```
+
+The YAML frontmatter supports direct integration with Microsoft Foundry Local through the `foundry` provider setting, enabling `.prompty` files to execute against locally-running models without requiring cloud service accounts or API keys. Template syntax supports Jinja2 and Mustache template engines, enabling dynamic prompt construction through variable interpolation, conditional logic, and iteration.
+
+### Can Microsoft Foundry Local Utilize Prompty?
+
+Microsoft Foundry Local integrates directly with the Prompty framework. The Prompty VS Code extension supports connection management for Microsoft Foundry endpoints alongside OpenAI and Anthropic providers, enabling developers to configure Foundry Local as a provider through the extension's connections sidebar. The Prompty Python runtime package provides a dedicated Foundry integration module:
+
+```bash
+pip install "prompty[jinja2,foundry]"
+```
+
+This integration enables `.prompty` files to execute against locally-running Foundry Local models:
+
+```python
+import prompty
+import prompty.foundry  # registers the Foundry Local provider
+
+# Execute prompt against a local model
+result = prompty.execute(
+    "vibe-coding-assistant.prompty",
+    inputs={"user_request": "Create a REST API for task management"}
+)
+print(result)
+```
+
+The Prompty runtime processes prompts through a four-stage pipeline: rendering template variables with Jinja2 or Mustache; parsing role markers (system, user, assistant) into structured message lists; executing the LLM call via the registered provider—in this case, Foundry Local; and processing the response, including content extraction, structured output parsing, and streaming chunk handling. Each stage is independently traceable, providing the observability essential for systematic prompt refinement when working with local models.
+
+### Prompty as a Vibe Coding Enhancement
+
+Prompty enhances vibe coding workflows with Microsoft Foundry Local through several complementary mechanisms.
+
+**Separation of Prompt Logic from Application Code**: Maintaining prompt logic in `.prompty` files separate from application code enables developers to iterate on prompts independently without modifying application logic. This separation is particularly valuable in vibe coding contexts where prompts evolve rapidly through iterative refinement. The `.prompty` file can be improved, tested, and versioned independently of the Python application that invokes it, enabling the kind of rapid iteration described in the Iterative Refinement Phase of the vibe coding lifecycle.
+
+**Version Control for Prompts**: Storing prompts as discrete files enables version control, comparison, and rollback using standard tools such as Git. This applies software engineering disciplines to prompt management that parallel those applied to code, ensuring that prompt improvements are traceable and reversible.
+
+**Easy Testing and Iterative Improvements**: The Prompty VS Code extension provides a development workbench where developers can author prompts with syntax highlighting and autocomplete, execute them with a single keystroke (F5), and inspect results through a built-in trace viewer. This immediate feedback loop accelerates the iterative prompt improvement central to effective vibe coding.
+
+**Traceability**: Every Prompty execution generates a detailed trace recording messages transmitted, tokens consumed, latency measurements, and raw API responses. This observability enables rapid debugging of prompt issues and systematic evaluation of prompt effectiveness—capabilities particularly valuable when working with local models whose performance characteristics differ from cloud equivalents.
+
+**Portable Prompts**: The same `.prompty` file operates identically across Python, TypeScript, and VS Code without modification, ensuring consistency across development environments and enabling team sharing of validated prompt templates.
+
+### Structured Prompting with Prompty in Practice
+
+Integrating Prompty with the `scripts/prompt_assistant.py` workflow extends the assistant's capabilities by enabling reusable, versioned prompt templates. A dedicated `.prompty` file for intent analysis might define:
+
+```yaml
+---
+name: intent-analyzer
+model:
+  id: qwen2.5-0.5b
+  provider: foundry
+  connection:
+    kind: local
+    endpoint: http://localhost:8080/v1
+  options:
+    temperature: 0.3
+inputs:
+  - name: user_request
+    kind: string
+template:
+  format:
+    kind: jinja2
+---
+system:
+You are an expert at analyzing software development requests.
+Extract: primary intent, category, requirements list, and constraints list.
+Output structured JSON only.
+
+user:
+Analyze this development request: {{user_request}}
+```
+
+This approach externalizes the analysis prompt used by `PromptAssistant.analyze_intent()` in `scripts/prompt_assistant.py` into a versioned, independently testable artifact. The lower temperature setting (0.3) reflects the structured output requirement—precise JSON extraction benefits from deterministic model behavior. The `.prompty` format's explicit separation of model configuration, input schema, and prompt content makes these design decisions visible and adjustable without modifying application code, directly supporting the leverage Prompty principle of separating prompt logic from application logic.
+
+## Model Optimization with Microsoft Olive
+
+### Overview of Microsoft Olive
+
+Microsoft Olive (an abbreviation of ONNX LIVE) is an open-source AI model optimization toolkit designed to simplify the process of fine-tuning, converting, quantizing, and optimizing machine learning models for efficient inference on the ONNX Runtime. As described in the official Olive repository, the toolkit "composes the best suitable optimization techniques to output the most efficient ONNX model(s) for inferencing on the cloud or edge, while taking a set of constraints such as accuracy and latency into consideration."
+
+For vibe coding workflows powered by Microsoft Foundry Local, Olive enables practitioners to deploy custom-optimized models that exceed the performance characteristics of standard catalog models, particularly in resource-constrained or specialized deployment scenarios. The ability to quantize, prune, and convert models from popular frameworks such as PyTorch and Hugging Face into highly efficient ONNX formats ensures that local AI inference remains interactive—a prerequisite for sustained vibe coding productivity where response latency directly impacts the creative flow of iterative development sessions.
+
+### Hardware-Aware Optimization Pipeline
+
+Olive implements a hardware-aware optimization pipeline that systematically applies complementary techniques to maximize model performance across diverse computing substrates, including NPUs, GPUs, and CPUs.
+
+**Quantization**: Olive supports multiple quantization precisions including INT4, INT8, and FP16, enabling substantial reductions in model size and corresponding improvements in inference speed. INT4 quantization achieves approximately 87.5 percent size reduction compared to FP32 models, enabling larger models to operate within the memory constraints of consumer devices. The Olive CLI provides a straightforward interface for automatic optimization:
+
+```bash
+olive optimize \
+  --model_name_or_path Qwen/Qwen2.5-0.5B-Instruct \
+  --precision int4 \
+  --output_path models/qwen-optimized
+```
+
+The automatic optimizer acquires the model from the Hugging Face repository, quantizes it to the specified precision using GPTQ, captures the ONNX computational graph, stores weights in an ONNX data file, and applies graph-level optimizations. Olive supports popular model architectures including Llama, Phi, Qwen, and Gemma out-of-the-box.
+
+**Graph Pruning and Node Fusion**: Beyond quantization, Olive applies graph-level optimizations including pruning of redundant computational nodes and fusion of adjacent operations into single optimized kernels. These optimizations reduce inference latency without compromising output quality, contributing to the responsive inference speeds essential for interactive vibe coding.
+
+**NPU and GPU Targeting**: The optimization pipeline considers the target hardware substrate—NPU, GPU, or CPU—and applies hardware-specific optimizations that maximize utilization of available specialized accelerators. This hardware-aware approach is particularly relevant for vibe coding on modern devices equipped with dedicated Neural Processing Units, which can provide order-of-magnitude improvements in inference speed for optimized models.
+
+### Deploying Custom Models with Olive and Foundry Local
+
+The workflow for deploying custom-optimized models through Olive and Foundry Local follows a structured four-stage process.
+
+**1. Download**: Pull the base model from Hugging Face or another model repository. Models such as Llama 3, Qwen, and Phi families are available through the Hugging Face Hub and can be acquired via the Olive CLI or the Hugging Face Hub library.
+
+**2. Configure**: Create a JSON configuration file defining the input model, target hardware, and desired optimization parameters:
+
+```json
+{
+  "input_model": {
+    "type": "HfModel",
+    "model_path": "Qwen/Qwen2.5-0.5B-Instruct"
+  },
+  "systems": {
+    "local_system": {
+      "type": "LocalSystem",
+      "accelerators": [
+        { "device": "GPU", "execution_providers": ["CUDAExecutionProvider"] }
+      ]
+    }
+  },
+  "passes": {
+    "quantize": {
+      "type": "OnnxMatMul4Quantizer"
+    }
+  },
+  "output_dir": "models/qwen-int4"
+}
+```
+
+**3. Run**: Execute the Olive optimization pipeline against the configuration:
+
+```bash
+python -m olive.workflows.run --config config.json
+```
+
+**4. Serve**: Deploy the optimized ONNX model using Microsoft Foundry Local or the ONNX Runtime for inference in vibe coding workflows. The optimized model integrates with the OpenAI-compatible API served by Foundry Local, enabling immediate use with `scripts/prompt_assistant.py` and other tools that communicate through the standard API interface.
+
+### Local LLM Optimization for Interactive Vibe Coding
+
+Optimizing local models with Olive directly improves the interactive quality of vibe coding sessions. The responsiveness essential to sustained vibe coding productivity depends fundamentally on inference latency—a model that responds within seconds maintains the creative momentum of iterative development, while extended response times disrupt the interact-and-verify paradigm described throughout this document.
+
+**Model Selection for Speed**: Lighter models such as Qwen2.5-0.5B with INT4 quantization deliver near-instantaneous responses on modern consumer hardware. The `PromptAssistant` in `scripts/prompt_assistant.py` defaults to this model through the `FOUNDRY_MODEL` environment variable, reflecting the priority of response speed in interactive sessions. Switching to heavier models for tasks requiring more sophisticated reasoning is straightforward:
+
+```bash
+FOUNDRY_MODEL=phi-4-mini python scripts/prompt_assistant.py
+```
+
+**Complementary Optimization Strategies**: Olive quantization and the prompt optimization strategies described in the preceding section operate synergistically. Quantized models benefit from concise, focused prompts that reduce context length requirements, as the quality advantages of INT4 models are maximized when operating within their optimal context ranges. Combining model-level optimization through Olive with prompt-level optimization through structured prompting and concise specifications yields interactive experiences that sustain the creative flow essential to effective vibe coding.
+
+**Switching Between Models by Task**: Microsoft Foundry Local and the AI Toolkit extension for VS Code provide unified interfaces for switching between models based on task complexity. Simple prompt generation and analysis tasks benefit from ultra-lightweight models, while architectural reasoning and complex code generation may warrant larger models with enhanced capabilities. Olive enables optimization of any model across this spectrum for the target hardware, ensuring that model selection decisions can be made purely on capability grounds rather than constrained by unoptimized inference performance.
+
+**Model Flexibility for Code Tasks**: As documented in Microsoft Foundry's official developer blog, supported and recommended models for code-related tasks include Qwen models (multilingual, supporting code generation and natural language processing), Microsoft Phi models (small and efficient, designed for reasoning and code generation), and other community models available through the Foundry catalog. Olive enables practitioners to optimize any of these models for their specific hardware substrate, ensuring optimal performance characteristics regardless of the target deployment environment and expanding the range of models available for local vibe coding workflows.
+
 ## AGENTS.md for Guiding Coding Agents
 
 The AGENTS.md format represents an emerging standard for providing structured guidance to AI coding agents, addressing a critical gap in the AI-assisted development ecosystem. As coding agents become increasingly sophisticated and autonomous, the need for explicit, machine-readable project context has become apparent. AGENTS.md provides a simple, open format that enables developers to communicate project-specific conventions, build procedures, testing requirements, and architectural decisions to AI systems in a predictable, standardized manner.
@@ -2348,128 +2628,138 @@ As software development continues to evolve, the synthesis of traditional SDLC f
 
 14. Fowler, M. (2024). _Continuous Integration and Developer Experience_. Martin Fowler's Blog.
 
-15. IEEE Computer Society. (2023). _Software Engineering Body of Knowledge (SWEBOK)_. IEEE Press.
+15. Microsoft Azure Foundry. (2026). _Prompt Engineering Techniques_. Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/prompt-engineering
 
-16. Agile Alliance. (2024). _Agile Software Development Practices_. Agile Alliance Resources.
+16. Dalal, M. (2025). _AI-Assisted Development Powered by Local Models_. Microsoft Foundry Developer Blog. https://devblogs.microsoft.com/foundry/ai-assisted-development-powered-by-local-models/
 
-17. Microsoft Research. (2025). _AI-Assisted Software Development: Impact on Developer Productivity_. Microsoft Technical Report.
+17. Microsoft. (2026). _Prompty: LLM Prompt Management Framework_. GitHub Repository. https://github.com/microsoft/prompty
 
-18. Stack Overflow. (2025). _Developer Survey: Tools and Practices_. Stack Overflow Annual Survey.
+18. Prompty.ai. (2026). _Prompty: Agency with Observability_. https://prompty.ai/
 
-19. DevOps Research and Assessment. (2025). _State of DevOps Report_. DORA Metrics and Analysis.
+19. Microsoft. (2026). _Olive: AI Model Optimization Toolkit for the ONNX Runtime_. GitHub Repository. https://github.com/microsoft/Olive
 
-20. ACM Digital Library. (2024). _Human Factors in Software Engineering_. Association for Computing Machinery.
+20. IEEE Computer Society. (2023). _Software Engineering Body of Knowledge (SWEBOK)_. IEEE Press.
 
-21. U.S. House of Representatives. (1999). _Systems Development Life-Cycle Policy_. http://www.house.gov/content/cao/procurement/ref-docs/SDLCPOL.pdf
+21. Agile Alliance. (2024). _Agile Software Development Practices_. Agile Alliance Resources.
 
-22. Blanchard, B. S., & Fabrycky, W. J. (2006). _Systems Engineering and Analysis_ (4th ed.). Prentice Hall.
+22. Microsoft Research. (2025). _AI-Assisted Software Development: Impact on Developer Productivity_. Microsoft Technical Report.
 
-23. Finnie-Ansley, J., Denny, P., Becker, B. A., Luxton-Reilly, A., & Prather, J. (2022). _The Robots Are Coming: Exploring the Implications of OpenAI Codex on Introductory Programming_. Australasian Computing Education Conference.
+23. Stack Overflow. (2025). _Developer Survey: Tools and Practices_. Stack Overflow Annual Survey.
 
-24. Veracode. (2025). _GenAI Code Security Report_. https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/
+24. DevOps Research and Assessment. (2025). _State of DevOps Report_. DORA Metrics and Analysis.
 
-25. Koren, M., Békés, G., Hinz, J., & Lohmann, A. (2026). _Vibe Coding Kills Open Source_. arXiv:2601.15494
+25. ACM Digital Library. (2024). _Human Factors in Software Engineering_. Association for Computing Machinery.
 
-26. Google Cloud. (2026). _What is Vibe Coding?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-vibe-coding
+26. U.S. House of Representatives. (1999). _Systems Development Life-Cycle Policy_. http://www.house.gov/content/cao/procurement/ref-docs/SDLCPOL.pdf
 
-27. Gemini CLI. (2026). _Gemini CLI: Command-Line Interface for AI Agents_. https://geminicli.com/
+27. Blanchard, B. S., & Fabrycky, W. J. (2006). _Systems Engineering and Analysis_ (4th ed.). Prentice Hall.
 
-28. Gemini CLI Documentation. (2026). _Gemini CLI Documentation: Getting Started and Advanced Features_. https://geminicli.com/docs/
+28. Finnie-Ansley, J., Denny, P., Becker, B. A., Luxton-Reilly, A., & Prather, J. (2022). _The Robots Are Coming: Exploring the Implications of OpenAI Codex on Introductory Programming_. Australasian Computing Education Conference.
 
-29. Google. (2026). _Gemini Code Assist: AI-Powered Coding Assistance_. https://codeassist.google/
+29. Veracode. (2025). _GenAI Code Security Report_. https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/
 
-30. Agent Development Kit. (2026). _ADK: Build Production Agents, Not Prototypes_. https://adk.dev/
+30. Koren, M., Békés, G., Hinz, J., & Lohmann, A. (2026). _Vibe Coding Kills Open Source_. arXiv:2601.15494
 
-31. Google. (2026). _Agent Development Kit (ADK) Python_. GitHub Repository. https://github.com/google/adk-python
+31. Google Cloud. (2026). _What is Vibe Coding?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-vibe-coding
 
-32. Google Antigravity. (2026). _Google Antigravity: Natural Language Application Development_. https://antigravity.google/
+32. Gemini CLI. (2026). _Gemini CLI: Command-Line Interface for AI Agents_. https://geminicli.com/
 
-33. Agent Development Kit. (2026). _Build Agents with Agent Config_. ADK Documentation. https://adk.dev/agents/config/
+33. Gemini CLI Documentation. (2026). _Gemini CLI Documentation: Getting Started and Advanced Features_. https://geminicli.com/docs/
 
-34. Anthropic. (2026). _Claude: AI Assistant for Software Development_. https://claude.com/product/claude-code
+34. Google. (2026). _Gemini Code Assist: AI-Powered Coding Assistance_. https://codeassist.google/
 
-35. Anthropic. (2026). _Start Building with Claude: Platform Documentation_. https://platform.claude.com/docs/en/home
+35. Agent Development Kit. (2026). _ADK: Build Production Agents, Not Prototypes_. https://adk.dev/
 
-36. Anthropic. (2026). _Claude Code Overview: Features and Capabilities_. https://code.claude.com/docs/en/overview
+36. Google. (2026). _Agent Development Kit (ADK) Python_. GitHub Repository. https://github.com/google/adk-python
 
-37. OpenAI. (2026). _Codex: Natural Language to Code System_. https://chatgpt.com/codex/
+37. Google Antigravity. (2026). _Google Antigravity: Natural Language Application Development_. https://antigravity.google/
 
-38. OpenAI. (2021). _Evaluating Large Language Models Trained on Code_. arXiv:2107.03374. https://arxiv.org/abs/2107.03374
+38. Agent Development Kit. (2026). _Build Agents with Agent Config_. ADK Documentation. https://adk.dev/agents/config/
 
-39. Chen, M., Tworek, J., Jun, H., Yuan, Q., Pinto, H. P. D. O., Kaplan, J., ... & Zaremba, W. (2021). _Evaluating Large Language Models Trained on Code_. OpenAI Research.
+39. Anthropic. (2026). _Claude: AI Assistant for Software Development_. https://claude.com/product/claude-code
 
-40. Anthropic. (2024). _Introducing the Next Generation of Claude_. Anthropic Blog. https://www.anthropic.com/news/claude-3-family
+40. Anthropic. (2026). _Start Building with Claude: Platform Documentation_. https://platform.claude.com/docs/en/home
 
-41. Anthropic. (2024). _Claude 3.5 Sonnet_. Anthropic Product Release. https://www.anthropic.com/claude/sonnet
+41. Anthropic. (2026). _Claude Code Overview: Features and Capabilities_. https://code.claude.com/docs/en/overview
 
-42. Bai, Y., Kadavath, S., Kundu, S., Askell, A., Kernion, J., Jones, A., ... & Kaplan, J. (2022). _Constitutional AI: Harmlessness from AI Feedback_. arXiv:2212.08073
+42. OpenAI. (2026). _Codex: Natural Language to Code System_. https://chatgpt.com/codex/
 
-43. Anthropic. (2024). _Claude API Documentation_. https://docs.anthropic.com/
+43. OpenAI. (2021). _Evaluating Large Language Models Trained on Code_. arXiv:2107.03374. https://arxiv.org/abs/2107.03374
 
-44. OpenAI. (2023). _GPT-4 Technical Report_. arXiv:2303.08774. https://arxiv.org/abs/2303.08774
+44. Chen, M., Tworek, J., Jun, H., Yuan, Q., Pinto, H. P. D. O., Kaplan, J., ... & Zaremba, W. (2021). _Evaluating Large Language Models Trained on Code_. OpenAI Research.
 
-45. GitHub. (2025). _GitHub Copilot X: The AI-Powered Developer Experience_. GitHub Blog. https://github.blog/2025-03-22-github-copilot-x-the-ai-powered-developer-experience/
+45. Anthropic. (2024). _Introducing the Next Generation of Claude_. Anthropic Blog. https://www.anthropic.com/news/claude-3-family
 
-46. Vaithilingam, P., Zhang, T., & Glassman, E. L. (2022). _Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large Language Models_. CHI Conference on Human Factors in Computing Systems Extended Abstracts.
+46. Anthropic. (2024). _Claude 3.5 Sonnet_. Anthropic Product Release. https://www.anthropic.com/claude/sonnet
 
-47. Barke, S., James, M. B., & Polikarpova, N. (2023). _Grounded Copilot: How Programmers Interact with Code-Generating Models_. Proceedings of the ACM on Programming Languages, 7(OOPSLA1), 85-111.
+47. Bai, Y., Kadavath, S., Kundu, S., Askell, A., Kernion, J., Jones, A., ... & Kaplan, J. (2022). _Constitutional AI: Harmlessness from AI Feedback_. arXiv:2212.08073
 
-48. GitHub. (2026). _Vibe Coding with GitHub Copilot_. GitHub Copilot Tutorials. https://docs.github.com/en/copilot/tutorials/vibe-coding
+48. Anthropic. (2024). _Claude API Documentation_. https://docs.anthropic.com/
 
-49. Ziegler, A., Kalliamvakou, E., Li, X. A., Rice, A., Rifkin, D., Simister, S., ... & Sittampalam, G. (2022). _Productivity Assessment of Neural Code Completion_. Proceedings of the 6th ACM SIGPLAN International Symposium on Machine Programming.
+49. OpenAI. (2023). _GPT-4 Technical Report_. arXiv:2303.08774. https://arxiv.org/abs/2303.08774
 
-50. Imai, S. (2022). _Is GitHub Copilot a Substitute for Human Pair-programming? An Empirical Study_. Proceedings of the ACM/IEEE 44th International Conference on Software Engineering: Companion Proceedings.
+50. GitHub. (2025). _GitHub Copilot X: The AI-Powered Developer Experience_. GitHub Blog. https://github.blog/2025-03-22-github-copilot-x-the-ai-powered-developer-experience/
 
-51. Montemagno, J. (2025). _Complete Beginner's Guide to Vibe Coding an App in 5 Minutes_. Microsoft Developer Blog. https://developer.microsoft.com/blog/complete-beginners-guide-to-vibe-coding-an-app-in-5-minutes
+51. Vaithilingam, P., Zhang, T., & Glassman, E. L. (2022). _Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large Language Models_. CHI Conference on Human Factors in Computing Systems Extended Abstracts.
 
-52. Microsoft. (2026). _Get Started with Foundry Local_. Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/get-started
+52. Barke, S., James, M. B., & Polikarpova, N. (2023). _Grounded Copilot: How Programmers Interact with Code-Generating Models_. Proceedings of the ACM on Programming Languages, 7(OOPSLA1), 85-111.
 
-53. Microsoft. (2026). _What is Foundry Local?_ Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local
+53. GitHub. (2026). _Vibe Coding with GitHub Copilot_. GitHub Copilot Tutorials. https://docs.github.com/en/copilot/tutorials/vibe-coding
 
-54. Microsoft. (2026). _Foundry Local: Build Once, Run Locally_. Foundry Local Official Website. https://foundrylocal.ai/
+54. Ziegler, A., Kalliamvakou, E., Li, X. A., Rice, A., Rifkin, D., Simister, S., ... & Sittampalam, G. (2022). _Productivity Assessment of Neural Code Completion_. Proceedings of the 6th ACM SIGPLAN International Symposium on Machine Programming.
 
-55. Microsoft. (2026). _Foundry Local SDK_. GitHub Repository. https://github.com/microsoft/foundry-local
+55. Imai, S. (2022). _Is GitHub Copilot a Substitute for Human Pair-programming? An Empirical Study_. Proceedings of the ACM/IEEE 44th International Conference on Software Engineering: Companion Proceedings.
 
-56. AGENTS.md Contributors. (2026). _AGENTS.md: A Simple, Open Format for Guiding Coding Agents_. https://agents.md/
+56. Montemagno, J. (2025). _Complete Beginner's Guide to Vibe Coding an App in 5 Minutes_. Microsoft Developer Blog. https://developer.microsoft.com/blog/complete-beginners-guide-to-vibe-coding-an-app-in-5-minutes
 
-57. AGENTS.md Contributors. (2026). _AGENTS.md Format Specification and Examples_. GitHub Repository. https://github.com/agentsmd/agents.md
+57. Microsoft. (2026). _Get Started with Foundry Local_. Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/get-started
 
-58. Agentic AI Foundation. (2026). _Agentic AI Foundation: Stewarding Open Standards for AI Development_. Linux Foundation. https://aaif.io/
+58. Microsoft. (2026). _What is Foundry Local?_ Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local
 
-59. OpenAI. (2026). _Agentic AI Foundation Announcement_. OpenAI Blog. https://openai.com/index/agentic-ai-foundation/
+59. Microsoft. (2026). _Foundry Local: Build Once, Run Locally_. Foundry Local Official Website. https://foundrylocal.ai/
 
-60. Google Cloud. (2026). _What is Vibe Coding?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-vibe-coding
+60. Microsoft. (2026). _Foundry Local SDK_. GitHub Repository. https://github.com/microsoft/foundry-local
 
-61. Karpathy, A. (2025). _Vibe Coding: The Future of Software Development_. AI Research Blog. Referenced in Google Cloud Discover.
+61. AGENTS.md Contributors. (2026). _AGENTS.md: A Simple, Open Format for Guiding Coding Agents_. https://agents.md/
 
-62. Google. (2026). _Google AI Studio: Rapid Application Prototyping_. Google AI Studio. https://aistudio.google.com/
+62. AGENTS.md Contributors. (2026). _AGENTS.md Format Specification and Examples_. GitHub Repository. https://github.com/agentsmd/agents.md
 
-63. Google. (2026). _Firebase Studio: Full-Stack Application Development_. Firebase Studio. https://firebase.studio/
+63. Agentic AI Foundation. (2026). _Agentic AI Foundation: Stewarding Open Standards for AI Development_. Linux Foundation. https://aaif.io/
 
-64. Google. (2026). _Gemini Code Assist: AI-Powered IDE Assistance_. Google Cloud. https://codeassist.google/
+64. OpenAI. (2026). _Agentic AI Foundation Announcement_. OpenAI Blog. https://openai.com/index/agentic-ai-foundation/
 
-65. Google. (2026). _Gemini CLI: Terminal-First AI Development_. Gemini CLI. https://geminicli.com/
+65. Google Cloud. (2026). _What is Vibe Coding?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-vibe-coding
 
-66. Google. (2026). _Google Antigravity: Mission Control for Autonomous Agents_. Google Antigravity. https://antigravity.google/
+66. Karpathy, A. (2025). _Vibe Coding: The Future of Software Development_. AI Research Blog. Referenced in Google Cloud Discover.
 
-67. Google. (2026). _What is Model Context Protocol (MCP)?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-model-context-protocol
+67. Google. (2026). _Google AI Studio: Rapid Application Prototyping_. Google AI Studio. https://aistudio.google.com/
 
-68. Google Cloud. (2026). _Cloud Run: Serverless Container Platform_. Google Cloud. https://cloud.google.com/run
+68. Google. (2026). _Firebase Studio: Full-Stack Application Development_. Firebase Studio. https://firebase.studio/
 
-69. Microsoft. (2026). _Foundry Local SDK: Python Samples_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python
+69. Google. (2026). _Gemini Code Assist: AI-Powered IDE Assistance_. Google Cloud. https://codeassist.google/
 
-70. Microsoft. (2026). _Foundry Local: Tool Calling Sample_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python/tool-calling
+70. Google. (2026). _Gemini CLI: Terminal-First AI Development_. Gemini CLI. https://geminicli.com/
 
-71. Microsoft. (2026). _Foundry Toolkit for Visual Studio Code_. VS Code Documentation. https://code.visualstudio.com/docs/intelligentapps/overview
+71. Google. (2026). _Google Antigravity: Mission Control for Autonomous Agents_. Google Antigravity. https://antigravity.google/
 
-72. Microsoft. (2026). _ONNX Runtime: Accelerated Machine Learning_. ONNX Runtime. https://onnxruntime.ai/
+72. Google. (2026). _What is Model Context Protocol (MCP)?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-model-context-protocol
 
-73. Qwen Team. (2026). _Qwen2.5 Model Family_. Alibaba Cloud Model Studio. https://qwenlm.github.io/
+73. Google Cloud. (2026). _Cloud Run: Serverless Container Platform_. Google Cloud. https://cloud.google.com/run
 
-74. Microsoft Research. (2026). _Phi-3: Small Language Models_. Microsoft Research Blog. https://www.microsoft.com/en-us/research/blog/phi-3-small-language-models/
+74. Microsoft. (2026). _Foundry Local SDK: Python Samples_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python
 
-75. Meta AI. (2026). _Llama 3.2: Efficient Language Models_. Meta AI Research. https://ai.meta.com/llama/
+75. Microsoft. (2026). _Foundry Local: Tool Calling Sample_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python/tool-calling
 
-76. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. PPIG 2025 (36th Annual Workshop). https://www.ppig.org/files/2025-PPIG-36th-sarkar.pdf
+76. Microsoft. (2026). _Foundry Toolkit for Visual Studio Code_. VS Code Documentation. https://code.visualstudio.com/docs/intelligentapps/overview
 
-77. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. Microsoft Research. https://www.microsoft.com/en-us/research/publication/vibe-coding-programming-through-conversation-with-artificial-intelligence/
+77. Microsoft. (2026). _ONNX Runtime: Accelerated Machine Learning_. ONNX Runtime. https://onnxruntime.ai/
+
+78. Qwen Team. (2026). _Qwen2.5 Model Family_. Alibaba Cloud Model Studio. https://qwenlm.github.io/
+
+79. Microsoft Research. (2026). _Phi-3: Small Language Models_. Microsoft Research Blog. https://www.microsoft.com/en-us/research/blog/phi-3-small-language-models/
+
+80. Meta AI. (2026). _Llama 3.2: Efficient Language Models_. Meta AI Research. https://ai.meta.com/llama/
+
+81. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. PPIG 2025 (36th Annual Workshop). https://www.ppig.org/files/2025-PPIG-36th-sarkar.pdf
+
+82. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. Microsoft Research. https://www.microsoft.com/en-us/research/publication/vibe-coding-programming-through-conversation-with-artificial-intelligence/
