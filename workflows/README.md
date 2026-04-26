@@ -32,6 +32,11 @@
   - [Testing and Validation Phase](#testing-and-validation-phase)
   - [Deployment Phase](#deployment-phase)
   - [Tools and Platforms](#tools-and-platforms)
+- [Vibe Coding Cleanup: Turning AI Prototypes into Production Products](#vibe-coding-cleanup-turning-ai-prototypes-into-production-products)
+  - [What is Vibe Coding Cleanup](#what-is-vibe-coding-cleanup)
+  - [Vibe Coding Cleanup Challenges](#vibe-coding-cleanup-challenges)
+  - [Cleanup Activities](#cleanup-activities)
+  - [From Prototype to Product Workflow](#from-prototype-to-product-workflow)
 - [Difference between Codex and Claude Code](#difference-between-codex-and-claude-code)
   - [Overview of Codex](#overview-of-codex)
   - [Overview of Claude Code](#overview-of-claude-code)
@@ -77,6 +82,12 @@
   - [Benefits for AI-Assisted Development](#benefits-for-ai-assisted-development)
   - [Implementation Best Practices](#implementation-best-practices)
   - [Ecosystem Compatibility](#ecosystem-compatibility)
+- [Guardrails for Vibe Coding and Foundry Local](#guardrails-for-vibe-coding-and-foundry-local)
+  - [Why Guardrails Matter in Vibe Coding](#why-guardrails-matter-in-vibe-coding)
+  - [Common Security Vulnerabilities in Vibe Coding](#common-security-vulnerabilities-in-vibe-coding)
+  - [Configuring Guardrails in Microsoft Foundry Local](#configuring-guardrails-in-microsoft-foundry-local)
+  - [Configuring Guardrails for Anthropic Claude Code](#configuring-guardrails-for-anthropic-claude-code)
+  - [Vibe Coding Safety Practices](#vibe-coding-safety-practices)
 - [Conclusion](#conclusion)
 - [References](#references)
 
@@ -317,7 +328,7 @@ Vibe coding offers distinct advantages across various phases of the Software Dev
 
 While vibe coding offers significant benefits to the SDLC, organizations must carefully consider its limitations and appropriate contexts for application:
 
-**Code Quality Considerations**: Research has demonstrated that AI-generated code can exhibit higher rates of security vulnerabilities, logic errors, and maintainability issues compared to human-written code. A December 2025 analysis by CodeRabbit found that AI co-authored code contained approximately 1.7 times more major issues than human-written code, including 2.74 times higher rates of security vulnerabilities. Organizations must implement rigorous code review processes and security scanning for vibe-coded components.
+**Code Quality Considerations**: Research has demonstrated that AI-generated code can exhibit higher rates of security vulnerabilities, logic errors, and maintainability issues compared to human-written code. A December 2025 analysis by CodeRabbit found that AI co-authored code contained approximately 1.7 times more major issues than human-written code, including 2.74 times higher rates of security vulnerabilities. Anthropic's analysis of [how AI is transforming work at Anthropic](https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic) illustrates that even leading AI organizations treat human review as an essential complement to AI-generated code, underscoring the need for rigorous cleanup processes. Organizations must implement rigorous code review processes and security scanning for vibe-coded components.
 
 **Technical Debt Implications**: Studies indicate that vibe coding may contribute to increased technical debt. GitClear's longitudinal analysis of 211 million lines of code revealed that code refactoring dropped from 25 percent to under 10 percent between 2021 and 2024, while code duplication increased approximately fourfold. Organizations must balance the short-term productivity gains of vibe coding against long-term maintainability costs.
 
@@ -455,7 +466,107 @@ The vibe coding ecosystem encompasses a diverse array of tools and platforms tha
 
 **Codex** represents OpenAI's code generation system, powering various AI coding tools and providing API access for integration into custom development workflows. The system demonstrates strong performance across multiple programming languages and development tasks.
 
+**Generative Design and Vibe Coding** represents an emerging intersection of AI-assisted prototyping and visual design, explored through communities such as [Generative Design and Vibe Coding](https://www.genai-prototyping.fun/home). This approach applies vibe coding principles to design-driven development, enabling rapid creation of visually polished applications through AI-guided iteration.
+
 These tools collectively support the complete vibe coding lifecycle, from initial ideation through production deployment. Organizations adopting vibe coding typically select tool combinations that align with their technology stack, development practices, and deployment infrastructure. The maturation of these platforms continues to enhance vibe coding capabilities, expanding the scope of applications that can be developed through natural language interaction.
+
+## Vibe Coding Cleanup: Turning AI Prototypes into Production Products
+
+While vibe coding tools such as Claude Code, GitHub Copilot, and Cursor enable rapid prototyping through conversational code generation, the resulting code often reflects the speed at which it was produced rather than the rigor required for production environments. Vibe coding cleanup is the systematic process of transforming fast, AI-generated prototypes into secure, scalable, and maintainable production-ready software. This process bridges the gap between a working proof of concept and a product that can withstand real-world usage, security scrutiny, and team maintenance over time.
+
+The emergence of vibe coding as a development methodology has democratized software creation, as explored in [Vibe coding and other ways AI is changing who can build apps and how](https://news.microsoft.com/source/features/ai/vibe-coding-and-other-ways-ai-is-changing-who-can-build-apps-and-how/), but simultaneously introduced new challenges in ensuring that AI-generated codebases meet professional standards before deployment. The proliferation of generative design and vibe coding tools means teams can scaffold complete applications in minutes, yet the prototypes produced require deliberate cleanup before they are suitable for production deployment. Understanding how to perform this cleanup effectively is becoming an essential competency for development teams adopting AI-assisted workflows.
+
+### What is Vibe Coding Cleanup
+
+Vibe coding cleanup transforms rapid, AI-generated prototypes into production-ready software by auditing, refactoring, and securing codebases that were produced for speed rather than sustainability. AI-generated code can be useful in production after thorough human review and cleanup, but hidden bugs, performance issues, and security vulnerabilities are common characteristics of prototypes that bypass the deliberate design process traditionally employed by software engineers.
+
+The cleanup process encompasses three primary dimensions. Structural cleanup addresses architecture, modularity, and code organization, replacing ad hoc implementations with coherent, maintainable patterns. Security cleanup identifies and remediates vulnerabilities introduced during rapid generation, including injection risks, insecure data handling, and absent authentication controls. Quality cleanup improves test coverage, error handling, logging, and documentation to ensure the application behaves reliably under real-world conditions.
+
+Vibe coding cleanup is not a single activity but an iterative process embedded within the Software Development Lifecycle. Each phase of cleanup builds on the previous, progressively hardening prototypes until they meet the standards required for production deployment. Organizations adopting AI-assisted development workflows must treat cleanup as a first-class activity, allocating appropriate time and expertise rather than assuming AI-generated code is production-ready upon initial generation.
+
+### Vibe Coding Cleanup Challenges
+
+The challenges of vibe coding cleanup stem from the fundamental differences between code optimized for rapid generation and code designed for long-term maintainability. AI models generating code through conversational interfaces prioritize producing outputs that satisfy the immediate prompt, which can result in implementations that function correctly in isolation but fail under production conditions.
+
+**Unmaintainable Code Structure**: AI-generated code frequently lacks the architectural coherence that emerges from deliberate design. Functions may be excessively long, responsibilities poorly separated, and dependencies tightly coupled in ways that complicate future modification. Developers inheriting AI-generated codebases often find that making a small change requires understanding a disproportionate amount of surrounding code due to this structural disorganization.
+
+**Hidden Bugs and Edge Cases**: Prototypes generated through vibe coding may pass happy-path scenarios while failing silently on edge cases, unusual inputs, or concurrent usage patterns. AI models generate code based on statistical patterns rather than exhaustive reasoning about all possible states, leaving gaps in error handling, boundary condition management, and defensive programming practices.
+
+**Performance Issues**: AI-generated implementations may be algorithmically correct but computationally inefficient, employing naive approaches where optimized algorithms or appropriate data structures would be required at production scale. Database queries may lack proper indexing, loops may perform redundant operations, and memory management may be inadequate for high-throughput scenarios.
+
+**Security Vulnerabilities**: Research consistently demonstrates that AI-generated code exhibits elevated rates of security vulnerabilities compared to carefully reviewed human-written code. Common risks include SQL injection from unsanitized inputs, cross-site scripting from improperly escaped outputs, hardcoded credentials, insecure direct object references, and absent authentication on sensitive endpoints. As demonstrated in [How AI is transforming work at Anthropic](https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic), even organizations deeply invested in AI development recognize that human review and systematic cleanup remain essential for ensuring code quality and security in production systems.
+
+**Technical Debt Accumulation**: The ease of generating code through vibe coding can encourage rapid feature addition without corresponding investment in refactoring, documentation, or test coverage. This pattern accumulates technical debt quickly, creating codebases that are increasingly difficult to maintain as they grow. Without deliberate cleanup cycles, prototypes may become unmaintainable before they reach production maturity.
+
+**Inconsistent Coding Conventions**: AI models generate code that reflects patterns from diverse training sources, resulting in inconsistent naming conventions, style variations, and structural approaches within the same codebase. This inconsistency increases cognitive overhead for developers reading, reviewing, and modifying the code over time.
+
+### Cleanup Activities
+
+Effective vibe coding cleanup addresses structural, security, and quality dimensions through targeted activities. Each cleanup activity transforms a specific characteristic of AI-generated prototypes, progressively hardening them toward production readiness.
+
+#### Structural Refactoring
+
+Structural refactoring converts AI-generated code into modular, maintainable structures by applying software engineering principles that AI generation may bypass in the interest of producing quick results. This activity is foundational to all subsequent cleanup because a well-structured codebase is easier to audit for security vulnerabilities, easier to test, and easier to extend with new features.
+
+Key structural refactoring activities include:
+
+- **Module Decomposition**: Breaking monolithic functions and files into focused, single-responsibility modules. AI-generated code may consolidate unrelated logic into single files or functions for convenience, creating implicit dependencies that complicate future modification. Decomposition creates clear boundaries between concerns, reducing coupling and improving testability.
+- **Dependency Management**: Identifying and resolving implicit dependencies, circular references, and unnecessary coupling between components. Clear dependency relationships make the codebase easier to reason about and enable isolated testing of individual components.
+- **Naming and Readability**: Improving variable, function, and class names to clearly communicate intent. AI-generated names may prioritize brevity over clarity, or use generic terms where domain-specific language would better communicate purpose to future developers.
+- **Design Pattern Application**: Replacing ad hoc implementations with established design patterns appropriate to the problem domain. Where AI may generate inline logic for repetitive operations, patterns such as Factory, Strategy, or Repository provide reusable, well-understood structures that team members can recognize and extend confidently.
+- **Documentation and Comments**: Adding explanatory documentation where AI-generated code lacks sufficient context for future maintainers, including architectural decisions, non-obvious logic, and integration point descriptions.
+
+#### Security and Hardening
+
+Security and hardening replaces insecure, hardcoded shortcuts with robust authentication mechanisms, proper input validation, and security protocols appropriate for production deployment. AI-generated prototypes frequently take the path of least resistance for authentication and data handling, creating security gaps that must be addressed before production exposure.
+
+- **Authentication and Authorization**: Replacing placeholder authentication with production-grade mechanisms using established libraries and frameworks. AI-generated code may implement simplified authentication that lacks token expiration, proper session management, or role-based access control. Hardening introduces industry-standard patterns such as OAuth 2.0, JWT with proper validation, or session-based authentication with appropriate security configurations.
+- **Input Validation and Output Encoding**: Implementing validation for all external inputs and proper encoding for all outputs. AI-generated prototypes may validate inputs insufficiently or omit validation entirely for internal API endpoints, creating injection vulnerabilities.
+- **Secrets Management**: Replacing hardcoded credentials, API keys, and configuration values with proper secrets management approaches using environment variables, secrets managers, or configuration files excluded from version control.
+- **Security Headers and Transport Security**: Configuring appropriate HTTP security headers, enforcing HTTPS, and applying security-relevant framework configurations that AI-generated scaffolding may omit.
+- **Dependency Auditing**: Reviewing all dependencies introduced by AI-generated code for known security vulnerabilities, appropriate licensing, and necessity.
+
+#### Fixing Security Gaps
+
+While the hardening activity addresses systemic security improvements, fixing security gaps targets specific vulnerabilities commonly introduced by AI code generation. AI models learn from codebases that include vulnerable patterns, making certain vulnerability classes particularly prevalent in AI-generated code.
+
+- **SQL Injection Elimination**: Replacing string-concatenated SQL queries with parameterized queries or ORM-based data access patterns. AI-generated code may produce queries constructed from user inputs without proper parameterization, creating SQL injection vulnerabilities that could expose or corrupt database contents.
+- **Cross-Site Scripting Prevention**: Ensuring all user-controlled content is properly escaped before rendering in HTML contexts. AI-generated frontend code may render data directly into templates without sanitization, enabling attackers to inject executable scripts into pages viewed by other users.
+- **Insecure Direct Object References**: Implementing proper authorization checks for resource access rather than relying solely on client-supplied identifiers. AI-generated CRUD endpoints may retrieve records based on provided IDs without verifying that the requesting user has permission to access the specified resource.
+- **Mass Assignment Vulnerabilities**: Restricting which model attributes can be set through bulk assignment from user-supplied data. AI-generated ORM usage may permit updating sensitive attributes such as administrative flags or ownership fields through regular update endpoints.
+- **Error Handling and Information Disclosure**: Replacing verbose error responses that expose stack traces, internal paths, or configuration details with sanitized error messages suitable for production.
+
+#### Scalability and Testing
+
+Scalability and testing activities introduce the rigor necessary for applications to handle real-world usage patterns and maintain correctness as they evolve. AI-generated prototypes may function correctly under single-user development conditions while exhibiting performance degradation, data inconsistencies, or failures under concurrent load.
+
+- **Unit Testing**: Creating unit tests that verify individual functions and modules in isolation. AI-generated code may lack tests entirely, or include superficial tests that cover only happy-path scenarios. Unit testing verifies behavior across normal cases, boundary conditions, error conditions, and edge cases.
+- **Integration Testing**: Implementing tests that verify correct interaction between components, services, and external dependencies. Integration tests catch issues that unit tests miss, particularly around data flows, API contracts, and dependency boundaries.
+- **Performance Testing**: Evaluating application behavior under representative load conditions to identify bottlenecks, memory leaks, and scalability limitations before production deployment.
+- **Database Optimization**: Adding appropriate indexes, optimizing query patterns, and implementing connection pooling where AI-generated database interactions may be naive.
+- **Caching Strategies**: Introducing caching layers at appropriate points to reduce redundant computation and database load. AI-generated prototypes typically omit caching considerations, requiring explicit addition during cleanup.
+- **Horizontal Scaling Preparation**: Ensuring application state management, session handling, and file operations are compatible with horizontally scaled deployment. AI-generated prototypes may assume single-instance deployment through use of local file system state or in-memory session storage incompatible with multiple concurrent instances.
+- **Monitoring and Observability**: Adding structured logging, metrics collection, and health check endpoints that enable operational visibility in production. AI-generated prototypes frequently lack the observability infrastructure necessary to diagnose production issues.
+
+### From Prototype to Product Workflow
+
+The vibe coding cleanup process follows a structured workflow that transforms AI-generated prototypes into production-ready products through four sequential phases. This workflow provides a repeatable process for organizations adopting AI-assisted development regardless of the specific technologies involved.
+
+**1. Generate Fast**
+
+Use AI tools to build prototypes and validate ideas quickly. The generation phase embraces the speed advantages of vibe coding without constraint, allowing AI models to make architectural decisions, select frameworks, and implement features conversationally. The objective is validation: demonstrating that the core concept is viable and that the proposed feature set can be realized. Code quality, security hardening, and test coverage are explicitly deferred to subsequent phases, enabling maximum iteration velocity during concept validation. Well-structured prompts that describe desired functionality, technology preferences, and deployment constraints produce higher-quality starting points for subsequent cleanup phases.
+
+**2. Audit Code**
+
+Review the AI-generated code for structural issues and security risks before investing in refinement. The audit phase applies systematic examination across structural, security, and quality dimensions, producing a prioritized list of issues requiring remediation. Auditing prevents effort investment in refining fundamentally problematic implementations by identifying issues early. Audit activities include manual code review by experienced developers, automated static analysis using linters and security scanners, and dependency vulnerability scanning. Security vulnerabilities are prioritized over structural improvements to ensure that hardening is not inadvertently reversed during subsequent refactoring.
+
+**3. Refactor Deliberately**
+
+Clean up the architecture and add robust error handling based on the audit findings. Deliberate refactoring applies software engineering discipline to AI-generated implementations, transforming working but disorganized code into maintainable, extensible systems. This phase implements the cleanup activities described in the preceding section, working through structural refactoring, security hardening, and security gap remediation systematically. Each refactoring step preserves existing behavior while improving a specific structural or security characteristic, with automated tests providing regression safety nets that enable confident refactoring.
+
+**4. Test and Launch**
+
+Implement testing and documentation for deployment. The test and launch phase validates that the refactored application meets correctness, performance, and security requirements before production deployment. Testing encompasses unit tests, integration tests, performance tests, and security-focused testing such as penetration testing or automated vulnerability scanning. Documentation created during this phase covers deployment procedures, operational runbooks, API documentation, and developer onboarding guides, ensuring the application can be maintained and extended by team members who did not participate in initial development. Launch activities include staged deployment through development, staging, and production environments, monitoring configuration, and rollback procedure definition.
 
 ## Difference between Codex and Claude Code
 
@@ -1290,7 +1401,7 @@ Organizations can maximize democratization benefits while mitigating risks throu
 
 **Training Programs**: Offer training in software quality principles, security awareness, architectural thinking, and effective vibe coding practices, enabling democratized contributors to generate higher-quality implementations.
 
-The democratization of software development through vibe coding represents a significant shift in who can create software and how organizations structure development activities. By lowering barriers to entry and enabling natural language interfaces, vibe coding opens software creation to broader populations. However, realizing democratization benefits while maintaining quality, security, and architectural coherence requires thoughtful governance, appropriate safeguards, and commitment to responsible AI-assisted development practices. Organizations that successfully navigate this balance can achieve unprecedented agility, creativity, and innovation by leveraging diverse perspectives and domain expertise from previously non-coding contributors.
+The democratization of software development through vibe coding represents a significant shift in who can create software and how organizations structure development activities. By lowering barriers to entry and enabling natural language interfaces, vibe coding opens software creation to broader populations, a transformation examined in depth in [Vibe coding and other ways AI is changing who can build apps and how](https://news.microsoft.com/source/features/ai/vibe-coding-and-other-ways-ai-is-changing-who-can-build-apps-and-how/). However, realizing democratization benefits while maintaining quality, security, and architectural coherence requires thoughtful governance, appropriate safeguards, and commitment to responsible AI-assisted development practices. Organizations that successfully navigate this balance can achieve unprecedented agility, creativity, and innovation by leveraging diverse perspectives and domain expertise from previously non-coding contributors.
 
 ## Foundry Local for Vibe Coding
 
@@ -2588,6 +2699,178 @@ This hierarchy enables project-wide defaults with package-specific overrides whi
 
 The AGENTS.md format represents a significant advancement in standardizing how developers communicate project context to AI coding agents. By providing a simple, flexible, and widely supported format for agent guidance, AGENTS.md addresses the challenge of contextual code generation and enables agents to produce implementations aligned with project-specific conventions, architectural decisions, and quality standards. The format's broad ecosystem adoption, stewarding by the Agentic AI Foundation under the Linux Foundation, and usage by over 60,000 open-source projects demonstrate its value and staying power as an open standard for AI-assisted development. Organizations and individual developers adopting AGENTS.md benefit from improved agent output quality, reduced prompt engineering overhead, and consistent guidance across diverse AI coding tools, making it an essential component of contemporary vibe coding practices.
 
+## Guardrails for Vibe Coding and Foundry Local
+
+Guardrails are the safety, governance, and control mechanisms applied to AI models to constrain their behavior within defined boundaries. In the context of vibe coding—where natural language prompts and rapid iterations drive the creation of applications—and in the context of Foundry Local, which enables on-device AI inference, guardrails provide essential protection against harmful outputs, insecure code generation, data privacy violations, and unintended model behavior. Without deliberate guardrail configuration, vibe coding workflows expose development pipelines and production systems to risks that neither developers nor end users may be aware of until after a security incident or data breach occurs.
+
+Foundry Local, as part of the Microsoft Azure AI Foundry ecosystem, allows developers to run, customize, and deploy AI models locally on Windows devices, providing offline capability and enhanced data privacy. It enables vibe coding workflows where natural language prompts and quick iterations are used to build, test, and deploy AI applications, and supports these workflows with built-in security features and configurable guardrails. Understanding how to configure and apply these controls is essential for any team using Foundry Local or conversational AI tools in production development pipelines.
+
+### Why Guardrails Matter in Vibe Coding
+
+Vibe coding's natural language interface reduces barriers to software creation but simultaneously creates new risk surfaces. When developers describe desired functionality conversationally and accept AI-generated implementations with minimal scrutiny, guardrails serve as the primary mechanism for preventing harmful, insecure, or policy-violating outputs from entering codebases or being deployed to users.
+
+The absence of guardrails in vibe coding environments introduces several categories of risk:
+
+**Harmful Content Generation**: Without content filters, AI models may generate code that implements harmful functionality, contains discriminatory logic, or produces outputs violating organizational or regulatory policies. Content guardrails intercept such outputs before they reach developers or end users.
+
+**Security Vulnerability Introduction**: AI models generate code based on statistical patterns, not security principles. Without guardrails enforcing secure coding practices, generated code may include injection vulnerabilities, insecure deserialization, hardcoded credentials, or authentication bypasses that create exploitable production weaknesses.
+
+**Privacy and Data Governance Violations**: Models operating on sensitive data without privacy controls may inadvertently include personally identifiable information in generated outputs, logs, or intermediate artifacts. Guardrails enforce data handling boundaries appropriate to the sensitivity of information being processed.
+
+**Intellectual Property and Compliance Risk**: Unguarded models may reproduce copyrighted content, generate code copying licensed implementations without attribution, or produce outputs violating sector-specific regulations. Guardrails can be configured to detect and block such outputs.
+
+**Prompt Injection Attacks**: Malicious inputs crafted to manipulate AI model behavior—known as prompt injection attacks—represent a significant threat in vibe coding contexts where user-supplied content may flow directly into model prompts. Prompt shields and input validation guardrails detect and neutralize such attacks.
+
+### Common Security Vulnerabilities in Vibe Coding
+
+Vibe coding introduces a specific set of security vulnerabilities that differ from those arising in traditional manual development. Understanding these vulnerability patterns is prerequisite to configuring appropriate guardrails and implementing effective mitigation strategies.
+
+**Unsafe Serialization**: AI-generated code may employ unsafe serialization mechanisms, most prominently Python's `pickle` module, which executes arbitrary code during deserialization. When an AI model generates serialization code using `pickle.loads()` on untrusted data, it creates a remote code execution vulnerability. Attackers who can influence serialized data can craft malicious payloads that execute arbitrary commands on the deserializing system. Guardrails should detect and flag use of `pickle` or other unsafe serialization primitives in AI-generated code, particularly when applied to data received from external sources.
+
+**Memory Corruption in Binary Parsing**: AI-generated code for binary data parsing, particularly code written in C or C++, is susceptible to memory corruption vulnerabilities including buffer overflows, use-after-free errors, and integer overflows. These vulnerabilities arise when generated code allocates fixed-size buffers without validating input lengths, uses pointer arithmetic without bounds checking, or fails to initialize memory before use. Memory corruption vulnerabilities are especially dangerous because they can lead to arbitrary code execution, privilege escalation, or denial-of-service conditions. Guardrails that enforce memory-safe coding patterns, require bounds checking, and flag unsafe pointer operations reduce the risk of such vulnerabilities in AI-generated binary processing code.
+
+**Insufficient Input Validation**: AI-generated code frequently omits input validation, accepting data at API endpoints, configuration parameters, and file uploads without verifying type, format, length, or character set constraints. Insufficient validation is a root cause of injection attacks, path traversal vulnerabilities, and unexpected application behavior under adversarial inputs. Guardrails that require input validation for all external data entry points and enforce parameterized query usage prevent a significant proportion of injection vulnerabilities in AI-generated code.
+
+**Insecure Default Configurations**: Vibe coding prototypes are often generated with configurations optimized for development convenience rather than production security—debug modes enabled, overly permissive CORS policies, absent rate limiting, and default credentials. These insecure defaults require explicit remediation before production deployment. Guardrails can detect and block generation of code containing known insecure configurations.
+
+**Overprivileged Access Patterns**: AI models generate access control code based on training patterns that may not align with the principle of least privilege. Generated code may request administrative database credentials when read-only access suffices, or grant broad file system permissions when narrowly scoped access would be appropriate. Guardrails that enforce least privilege principles in generated permission and access control code reduce the blast radius of potential compromises.
+
+### Configuring Guardrails in Microsoft Foundry Local
+
+Microsoft Foundry Local integrates with the Azure AI Foundry guardrail configuration interface, enabling developers to define and enforce content filters, input validation rules, and behavioral constraints for locally-running models. Detailed configuration procedures are documented in the official Microsoft Learn article [How to configure guardrails and controls in Microsoft Foundry](https://learn.microsoft.com/en-us/azure/foundry/guardrails/how-to-create-guardrails).
+
+The guardrail configuration process in Azure AI Foundry involves three primary steps that establish content filtering, severity thresholds, and prompt injection protection for vibe coding workflows.
+
+**Navigate to the Guardrails Configuration Page**
+
+In Azure AI Foundry, navigate to your project, select Build from the left navigation panel, and then select Guardrails. This page provides an overview of configured guardrail sets and their association with deployed models. Guardrails are configured at the project level and can be associated with specific model deployments, enabling different guardrail configurations for different applications or risk profiles within the same Azure AI Foundry project.
+
+**Add Controls and Configure Content Filters**
+
+Select "Create Guardrail" to begin defining a new guardrail set. The content filter configuration interface allows specification of filtering behavior across four primary harm categories:
+
+- **Hate**: Content expressing hostility toward individuals or groups based on protected characteristics
+- **Sexual**: Sexually explicit content inappropriate for general audiences or specific use contexts
+- **Violence**: Content describing, glorifying, or instructing on violent acts
+- **Self-harm**: Content relating to self-injury or suicide
+
+For each category, action thresholds are configurable independently for input (user-provided prompts) and output (model-generated responses). Available threshold levels correspond to content severity, from low (filter any potentially concerning content) to high (filter only severe content). For vibe coding environments generating production code, conservative threshold configurations that block content at lower severity levels reduce the risk of harmful patterns appearing in generated implementations. Each threshold action can be set to annotate (flag for review), warn (alert the developer), or block (prevent the content from being returned).
+
+**Enable Prompt Shields**
+
+Prompt Shields, also referred to as prompt injection detection, protect against user-side malicious input attacks where adversarial content embedded in user inputs attempts to override model instructions, extract system prompt contents, or redirect model behavior outside defined constraints. In vibe coding workflows where developers interact with models through natural language prompts, prompt injection represents a realistic attack vector, particularly when user-provided data flows into prompts without sanitization.
+
+Enable Prompt Shields within the Guardrails configuration by toggling the Prompt Shield option. When enabled, incoming prompts are analyzed for injection patterns before reaching the model. Detected injection attempts are blocked, and the event is logged for security review. Prompt shield configuration supports both direct injection attacks (instructions embedded directly in user messages) and indirect injection attacks (instructions embedded in documents, web pages, or other data sources that are incorporated into model context).
+
+**Associate Guardrails with Model Deployments**
+
+After creating and configuring a guardrail set, associate it with specific model deployments within the project. Foundry Local models accessed through the Azure AI Foundry project inherit the guardrail configuration associated with their deployment, ensuring that locally-running inference respects the content and safety controls defined at the project level. This association can be updated as requirements evolve, enabling guardrail configurations to be tightened or adjusted based on observed model behavior and emerging risk patterns.
+
+### Configuring Guardrails for Anthropic Claude Code
+
+Anthropic Claude Code provides guardrail configuration mechanisms that operate through context files and programmatic validation wrappers. These mechanisms complement Azure AI Foundry's platform-level controls with application-level guardrails specific to Claude Code's conversational development workflow.
+
+**Create a CLAUDE.md File**
+
+The CLAUDE.md file is a context document placed in the repository root that Claude Code treats as an authoritative source of project-level guidance. Unlike AGENTS.md, which targets a broad ecosystem of AI coding agents, CLAUDE.md is specifically processed by Claude Code and takes precedence in guiding its behavior throughout a development session. Security rules, prohibited libraries, required coding standards, and compliance constraints defined in CLAUDE.md constrain the code and recommendations Claude Code generates.
+
+An effective CLAUDE.md for security-focused vibe coding development includes:
+
+```markdown
+# Project Security Rules
+
+## Prohibited Patterns
+
+- Do not use pickle, marshal, or shelve modules for deserializing untrusted data
+- Do not use eval() or exec() with user-supplied strings
+- Do not hardcode credentials, API keys, or secrets in source files
+- Do not generate SQL queries through string concatenation; use parameterized queries
+
+## Required Practices
+
+- All functions accepting external input must validate type, length, and format
+- Database operations must use ORM parameterization or prepared statements
+- File path operations must sanitize and canonicalize before use
+- Secrets must be loaded from environment variables or a secrets manager
+
+## Approved Libraries
+
+- Authentication: use only PyJWT with algorithm verification, never HS256 with default settings
+- Serialization: use json or msgpack for data exchange; pickle is prohibited
+- Cryptography: use the cryptography library; do not implement custom cryptographic routines
+
+## Code Review Requirements
+
+- Security-sensitive code (authentication, authorization, cryptography) requires human review before merge
+- Any use of subprocess, os.system, or shell=True requires justification comment
+```
+
+Claude Code reads this file at session initialization and incorporates these constraints into all code generation and recommendation activities. Updating the file is immediately reflected in subsequent Claude Code interactions within the repository, providing a lightweight mechanism for evolving security rules as project requirements change.
+
+**Use the Guardrails AI Library**
+
+The Guardrails AI Python library provides a programmatic framework for wrapping API calls to Claude and other AI models with validators that evaluate generated outputs against defined quality and safety criteria. This library enables application-level validation that complements platform-level content filtering with domain-specific checks appropriate to the application being developed.
+
+Install the Guardrails AI library and relevant validator packages:
+
+```bash
+pip install guardrails-ai
+guardrails hub install hub://guardrails/profanity_free
+guardrails hub install hub://guardrails/detect_pii
+```
+
+Wrap Claude API calls with a validation guard:
+
+```python
+from guardrails import Guard
+from guardrails.hub import ProfanityFree, DetectPII
+
+guard = Guard().use_many(
+    ProfanityFree(on_fail="exception"),
+    DetectPII(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail="fix"),
+)
+
+validated_response = guard(
+    anthropic_client.messages.create,
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": user_prompt}]
+)
+```
+
+When the guard detects a policy violation in Claude's response, the configured `on_fail` action is triggered: `"exception"` raises a validation error preventing the response from being used; `"fix"` applies automated remediation such as PII redaction; `"reask"` sends a corrective prompt back to the model requesting a compliant response. Custom validators can be implemented for domain-specific requirements such as prohibiting specific library usage, enforcing naming conventions, or detecting security-sensitive code patterns in generated output.
+
+The Guardrails AI framework supports a validator hub containing community-contributed validators for common validation scenarios, enabling vibe coding teams to adopt proven validation logic rather than building custom validators for every concern from scratch.
+
+### Vibe Coding Safety Practices
+
+Beyond platform-level guardrail configuration, effective vibe coding safety requires organizational practices that complement technical controls with human oversight and version control discipline. These practices address risks that cannot be fully mitigated through model configuration alone.
+
+**Git Security and Push Protection**
+
+Enable GitHub Push Protection on all repositories used in vibe coding workflows. Push Protection scans commits for secrets—API keys, database credentials, private keys, authentication tokens, and similar sensitive values—before they are pushed to remote repositories. When a secret is detected, the push is blocked and the developer is prompted to remove the secret from history before proceeding.
+
+AI-generated code frequently includes placeholder or functional credentials copied from training examples, making push protection an essential first line of defense against accidental secret exposure. Configure Push Protection at the organization level through GitHub's security settings to ensure consistent enforcement across all repositories without relying on individual developer awareness:
+
+1. Navigate to the GitHub organization settings
+2. Select Code security and analysis
+3. Enable Secret scanning for the organization
+4. Enable Push protection under Secret scanning
+
+For environments using Azure Repos or GitLab, equivalent secret scanning and push protection functionality is available through their respective security features. Repository-level pre-commit hooks using tools such as `detect-secrets` or `truffleHog` provide an additional defense layer that operates before secrets reach the remote repository.
+
+**Human-in-the-Loop Review Workflow**
+
+Do not allow AI agents to commit directly to production branches without human review of generated diffs. Establish a review-commit workflow that enforces human oversight at the boundary between AI generation and production deployment:
+
+- **Branch Protection**: Configure branch protection rules on main and release branches that require pull request reviews before merging. AI agents operating in vibe coding workflows should commit to feature branches only; merges to protected branches require human approval.
+- **Diff Review Before Commit**: Developers should review the complete diff of AI-generated changes before committing, not merely test that the changes produce correct output. Runtime correctness does not imply security correctness; a change may behave correctly while introducing a subtle authorization bypass or information disclosure vulnerability invisible to functional testing.
+- **Mandatory Code Review for Security-Sensitive Changes**: Establish repository policies requiring security specialist review for changes affecting authentication, authorization, cryptography, data serialization, or external input handling. These categories represent the areas where AI-generated code most frequently introduces vulnerabilities and where the cost of undetected mistakes is highest.
+- **Audit Logging for AI-Assisted Changes**: Maintain records of which code changes were generated or substantially assisted by AI tools. This audit trail supports security incident investigation, compliance verification, and post-incident analysis by identifying which components of a system were AI-generated and which received full human implementation review.
+- **Staged Deployment Validation**: Require AI-generated features to pass through development, staging, and production environments sequentially, with automated security scanning at each gate. Staging environments that mirror production configurations catch environment-specific vulnerabilities that may not manifest in development before reaching production users.
+
+Combining technical guardrails configured at the platform level with organizational practices enforced through version control and review workflows creates a defense-in-depth approach appropriate for the risk profile of AI-assisted development. Neither layer alone is sufficient: platform guardrails cannot prevent all classes of insecure code generation, and organizational practices cannot compensate for complete absence of technical controls. Teams that implement both layers are materially better positioned to realize vibe coding's productivity benefits while maintaining the security and governance standards that production software demands.
+
 ## Conclusion
 
 The integration of Vibe Coding principles within the Software Development Lifecycle represents a progressive approach to software engineering that acknowledges both the technical and human aspects of development. By combining structured SDLC methodologies with the adaptive, developer-centric nature of Vibe Coding, organizations can achieve sustainable productivity, higher code quality, and improved team satisfaction.
@@ -2698,68 +2981,78 @@ As software development continues to evolve, the synthesis of traditional SDLC f
 
 49. OpenAI. (2023). _GPT-4 Technical Report_. arXiv:2303.08774. https://arxiv.org/abs/2303.08774
 
-50. GitHub. (2025). _GitHub Copilot X: The AI-Powered Developer Experience_. GitHub Blog. https://github.blog/2025-03-22-github-copilot-x-the-ai-powered-developer-experience/
+50. Microsoft. (2025). _Vibe coding and other ways AI is changing who can build apps and how_. Microsoft Source. https://news.microsoft.com/source/features/ai/vibe-coding-and-other-ways-ai-is-changing-who-can-build-apps-and-how/
 
-51. Vaithilingam, P., Zhang, T., & Glassman, E. L. (2022). _Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large Language Models_. CHI Conference on Human Factors in Computing Systems Extended Abstracts.
+51. Generative AI Prototyping. (2026). _Generative Design and Vibe Coding_. https://www.genai-prototyping.fun/home
 
-52. Barke, S., James, M. B., & Polikarpova, N. (2023). _Grounded Copilot: How Programmers Interact with Code-Generating Models_. Proceedings of the ACM on Programming Languages, 7(OOPSLA1), 85-111.
+52. Anthropic. (2025). _How AI is transforming work at Anthropic_. Anthropic Research. https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic
 
-53. GitHub. (2026). _Vibe Coding with GitHub Copilot_. GitHub Copilot Tutorials. https://docs.github.com/en/copilot/tutorials/vibe-coding
+53. GitHub. (2025). _GitHub Copilot X: The AI-Powered Developer Experience_. GitHub Blog. https://github.blog/2025-03-22-github-copilot-x-the-ai-powered-developer-experience/
 
-54. Ziegler, A., Kalliamvakou, E., Li, X. A., Rice, A., Rifkin, D., Simister, S., ... & Sittampalam, G. (2022). _Productivity Assessment of Neural Code Completion_. Proceedings of the 6th ACM SIGPLAN International Symposium on Machine Programming.
+54. Vaithilingam, P., Zhang, T., & Glassman, E. L. (2022). _Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large Language Models_. CHI Conference on Human Factors in Computing Systems Extended Abstracts.
 
-55. Imai, S. (2022). _Is GitHub Copilot a Substitute for Human Pair-programming? An Empirical Study_. Proceedings of the ACM/IEEE 44th International Conference on Software Engineering: Companion Proceedings.
+55. Barke, S., James, M. B., & Polikarpova, N. (2023). _Grounded Copilot: How Programmers Interact with Code-Generating Models_. Proceedings of the ACM on Programming Languages, 7(OOPSLA1), 85-111.
 
-56. Montemagno, J. (2025). _Complete Beginner's Guide to Vibe Coding an App in 5 Minutes_. Microsoft Developer Blog. https://developer.microsoft.com/blog/complete-beginners-guide-to-vibe-coding-an-app-in-5-minutes
+56. GitHub. (2026). _Vibe Coding with GitHub Copilot_. GitHub Copilot Tutorials. https://docs.github.com/en/copilot/tutorials/vibe-coding
 
-57. Microsoft. (2026). _Get Started with Foundry Local_. Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/get-started
+57. Ziegler, A., Kalliamvakou, E., Li, X. A., Rice, A., Rifkin, D., Simister, S., ... & Sittampalam, G. (2022). _Productivity Assessment of Neural Code Completion_. Proceedings of the 6th ACM SIGPLAN International Symposium on Machine Programming.
 
-58. Microsoft. (2026). _What is Foundry Local?_ Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local
+58. Microsoft. (2026). _How to configure guardrails and controls in Microsoft Foundry_. Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry/guardrails/how-to-create-guardrails
 
-59. Microsoft. (2026). _Foundry Local: Build Once, Run Locally_. Foundry Local Official Website. https://foundrylocal.ai/
+59. Guardrails AI. (2026). _Guardrails AI: Adding Guardrails to Large Language Models_. https://www.guardrailsai.com/
 
-60. Microsoft. (2026). _Foundry Local SDK_. GitHub Repository. https://github.com/microsoft/foundry-local
+60. Imai, S. (2022). _Is GitHub Copilot a Substitute for Human Pair-programming? An Empirical Study_. Proceedings of the ACM/IEEE 44th International Conference on Software Engineering: Companion Proceedings.
 
-61. AGENTS.md Contributors. (2026). _AGENTS.md: A Simple, Open Format for Guiding Coding Agents_. https://agents.md/
+61. Montemagno, J. (2025). _Complete Beginner's Guide to Vibe Coding an App in 5 Minutes_. Microsoft Developer Blog. https://developer.microsoft.com/blog/complete-beginners-guide-to-vibe-coding-an-app-in-5-minutes
 
-62. AGENTS.md Contributors. (2026). _AGENTS.md Format Specification and Examples_. GitHub Repository. https://github.com/agentsmd/agents.md
+62. Microsoft. (2026). _Get Started with Foundry Local_. Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/get-started
 
-63. Agentic AI Foundation. (2026). _Agentic AI Foundation: Stewarding Open Standards for AI Development_. Linux Foundation. https://aaif.io/
+63. Microsoft. (2026). _What is Foundry Local?_ Microsoft Learn. https://learn.microsoft.com/en-us/azure/foundry-local/what-is-foundry-local
 
-64. OpenAI. (2026). _Agentic AI Foundation Announcement_. OpenAI Blog. https://openai.com/index/agentic-ai-foundation/
+64. Microsoft. (2026). _Foundry Local: Build Once, Run Locally_. Foundry Local Official Website. https://foundrylocal.ai/
 
-65. Google Cloud. (2026). _What is Vibe Coding?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-vibe-coding
+65. Microsoft. (2026). _Foundry Local SDK_. GitHub Repository. https://github.com/microsoft/foundry-local
 
-66. Karpathy, A. (2025). _Vibe Coding: The Future of Software Development_. AI Research Blog. Referenced in Google Cloud Discover.
+66. AGENTS.md Contributors. (2026). _AGENTS.md: A Simple, Open Format for Guiding Coding Agents_. https://agents.md/
 
-67. Google. (2026). _Google AI Studio: Rapid Application Prototyping_. Google AI Studio. https://aistudio.google.com/
+67. AGENTS.md Contributors. (2026). _AGENTS.md Format Specification and Examples_. GitHub Repository. https://github.com/agentsmd/agents.md
 
-68. Google. (2026). _Firebase Studio: Full-Stack Application Development_. Firebase Studio. https://firebase.studio/
+68. Agentic AI Foundation. (2026). _Agentic AI Foundation: Stewarding Open Standards for AI Development_. Linux Foundation. https://aaif.io/
 
-69. Google. (2026). _Gemini Code Assist: AI-Powered IDE Assistance_. Google Cloud. https://codeassist.google/
+69. OpenAI. (2026). _Agentic AI Foundation Announcement_. OpenAI Blog. https://openai.com/index/agentic-ai-foundation/
 
-70. Google. (2026). _Gemini CLI: Terminal-First AI Development_. Gemini CLI. https://geminicli.com/
+70. Google Cloud. (2026). _What is Vibe Coding?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-vibe-coding
 
-71. Google. (2026). _Google Antigravity: Mission Control for Autonomous Agents_. Google Antigravity. https://antigravity.google/
+71. Karpathy, A. (2025). _Vibe Coding: The Future of Software Development_. AI Research Blog. Referenced in Google Cloud Discover.
 
-72. Google. (2026). _What is Model Context Protocol (MCP)?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-model-context-protocol
+72. Google. (2026). _Google AI Studio: Rapid Application Prototyping_. Google AI Studio. https://aistudio.google.com/
 
-73. Google Cloud. (2026). _Cloud Run: Serverless Container Platform_. Google Cloud. https://cloud.google.com/run
+73. Google. (2026). _Firebase Studio: Full-Stack Application Development_. Firebase Studio. https://firebase.studio/
 
-74. Microsoft. (2026). _Foundry Local SDK: Python Samples_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python
+74. Google. (2026). _Gemini Code Assist: AI-Powered IDE Assistance_. Google Cloud. https://codeassist.google/
 
-75. Microsoft. (2026). _Foundry Local: Tool Calling Sample_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python/tool-calling
+75. Google. (2026). _Gemini CLI: Terminal-First AI Development_. Gemini CLI. https://geminicli.com/
 
-76. Microsoft. (2026). _Foundry Toolkit for Visual Studio Code_. VS Code Documentation. https://code.visualstudio.com/docs/intelligentapps/overview
+76. Google. (2026). _Google Antigravity: Mission Control for Autonomous Agents_. Google Antigravity. https://antigravity.google/
 
-77. Microsoft. (2026). _ONNX Runtime: Accelerated Machine Learning_. ONNX Runtime. https://onnxruntime.ai/
+77. Google. (2026). _What is Model Context Protocol (MCP)?_ Google Cloud Discover. https://cloud.google.com/discover/what-is-model-context-protocol
 
-78. Qwen Team. (2026). _Qwen2.5 Model Family_. Alibaba Cloud Model Studio. https://qwenlm.github.io/
+78. Google Cloud. (2026). _Cloud Run: Serverless Container Platform_. Google Cloud. https://cloud.google.com/run
 
-79. Microsoft Research. (2026). _Phi-3: Small Language Models_. Microsoft Research Blog. https://www.microsoft.com/en-us/research/blog/phi-3-small-language-models/
+79. Microsoft. (2026). _Foundry Local SDK: Python Samples_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python
 
-80. Meta AI. (2026). _Llama 3.2: Efficient Language Models_. Meta AI Research. https://ai.meta.com/llama/
+80. Microsoft. (2026). _Foundry Local: Tool Calling Sample_. GitHub Repository. https://github.com/microsoft/Foundry-Local/tree/main/samples/python/tool-calling
 
-81. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. PPIG 2025 (36th Annual Workshop). https://www.ppig.org/files/2025-PPIG-36th-sarkar.pdf
+81. Microsoft. (2026). _Foundry Toolkit for Visual Studio Code_. VS Code Documentation. https://code.visualstudio.com/docs/intelligentapps/overview
 
-82. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. Microsoft Research. https://www.microsoft.com/en-us/research/publication/vibe-coding-programming-through-conversation-with-artificial-intelligence/
+82. Microsoft. (2026). _ONNX Runtime: Accelerated Machine Learning_. ONNX Runtime. https://onnxruntime.ai/
+
+83. Qwen Team. (2026). _Qwen2.5 Model Family_. Alibaba Cloud Model Studio. https://qwenlm.github.io/
+
+84. Microsoft Research. (2026). _Phi-3: Small Language Models_. Microsoft Research Blog. https://www.microsoft.com/en-us/research/blog/phi-3-small-language-models/
+
+85. Meta AI. (2026). _Llama 3.2: Efficient Language Models_. Meta AI Research. https://ai.meta.com/llama/
+
+86. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. PPIG 2025 (36th Annual Workshop). https://www.ppig.org/files/2025-PPIG-36th-sarkar.pdf
+
+87. Sarkar, A. (2025). _Vibe Coding: Programming Through Conversation with Artificial Intelligence_. Microsoft Research. https://www.microsoft.com/en-us/research/publication/vibe-coding-programming-through-conversation-with-artificial-intelligence/
