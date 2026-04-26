@@ -1,0 +1,34 @@
+# Guardrails dependencies for LLM security and validation scripts
+#
+# Install with:
+#   source venv/bin/activate
+#   pip install -r requirements-guardrails.txt
+#
+# After installing guardrails-ai, install the ProfanityFree hub validator:
+#   guardrails configure
+#   guardrails hub install hub://guardrails/profanity_free
+
+# Guardrails AI - Input/Output validation and structured output generation
+# https://github.com/guardrails-ai/guardrails
+guardrails-ai>=0.10.0
+
+# LiteLLM - Unified LLM gateway; used to connect Guardrails AI to Ollama
+# https://github.com/BerriAI/litellm
+litellm>=1.40.0
+
+# Pydantic AI - Type-safe agent framework with built-in Ollama support
+# https://github.com/pydantic/pydantic-ai
+pydantic-ai>=0.0.20
+
+# LLM Guard - Security toolkit for prompt/output scanning
+# https://github.com/protectai/llm-guard
+llm-guard>=0.3.14
+
+# CrewAI - Multi-agent framework for building agentic AI pipelines with guardrails
+# https://github.com/crewaiinc/crewai
+# Requires Python >=3.10 <3.14
+crewai>=0.80.0
+
+# Testing
+pytest>=8.0.0
+pytest-mock>=3.12.0

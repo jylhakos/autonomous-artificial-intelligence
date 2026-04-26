@@ -78,6 +78,17 @@ Thumbs.db
 # Secrets and Credentials
 *.pem
 *.key
+
+# Guardrails AI hub local cache
+.guardrails/
+
+# ML model binary files (LLM Guard, HuggingFace transformers)
+# These can be several GB and must not be committed to the repository
+*.bin
+*.safetensors
+*.pt
+*.onnx
+models/
 secrets.json
 credentials.json
 
