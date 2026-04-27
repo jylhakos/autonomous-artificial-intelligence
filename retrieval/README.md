@@ -1013,7 +1013,7 @@ The RAG pipeline flow:
 2. The Foundry Local SDK loads the language model into memory.
 3. A user question arrives at the Express.js server. The question is TF-IDF vectorized and cosine similarity is used to retrieve the top-$k$ chunks from SQLite via an inverted index:
 
-$$\text{cosine_similarity}(q, d) = \frac{q \cdot d}{\|q\| \cdot \|d\|}$$
+$$\text{cosine}\_\text{similarity}(q, d) = \frac{q \cdot d}{\|q\| \cdot \|d\|}$$
 
 4. Retrieved chunks are injected into the prompt alongside the system instructions.
 5. The prompt is sent to the locally loaded model via the Foundry Local SDK; the response streams back token by token.
