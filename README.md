@@ -12,6 +12,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
+├── 📂 retrieval/           # Vector databases, vector search and RAG for LLMs
 ├── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
 └── 📂 security/            # AI agent security and threat protection
 ```
@@ -123,6 +124,28 @@ Autonomous agents often need to execute complex, multi-step workflows that invol
 - Task coordination and dependency management
 - Test suite for workflow validation
 - Quickstart guides for rapid deployment
+
+### 📂 retrieval/
+
+**Key Points:**
+- Open-source vector databases including Qdrant, Chroma, FAISS, Weaviate, and Milvus
+- Vector search algorithms, similarity metrics, and indexing strategies (HNSW, IVF, scalar quantization)
+- Retrieval-Augmented Generation (RAG) pipeline integrating vector search with large language models
+- Hybrid search combining dense vector retrieval with keyword-based (BM25) search
+- Local RAG with Microsoft Foundry Local for on-device LLM inference without cloud dependencies
+
+**Importance for Autonomous AI:**
+Autonomous agents operating on large knowledge bases cannot load entire document corpora into a context window. Vector databases solve this by converting documents into dense numerical embeddings and enabling sub-millisecond approximate nearest-neighbor search across millions of vectors. Retrieval-Augmented Generation grounds LLM responses in factual, up-to-date information by retrieving only the most semantically relevant passages before generating an answer, reducing hallucinations and enabling agents to work with private or domain-specific knowledge without retraining the model. For autonomous systems, RAG is a foundational pattern that decouples knowledge storage from model weights, allowing agents to reason over dynamic, evolving datasets at inference time.
+
+**Key Features:**
+- Overview of open-source vector databases with trade-off analysis for production selection
+- End-to-end RAG pipeline example using Qdrant and Microsoft Foundry Local running locally on-device
+- Coverage of distance metrics (cosine similarity, dot product, Euclidean) and approximate nearest-neighbor index types
+- Quantization techniques for reducing memory footprint while preserving retrieval accuracy
+- Hybrid search patterns merging dense embeddings with sparse keyword retrieval
+- Document ingestion workflow from raw text to stored vectors with embedding model integration
+- Vibe Coding workflow demonstrating AI-assisted development with a vector database backend
+- Foundry Local integration for privacy-preserving, offline-capable RAG without cloud API calls
 
 ### 📂 workflows/
 
