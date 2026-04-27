@@ -655,7 +655,7 @@ Quantization compresses the vector representations to reduce memory footprint an
 
 **3. Refiner (optional)**
 
-Because quantization is lossy, the refiner re-scores candidates returned by the compressed index using original full-precision vectors. At query time, the system retrieves $\text{topK} \times \text{expansion_rate}$ candidates from the quantized index, then the refiner recomputes exact distances on those candidates and returns the final $\text{topK}$ results. This hybrid approach maintains high recall without paying the full cost of exact search over the entire dataset.
+Because quantization is lossy, the refiner re-scores candidates returned by the compressed index using original full-precision vectors. At query time, the system retrieves $\text{topK} \times \text{expansion\_rate}$ candidates from the quantized index, then the refiner recomputes exact distances on those candidates and returns the final $\text{topK}$ results. This hybrid approach maintains high recall without paying the full cost of exact search over the entire dataset.
 
 The memory footprint of these components is significant at scale. For 1 million 128-dimensional vectors:
 
