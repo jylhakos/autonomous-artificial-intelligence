@@ -1,0 +1,4 @@
+# Core dependencies for the RAG example
+openai>=1.0.0
+qdrant-client>=1.9.0
+sentence-transformers>=2.7.0

@@ -1,0 +1,60 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Installed packages
+site-packages/
+
+# Qdrant local storage (Docker bind-mount)
+qdrant_storage/
+
+# Sentence-transformers and Hugging Face model cache
+.cache/
+
+# VS Code workspace settings (keep extensions.json and launch.json if desired)
+.vscode/settings.json
+
+# JetBrains IDE
+.idea/
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variable files
+*.env
+.env.*
+!.env.example
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Test and coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
