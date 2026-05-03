@@ -1,0 +1,83 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+*.whl
+
+# Installed libraries and packages
+lib/
+lib64/
+include/
+share/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Downloaded models and weights
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.onnx
+models/
+weights/
+checkpoints/
+
+# Binary files
+*.so
+*.dll
+*.dylib
+*.exe
+
+# IDE and editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables and secrets
+.env
+.env.*
+secrets.json
+
+# Logs and output
+*.log
+logs/
+output/
+
+# Hugging Face cache
+.cache/
+huggingface/
+
+# torchtune / torchchat exported models
+exportedModels/
+
+# Adapter files from LoRA fine-tuning
+lora_lab/
+trainedLora/
+adapters/

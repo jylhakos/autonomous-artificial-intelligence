@@ -1,0 +1,84 @@
+# requirements.txt
+# -----------------
+# Python dependencies for all practical example scripts in this project.
+#
+# Setup:
+#   python3 -m venv .venv
+#   source .venv/bin/activate
+#   pip install --upgrade pip
+#   pip install -r requirements.txt
+#
+# GPU note:
+#   The torch line below installs the CUDA 12.1 build.
+#   For CPU-only or a different CUDA version, visit:
+#   https://pytorch.org/get-started/locally/
+#
+# Script reference:
+#   quantization_example.py  — torch, transformers, bitsandbytes, accelerate
+#   prompt_optimization.py   — torch, transformers
+#   rag_example.py           — sentence-transformers, faiss-cpu, numpy
+#   fast_finetune.py         — unsloth (install separately, see below), torch, transformers, peft, trl
+#   azure_ml_submit.py       — azure-ai-ml, azure-identity
+#   azure_rag_search.py      — azure-search-documents, azure-identity, openai
+
+# ---------------------------------------------------------------------------
+# Core ML framework (PyTorch)
+# ---------------------------------------------------------------------------
+# Install with CUDA 12.1 support (adjust index URL for your CUDA version):
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# For CPU-only:
+#   pip install torch torchvision torchaudio
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# ---------------------------------------------------------------------------
+# Hugging Face ecosystem
+# ---------------------------------------------------------------------------
+transformers>=4.40.0
+datasets>=2.18.0
+accelerate>=0.28.0
+peft>=0.10.0
+trl>=0.8.0
+huggingface_hub>=0.22.0
+
+# ---------------------------------------------------------------------------
+# Quantization (quantization_example.py, fast_finetune.py)
+# ---------------------------------------------------------------------------
+bitsandbytes>=0.43.0
+
+# ---------------------------------------------------------------------------
+# Sentence embeddings and local vector search (rag_example.py)
+# ---------------------------------------------------------------------------
+sentence-transformers>=2.6.0
+faiss-cpu>=1.8.0
+
+# ---------------------------------------------------------------------------
+# Azure SDK — Azure ML job submission (azure_ml_submit.py)
+# ---------------------------------------------------------------------------
+azure-ai-ml>=1.15.0
+azure-identity>=1.16.0
+
+# ---------------------------------------------------------------------------
+# Azure SDK — Azure AI Search + Azure OpenAI RAG (azure_rag_search.py)
+# ---------------------------------------------------------------------------
+azure-search-documents>=11.4.0
+openai>=1.30.0
+
+# ---------------------------------------------------------------------------
+# Utilities
+# ---------------------------------------------------------------------------
+numpy>=1.26.0
+scipy>=1.12.0
+pandas>=2.2.0
+tqdm>=4.66.0
+
+# ---------------------------------------------------------------------------
+# Unsloth (fast_finetune.py)
+# ---------------------------------------------------------------------------
+# Unsloth is NOT installable via a plain pip entry because the correct wheel
+# depends on your CUDA version and Python version.  Install it separately:
+#
+#   pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+#
+# See https://github.com/unslothai/unsloth for up-to-date installation instructions.
