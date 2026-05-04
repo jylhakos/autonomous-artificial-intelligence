@@ -1,0 +1,45 @@
+# Reasoning model training and inference dependencies
+# Install inside the virtual environment:
+#   source venv/bin/activate
+#   pip install -r requirements.txt
+#
+# GPU/CUDA prerequisites (install first if using conda or bare Python):
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# ---------------------------------------------------------------------------
+# Core training stack
+# ---------------------------------------------------------------------------
+unsloth                # Accelerated LoRA/QLoRA + GRPO; 80 % less VRAM than vanilla HF
+trl>=0.15.0            # GRPOConfig and GRPOTrainer (TRL 0.15+ required for GRPO)
+transformers>=4.40.0
+accelerate>=0.28.0
+peft>=0.10.0           # LoRA adapter support (used by Unsloth under the hood)
+datasets>=2.18.0       # HuggingFace Datasets — GSM8K, OpenMathReasoning-mini
+
+# ---------------------------------------------------------------------------
+# Inference
+# ---------------------------------------------------------------------------
+vllm                   # Fast inference backend (used by Unsloth fast_inference=True)
+requests               # HTTP client for Ollama REST API
+httpx                  # Async HTTP alternative
+
+# ---------------------------------------------------------------------------
+# Agentic / orchestration
+# ---------------------------------------------------------------------------
+langchain>=0.2.0
+langchain-community>=0.2.0
+langgraph>=0.1.0
+
+# ---------------------------------------------------------------------------
+# Utilities
+# ---------------------------------------------------------------------------
+pillow                 # Image processing (multi-modal models)
+sentencepiece          # Tokenizer for many open models
+protobuf               # Required by some HuggingFace tokenisers
+bitsandbytes>=0.43.0   # 4/8-bit quantisation kernels
+
+# ---------------------------------------------------------------------------
+# Optional — experiment tracking
+# ---------------------------------------------------------------------------
+# wandb                # Weights & Biases (set report_to="wandb" in GRPOConfig)
+# tensorboard          # TensorBoard (set report_to="tensorboard" in GRPOConfig)

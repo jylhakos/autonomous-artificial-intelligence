@@ -1,0 +1,76 @@
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# ── Python cache and bytecode ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Distribution / packaging ──────────────────────────────────────────────────
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# ── Training outputs and model artifacts ─────────────────────────────────────
+outputs/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+grpo_saved_lora/
+
+# ── HuggingFace cache ─────────────────────────────────────────────────────────
+.cache/
+~/.cache/huggingface/
+
+# ── Jupyter and IPython ───────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Environment variables / secrets ──────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.secret
+
+# ── OS generated files ────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+wandb/
+runs/
+tensorboard/
+
+# ── Docker volumes (local bind mounts) ───────────────────────────────────────
+docker/volumes/
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
