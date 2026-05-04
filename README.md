@@ -11,7 +11,9 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 observability/       # Monitoring and analysis tools
+├── 📂 optimization/        # ML and LLM optimization techniques and tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
+├── 📂 reasoning/           # LLM reasoning techniques and training workflows
 ├── 📂 retrieval/           # Vector databases, vector search and RAG for LLMs
 ├── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
 └── 📂 security/            # AI agent security and threat protection
@@ -168,6 +170,45 @@ The software development life cycle is being fundamentally transformed by autono
 - Integration patterns for autonomous coding agents within traditional SDLC phases
 - Offline-capable AI development with complete data privacy and zero cloud dependencies
 - AGENTS.md format documentation for guiding coding agents with project-specific conventions
+
+### 📂 optimization/
+
+**Key Points:**
+- Techniques for reducing model size and inference cost without sacrificing quality
+- Quantization (INT4/INT8), pruning, knowledge distillation, and low-rank factorization
+- Parameter-Efficient Fine-Tuning (PEFT) and LoRA for task-specific adaptation with minimal compute
+- Prompt optimization and Retrieval-Augmented Generation (RAG) for accuracy improvements
+- Cloud-based optimization on Microsoft Azure (Olive, Azure ML, Azure AI Search), AWS, and Google Cloud
+- Local optimization workflows for on-device inference with reduced memory footprint
+
+**Importance for Autonomous AI:**
+Autonomous agents that rely on large language models face practical constraints in latency, memory, and cost that limit real-world deployment. Optimization techniques address these constraints directly: quantization shrinks model VRAM requirements from 28 GB (FP32) to as little as 3.5 GB (INT4), enabling deployment on consumer hardware; LoRA and PEFT allow agents to be fine-tuned on domain-specific data without retraining billions of parameters; and prompt optimization combined with RAG ensures agents produce accurate, grounded responses without inflating model size. For autonomous systems operating at scale, the difference between an unoptimized and an optimized model can determine whether deployment is economically and technically feasible.
+
+**Key Components:**
+- `quantization_example.py` - 4-bit and 8-bit quantization using Hugging Face and BitsAndBytes
+- `fast_finetune.py` - Parameter-efficient fine-tuning with LoRA and PEFT
+- `prompt_optimization.py` - Few-shot prompt engineering for improved model accuracy
+- `rag_example.py` - Local RAG pipeline integrating vector search with LLM inference
+- `azure_rag_search.py` - RAG optimization with Azure AI Search
+- `azure_ml_submit.py` - Cloud-based training and optimization jobs on Azure ML
+
+### 📂 reasoning/
+
+**Key Points:**
+- Chain-of-Thought (CoT) prompting for structured, multi-step problem solving
+- Reinforcement Learning (RL) training approaches including GRPO for reasoning behavior
+- Test-Time Computation (TTC) scaling to improve answer quality at inference
+- Tree of Thoughts and self-correction for exploring and refining solution paths
+- Large Reasoning Model (LRM) training: SFT + RL, pure RL, and distillation pipelines
+- Local deployment of reasoning models with Ollama and Open WebUI
+- Agentic reasoning with tool use via the ReAct (Reason + Act) loop
+
+**Importance for Autonomous AI:**
+Reasoning is the cognitive core of autonomous agents. Standard LLMs retrieve statistically likely answers; reasoning models calculate answers by working through intermediate steps, enabling reliable performance on mathematics, coding, planning, and complex logic tasks. Chain-of-Thought transforms model outputs from pattern retrieval into verifiable thought traces, allowing agents to self-correct and explore alternative solution paths before committing to an answer. Reinforcement learning on reasoning — through algorithms like GRPO and Process Reward Models (PRMs) — teaches models to improve their reasoning chains based on outcome quality, not just next-token prediction. For autonomous systems, robust reasoning capability directly determines the complexity of tasks an agent can reliably execute without human supervision.
+
+**Key Components:**
+- `prompts/` - System prompt templates and prompt strategy configurations for reasoning models
+- `scripts/` - Training scripts including Unsloth GRPO fine-tuning and Ollama deployment workflows
 
 ### 📂 security/
 
