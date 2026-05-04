@@ -197,10 +197,10 @@ flowchart TD
     O -- Yes --> P[Generate Final Answer]
     P --> Z([Final Answer])
 
-    style A fill:#1a1a2e,color:#eee,stroke:#555
-    style Z fill:#16213e,color:#eee,stroke:#555
-    style E fill:#0f3460,color:#eee,stroke:#555
-    style J fill:#533483,color:#eee,stroke:#555
+    style A fill:#ffffff,color:#222,stroke:#aaa
+    style Z fill:#f4f4f4,color:#222,stroke:#aaa
+    style E fill:#e8f4f8,color:#222,stroke:#aaa
+    style J fill:#ede8f8,color:#222,stroke:#aaa
 ```
 
 **Explanation of steps:**
@@ -291,11 +291,11 @@ flowchart LR
     SFT1 --> SFT2
     RL2 --> DIST
 
-    style Stage1 fill:#1a1a2e,color:#eee,stroke:#333
-    style Stage2 fill:#16213e,color:#eee,stroke:#333
-    style Stage3 fill:#0f3460,color:#eee,stroke:#333
-    style Stage4 fill:#533483,color:#eee,stroke:#333
-    style Stage5 fill:#2d6a4f,color:#eee,stroke:#333
+    style Stage1 fill:#f4f4f4,color:#222,stroke:#aaa
+    style Stage2 fill:#e8f4f8,color:#222,stroke:#aaa
+    style Stage3 fill:#e8f0fe,color:#222,stroke:#aaa
+    style Stage4 fill:#ede8f8,color:#222,stroke:#aaa
+    style Stage5 fill:#d4edda,color:#222,stroke:#aaa
 ```
 
 ---
@@ -993,10 +993,10 @@ graph TD
     M3 -- tensor ops --> VRAM
     VRAM -. overflow .-> RAM
 
-    style Client fill:#1a1a2e,color:#eee,stroke:#333
-    style Docker fill:#16213e,color:#eee,stroke:#333
-    style Models fill:#0f3460,color:#eee,stroke:#333
-    style GPU fill:#533483,color:#eee,stroke:#333
+    style Client fill:#f4f4f4,color:#222,stroke:#aaa
+    style Docker fill:#e8f4f8,color:#222,stroke:#aaa
+    style Models fill:#e8f0fe,color:#222,stroke:#aaa
+    style GPU fill:#ede8f8,color:#222,stroke:#aaa
 ```
 
 ### 13.4 Configure Reasoning Parser (Ollama Backend)
