@@ -1319,10 +1319,10 @@ flowchart TD
     CHECK -- Yes --> FINAL[Final Answer\nSynthesized from\nreasoning + observations]
     FINAL --> END([Response to User])
 
-    style LOOP fill:#16213e,color:#eee,stroke:#555
-    style START fill:#1a1a2e,color:#eee,stroke:#555
-    style END fill:#1a1a2e,color:#eee,stroke:#555
-    style FINAL fill:#2d6a4f,color:#eee,stroke:#555
+    style LOOP fill:#f4f4f4,color:#222,stroke:#aaa
+    style START fill:#ffffff,color:#222,stroke:#aaa
+    style END fill:#ffffff,color:#222,stroke:#aaa
+    style FINAL fill:#d4edda,color:#222,stroke:#aaa
 ```
 
 **Python implementation of the ReAct loop:**
