@@ -1,8 +1,8 @@
-# Observability of AI Agents in Software Development
+# Observability for AI Agents in Local and Cloud Environments
 
 ## Abstract
 
-This document presents observability practices for AI agents within software development environments. As autonomous AI agents increasingly participate in software development lifecycles, the need for robust monitoring, tracing, and evaluation mechanisms becomes essential. This research explores practical implementations, and tooling ecosystems that enable effective observability of AI agent actions, with particular emphasis on VS Code integration and OpenTelemetry-based monitoring frameworks.
+This document presents observability practices for AI agents within software development workflows (including integrated development environments) and across local and cloud environments. As autonomous AI agents increasingly participate in software development lifecycles, the need for robust monitoring, tracing, and evaluation mechanisms becomes essential. This research explores practical implementations, and tooling ecosystems that enable effective observability of AI agent actions, with particular emphasis on VS Code integration and OpenTelemetry-based monitoring frameworks.
 
 ## Table of Contents
 
@@ -10,18 +10,42 @@ This document presents observability practices for AI agents within software dev
 - [Quick Start Guide](#quick-start-guide)
   - [Initial Setup](#initial-setup)
   - [Running the Weather Dashboard Demo](#running-the-weather-dashboard-demo)
-- [Fundamental Concepts](#fundamental-concepts)
+- [Observability Concepts](#observability-concepts)
   - [What is Observability?](#what-is-observability)
+    - [Modern Context](#modern-context)
+    - [Observability vs Monitoring](#observability-vs-monitoring)
+    - [Use Cases in AI](#use-cases-in-ai)
   - [What is Agent Observability?](#what-is-agent-observability)
   - [What is an Agent?](#what-is-an-agent)
+- [Observability Signals for Generative AI](#observability-signals-for-generative-ai)
+  - [Traces: Tracing Model Interactions](#traces-tracing-model-interactions)
+  - [Metrics: Monitoring Usage and Performance](#metrics-monitoring-usage-and-performance)
+  - [Events: Capturing Detailed Interactions](#events-capturing-detailed-interactions)
+- [Deploying AI Applications with Observability](#deploying-ai-applications-with-observability)
+  - [A) Local Computers](#a-local-computers)
+  - [B) Commercial Cloud Platforms](#b-commercial-cloud-platforms)
 - [Observability in Generative AI Systems](#observability-in-generative-ai-systems)
 - [Data Observability Platforms](#data-observability-platforms)
   - [Monte Carlo Data Observability](#monte-carlo-data-observability)
   - [Developer-Friendly Observability](#developer-friendly-observability)
-- [Open Source Observability Tools](#open-source-observability-tools)
-  - [Langfuse](#langfuse)
-  - [Microsoft Azure AI Foundry](#microsoft-azure-ai-foundry)
+- [Open Source Tools for LLM Observability](#open-source-tools-for-llm-observability)
+  - [LLM-Specific Observability Platforms](#llm-specific-observability-platforms)
+    - [Langfuse](#langfuse)
+    - [OpenLIT](#openlit)
+    - [OpenLLMetry](#openllmetry)
+    - [OpenObserve](#openobserve)
+  - [Agent and Workflow Observability](#agent-and-workflow-observability)
+    - [OpenClawWatch](#openclawwatch)
+    - [Monocle2AI](#monocle2ai)
+  - [General Telemetry Stack](#general-telemetry-stack)
   - [LangSmith](#langsmith)
+  - [Microsoft Azure AI Foundry](#microsoft-azure-ai-foundry)
+- [What You Monitor in LLM Inference Systems](#what-you-monitor-in-llm-inference-systems)
+- [Azure AI Observability](#azure-ai-observability)
+  - [Azure AI Foundry](#azure-ai-foundry)
+  - [Azure Monitor Application Insights](#azure-monitor-application-insights)
+  - [Metrics to Track on Azure](#metrics-to-track-on-azure)
+  - [OpenTelemetry Integration with Azure](#opentelemetry-integration-with-azure)
 - [Implementing Observability in VS Code](#implementing-observability-in-vs-code)
   - [Environment Setup](#environment-setup)
   - [Claude Code Observability](#claude-code-observability)
@@ -33,6 +57,9 @@ This document presents observability practices for AI agents within software dev
 - [Spec-Driven Development with AI Agents](#spec-driven-development-with-ai-agents)
 - [End-to-End Agentic Software Development Lifecycle](#end-to-end-agentic-software-development-lifecycle)
 - [Security Considerations](#security-considerations)
+  - [Malicious Tool Detection Analysis Document](#malicious-tool-detection-analysis-document)
+  - [Detection of Malicious Tools](#detection-of-malicious-tools)
+  - [Agent Autonomy Controls](#agent-autonomy-controls)
 - [Practical Example: AI-Generated Weather Dashboard](#practical-example-ai-generated-weather-dashboard)
 - [References](#references)
 
@@ -111,11 +138,50 @@ Access the dashboard at `http://localhost:5000` to see OpenTelemetry tracing in 
 
 For detailed setup instructions, API configuration, and troubleshooting, see the [Weather Dashboard README](weather-dashboard/README.md).
 
-## Fundamental Concepts
+## Observability Concepts
 
 ### What is Observability?
 
-Observability is the ability to have visibility into the inputs and outputs of a system as well as the performance of its component parts. In traditional software engineering, observability encompasses three pillars: metrics (quantitative measurements), logs (discrete event records), and traces (request flow through distributed systems). Modern observability extends beyond simple monitoring by enabling practitioners to ask arbitrary questions about system behavior without predefining specific failure modes.
+Observability is the ability to understand the internal state of a system based on its external outputs—such as logs, metrics, traces, and other telemetry data. In traditional software engineering, observability encompasses three pillars: metrics (quantitative measurements), logs (discrete event records), and traces (request flow through distributed systems).
+
+#### Modern Context
+
+In modern contexts—such as cloud applications, microservices, and DevOps—observability refers to how well you can understand what is happening inside a system based on its outputs. It goes beyond simple monitoring by enabling practitioners to diagnose and explore unknown issues, not just track known ones. Observability helps developers monitor, troubleshoot, and debug complex systems by providing a comprehensive view of their behavior and performance.
+
+Implementing observability requires a toolbox of techniques and tools covering the three pillars:
+
+- **Instrumentation**: Identify and implement tools that measure system performance, covering logging, metrics, and tracing. Linking network management and control systems can boost observability.
+- **Collection**: Gather generated data using logging frameworks, metric collection systems, and tracing libraries.
+- **Storage**: Store collected data in a centralized location (database or data lake) for later query and analysis. Regular backups and automated retrieval systems help manage data accessibility.
+- **Analysis**: Analyze collected data for insights into system behavior and performance using dashboards, alerting systems, and machine learning models.
+- **Visualization**: Present data in visually understandable formats such as charts and graphs to identify trends and patterns.
+
+#### Observability vs Monitoring
+
+These two concepts are related but distinct:
+
+| Aspect | Monitoring | Observability |
+|--------|-----------|---------------|
+| Focus | Predefined metrics and alerts | Deeper insight and investigation |
+| Problem type | Known problems | Unknown and unexpected problems |
+| Approach | Reactive (alerts fire on thresholds) | Proactive and exploratory |
+| Questions asked | "Is this metric within bounds?" | "Why is this behaving unexpectedly?" |
+
+Monitoring checks predefined metrics and fires alerts when thresholds are exceeded. Observability enables deeper investigation into unexpected or novel system behaviors—helping teams understand not just that something is wrong, but why.
+
+#### Use Cases in AI
+
+In the context of artificial intelligence, observability is particularly critical because AI systems are non-deterministic and exhibit emergent behaviors that cannot always be anticipated in advance.
+
+**Examples of observability applied to AI:**
+
+- "We improved the observability of our microservices with better tracing and logging."
+- "We use monitoring tools, but observability helps us debug unexpected issues in our LLM pipelines."
+- Detecting prompt injection attempts by tracing the full request lifecycle through an LLM application.
+- Identifying model drift by correlating quality metric trends with model version deployments.
+- Tracking token consumption and latency to optimize cost efficiency in production RAG systems.
+
+Observability empowers teams to gain insights into the inner workings of AI systems, enabling informed decisions about model improvements, optimizations, and architecture changes. While monitoring primarily raises alerts when issues arise, observability enables investigation of root causes and strategies to enhance model performance.
 
 In the context of AI systems, observability must account for non-deterministic behavior, emergent capabilities, and the complex interaction patterns between models, tools, and external APIs. The stochastic nature of LLM outputs necessitates observability frameworks that can capture not only performance metrics but also semantic content, reasoning chains, and decision pathways.
 
@@ -141,6 +207,157 @@ This definition distinguishes agents from simple LLM completions by emphasizing 
 - **State transitions**: Monitoring how agent state evolves across multiple interaction cycles
 
 Agent observability provides visibility into the telemetry of each span, including the prompt (input), completion (output), and operational metrics such as token count (cost) and latency. This granular visibility enables debugging, optimization, and compliance verification in production AI systems.
+
+## Observability Signals for Generative AI
+
+The [Semantic Conventions for Generative AI](https://opentelemetry.io/docs/specs/semconv/gen-ai/) defined by OpenTelemetry focus on capturing insights into AI model behavior through three primary signals: Traces, Metrics, and Events. Together, these signals provide a comprehensive monitoring framework, enabling better cost management, performance tuning, and request tracing across LLM-based applications.
+
+References: [OpenTelemetry for Generative AI](https://opentelemetry.io/blog/2024/otel-generative-ai/) and [An Introduction to Observability for LLM-based applications using OpenTelemetry](https://opentelemetry.io/blog/2024/llm-observability/)
+
+### Traces: Tracing Model Interactions
+
+Traces track each model interaction's lifecycle, covering input parameters and response details. They provide visibility into each request, aiding in identifying bottlenecks and analyzing the impact of settings on model output. In orchestration frameworks like LangChain or LlamaIndex, traces monitor the entire lifecycle of an LLM request, covering retrieval steps, tool calls, and model invocations.
+
+Key trace attributes for LLMs:
+
+**Request Metadata:**
+- `temperature`: Indicates the level of creativity or randomness desired from the model's outputs. Varying this parameter can significantly impact the nature of generated content.
+- `top_p`: Decides how selective the model is by choosing from a percentage of most likely words. A high `top_p` value means the model considers a wider range of words, making text more varied.
+- `model_name` / version: Essential for tracking over time, as updates to the LLM may affect performance or response characteristics.
+- `prompt_details`: The exact inputs sent to the LLM, which can vary widely and affect output complexity and cost.
+
+**Response Metadata:**
+- `tokens`: Directly impacts cost and is a measure of response length and complexity.
+- `cost`: Critical for budgeting, as API-based costs scale with the number of requests and their complexity.
+- `response_details`: Provides insights into the model's output characteristics and potential areas of inefficiency or unexpected cost.
+
+### Metrics: Monitoring Usage and Performance
+
+Metrics aggregate high-level indicators essential for managing costs and performance. This data is particularly critical for API-dependent AI applications subject to rate limits and cost constraints.
+
+Key LLM metrics to monitor:
+
+| Metric | Description |
+|--------|-------------|
+| Request Volume | Total number of requests to the LLM service; helps identify demand patterns and usage anomalies |
+| Request Duration | Time for a request to be processed and a response received, including network latency and model generation time |
+| Token Counters | Total tokens consumed over time; essential for budgeting and cost optimization |
+| Cost Tracking | Cumulative API costs; monitors for unexpected increases indicating inefficient use |
+| Error Rate | Rate of failed requests or safety filter violations |
+| Latency Percentiles | p50, p95, p99 response times to detect degradation |
+
+### Events: Capturing Detailed Interactions
+
+Events log detailed moments during model execution, such as user prompts and model responses, providing a granular view of model interactions. These insights are invaluable for debugging and optimizing AI applications where unexpected behaviors may arise.
+
+The LLM Working Group recommends capturing prompt and completion content on events rather than span attributes, because many backend systems can struggle with those often large payloads.
+
+Events include:
+- User prompts sent to the model
+- Model responses and completions
+- Tool invocation results
+- Safety check outcomes
+- Retrieval results in RAG (Retrieval-Augmented Generation) systems
+
+Content capture can be enabled with the environment variable `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true`. Note that the Events API for message content capture is in active development within the OpenTelemetry specification.
+
+## Deploying AI Applications with Observability
+
+Observability practices differ depending on where AI applications are deployed. The two primary deployment contexts—local development machines and commercial cloud platforms—each present distinct challenges and tooling approaches. Many of the observability tools discussed in this document are open-source, meaning their source code is public and available for trial, allowing teams to evaluate and customize before committing to production deployments.
+
+### A) Local Computers
+
+When running AI applications locally (for development, research, or self-hosted inference), observability focuses on the following areas:
+
+**Infrastructure concerns:**
+- GPU utilization and VRAM consumption (critical for locally-hosted models)
+- CPU and memory usage per inference call
+- Model loading time and batching efficiency
+- Disk I/O during model weight loading
+
+**Application-level observability:**
+- Local traces exported to tools like [Jaeger](https://www.jaegertracing.io/) (run via Docker)
+- Metrics collected by [Prometheus](https://prometheus.io/) and visualized in [Grafana](https://grafana.com/)
+- Structured logging to local files or a lightweight log aggregator
+
+**Typical local observability stack:**
+
+```
+[LLM App / Inference Server]
+          |
+     (OpenLIT SDK)
+          |
+ (OpenTelemetry Collector)
+          |
+ -------------------------
+ | Prometheus  |  Jaeger  |
+ -------------------------
+          |
+      Grafana UI
+```
+
+To start a local Jaeger instance for trace visualization:
+
+```bash
+docker run --rm -it -d \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  --name jaeger \
+  jaegertracing/all-in-one:latest
+```
+
+Access the Jaeger UI at `http://localhost:16686`.
+
+**Tools suited for local deployment:** Langfuse (self-hosted), OpenLIT, OpenObserve, Grafana + Prometheus + Jaeger.
+
+### B) Commercial Cloud Platforms
+
+When deploying AI applications on commercial cloud platforms (Azure, AWS, GCP), observability leverages managed services that scale automatically and integrate with enterprise tooling.
+
+**Key cloud observability capabilities:**
+
+| Capability | Azure | AWS | GCP |
+|------------|-------|-----|-----|
+| Distributed Tracing | Azure Monitor Application Insights | AWS X-Ray | Cloud Trace |
+| Metrics | Azure Monitor | Amazon CloudWatch | Cloud Monitoring |
+| Log Aggregation | Log Analytics Workspace | CloudWatch Logs | Cloud Logging |
+| LLM-specific | Azure AI Foundry Observability | Bedrock Model Monitoring | Vertex AI Monitoring |
+| Serverless (FaaS) | Azure Functions | AWS Lambda | Cloud Functions |
+| Kubernetes | AKS + OTel Operator | EKS + OTel Operator | GKE + OTel Operator |
+
+OpenTelemetry supports the full spectrum of cloud deployment targets:
+
+- **Client-side Apps**: [OpenTelemetry on end-user controlled apps](https://opentelemetry.io/docs/platforms/client-apps/) running on devices.
+- **Functions as a Service**: [FaaS monitoring](https://opentelemetry.io/docs/platforms/faas/) across Azure, GCP, and AWS serverless platforms. Functions as a Service (FaaS) is an important serverless compute platform for cloud native apps.
+- **Kubernetes**: [OpenTelemetry with Kubernetes](https://opentelemetry.io/docs/platforms/kubernetes/) for automated deployment, scaling, and management of containerized AI applications.
+
+**Cloud LLM inference architecture:**
+
+```
+[LLM App / API]
+      |
+(OpenLLMetry / Langfuse SDK)
+      |
+(OpenTelemetry Collector)
+      |
+----------------------------------
+| Grafana + Prometheus + Jaeger  |
+----------------------------------
+      |
+(Optional: OpenLIT / OpenObserve UI)
+```
+
+For Azure specifically, the recommended observability stack integrates AI Foundry with Application Insights:
+
+```
+[Azure AI Foundry Agent]
+          |
+(Azure Monitor Application Insights)
+          |   (OTel Collector)
+          |
+[Foundry Observability Dashboard]
+```
 
 ## Observability in Generative AI Systems
 
@@ -186,35 +403,140 @@ The concept of "developer-friendly" observability emphasizes reducing friction i
 
 These principles are particularly relevant for AI agent observability, where developers need rapid feedback loops during agent development and debugging.
 
-## Open Source Observability Tools
+## Open Source Tools for LLM Observability
 
-### Langfuse
+There is an ecosystem of open-source observability tools specifically for LLMs and inference systems. The source code for these tools is public and available for trial, allowing teams to evaluate them in their own environments before adopting them for production. These tools can be grouped into several clear layers:
 
-[Langfuse](https://langfuse.com/) is an open-source LLM engineering platform that provides observability for AI applications. Langfuse represents agent runs as traces and spans:
+- **LLM-specific observability** (prompts, traces, evaluations)
+- **Agent and workflow observability**
+- **General telemetry** (logs, metrics, traces) adapted to AI
+- **Infrastructure and GPU monitoring** for inference servers
+
+### LLM-Specific Observability Platforms
+
+These platforms are the closest equivalents to "Datadog for LLMs"—purpose-built for understanding the behavior of language model applications.
+
+#### Langfuse
+
+[Langfuse](https://github.com/langfuse/langfuse) is an open-source LLM engineering platform and probably the most widely adopted OSS LLM observability tool. Langfuse represents agent runs as traces and spans:
 
 - **Trace**: Represents a complete agent task from start to finish, such as handling a user query or executing a multi-step workflow
 - **Span**: Individual steps within the trace, such as calling a language model, retrieving data from a vector database, or executing a tool
 
 Langfuse provides:
+- End-to-end tracing (LLM calls, RAG steps, agents)
+- Prompt versioning and management
+- Evaluation pipelines (hallucination detection, quality scoring)
+- Session replay (debug conversations)
 - Production monitoring with latency and cost tracking
-- Prompt management and versioning
-- Evaluation frameworks for quality assessment
 - User feedback collection and analysis
 
-The platform supports popular frameworks including LangChain, LlamaIndex, and native Python/JavaScript integrations.
+The platform integrates with LangChain, LlamaIndex, OpenAI SDK, and native Python/JavaScript clients.
 
-### Microsoft Azure AI Foundry
+**Use case**: Application-level observability for LLM apps
 
-[Microsoft Azure AI Foundry](https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry) (formerly known as Azure AI Studio) provides enterprise-grade infrastructure for building, training, and deploying AI applications with integrated observability.
+```
+App -> Langfuse SDK -> Langfuse backend -> Langfuse UI
+```
 
-Azure AI Foundry includes:
-- Built-in tracing with automatic instrumentation for supported frameworks
-- Integration with Azure Monitor for centralized logging
-- Prompt flow designer with visual debugging capabilities
-- Evaluation pipelines for systematic quality assessment
-- Cost management and optimization recommendations
+#### OpenLIT
 
-The platform natively implements OpenTelemetry standards, enabling seamless integration with third-party observability tools.
+[OpenLIT](https://openlit.io/) provides a full OpenTelemetry-native observability stack for Generative AI. It is designed as a full-stack observability solution covering both application and infrastructure layers.
+
+OpenLIT covers:
+- Tracing, metrics, and logs in a unified view
+- GPU monitoring (important for self-hosted inference servers)
+- Prompt management and evaluation
+- Support for LLMs, vector databases, and infrastructure in one platform
+
+OpenLIT aligns with the GenAI semantic conventions established by the OpenTelemetry community and does not rely on vendor-specific span attributes or environment variables for OTLP endpoint configuration.
+
+**Use case**: Full-stack observability (LLM + infrastructure)
+
+To instrument a Python LLM application with OpenLIT:
+
+```bash
+pip install openlit
+```
+
+```python
+import openlit
+
+openlit.init(otlp_endpoint="YOUR_OTELCOL_URL:4318")
+```
+
+#### OpenLLMetry
+
+[OpenLLMetry](https://github.com/traceloop/openllmetry) (Open Large Language Model Telemetry) is an open-source observability toolkit built on top of OpenTelemetry that offers specialized instrumentation for LLM applications.
+
+OpenLLMetry tracks:
+- Latency, errors, and token usage
+- Request traces across distributed services
+- Prompt and completion details
+
+OpenLLMetry exports to standard observability backends including Prometheus, Grafana, and Jaeger—making it easy to integrate with existing monitoring infrastructure.
+
+**Use case**: OpenTelemetry for LLM calls, integrating with existing telemetry stacks
+
+#### OpenObserve
+
+[OpenObserve](https://openobserve.ai/) is a unified observability platform for:
+- Logs, metrics, traces, and LLM telemetry in one place
+- SQL-based querying across infrastructure and AI data
+- Very efficient storage using columnar format
+
+**Use case**: Replace Prometheus + Loki + Tempo + LLM-specific tool with a single unified platform
+
+### Agent and Workflow Observability
+
+These tools are important when running multi-step agents or tool-using systems. This is the next wave of LLM observability, focused on understanding agent behavior rather than just individual LLM calls.
+
+#### OpenClawWatch
+
+[OpenClawWatch](https://github.com/Metabuilder-Labs/openclawwatch) focuses on agent behavior, not just LLM calls.
+
+OpenClawWatch tracks:
+- Tool usage patterns across agent runs
+- Safety issues and policy violations
+- Behavioral drift over time
+- Includes alerting and validation capabilities
+
+**Use case**: Safety and behavioral monitoring for agentic systems
+
+#### Monocle2AI
+
+[Monocle2AI](https://github.com/monocle2ai/monocle) (the actual package is `monocle`) provides OpenTelemetry-style tracing for LLM and agent systems.
+
+Monocle2AI is designed to make LLM and agent systems observable without heavy manual instrumentation. It focuses on:
+- Tracing reasoning chains and multi-step workflows
+- Tracking tool calls and retrieval steps
+- Recording failures and retries
+- Enabling testing and evaluation on captured traces
+
+Monocle2AI connects to any OpenTelemetry-compatible backend:
+
+```
+App -> Monocle instrumentation -> OpenTelemetry -> ANY backend
+                                         |
+                             (Jaeger / Grafana / Langfuse / etc.)
+```
+
+**Use case**: OpenTelemetry-style tracing for LLM/agent systems without vendor lock-in
+
+### General Telemetry Stack
+
+All serious LLM observability tools build on [OpenTelemetry](https://opentelemetry.io/docs/) (OTel) as their foundation. OpenTelemetry is a vendor-neutral open-source Observability framework for instrumenting, generating, collecting, and exporting telemetry data such as traces, metrics, and logs.
+
+The standard foundation provides:
+- **Traces**: Request lifecycle tracking across distributed services
+- **Metrics**: Aggregated measurements for performance and cost
+- **Logs**: Structured event records for debugging
+
+You combine LLM-specific tools with the general telemetry stack:
+- [Prometheus](https://prometheus.io/) for metrics storage and alerting
+- [Grafana](https://grafana.com/) for visualization and dashboards
+- [Jaeger](https://www.jaegertracing.io/) for distributed trace visualization
+- [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) for data pipeline routing
 
 ### LangSmith
 
@@ -229,6 +551,138 @@ Key features include:
 - **Dataset management**: Version-controlled test datasets for reproducible evaluations
 
 LangSmith supports the complete development lifecycle from prototyping through production monitoring.
+
+### Microsoft Azure AI Foundry
+
+[Microsoft Azure AI Foundry](https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry) (formerly known as Azure AI Studio) provides enterprise-grade infrastructure for building, training, and deploying AI applications with integrated observability.
+
+Azure AI Foundry includes:
+- Built-in tracing with automatic instrumentation for supported frameworks
+- Integration with Azure Monitor for centralized logging
+- Prompt flow designer with visual debugging capabilities
+- Evaluation pipelines for systematic quality assessment
+- Cost management and optimization recommendations
+
+The platform natively implements OpenTelemetry standards, enabling seamless integration with third-party observability tools.
+
+## What You Monitor in LLM Inference Systems
+
+Effective observability for LLM inference systems requires monitoring at two distinct levels: the application level (LLM-specific) and the system or infrastructure level.
+
+### Application-Level Monitoring (LLM-Specific)
+
+| Signal | Description |
+|--------|-------------|
+| Prompt and response traces | Full request lifecycle including prompt construction, model call, and response processing |
+| Token usage and cost | Input and output token counts mapped to provider pricing |
+| Latency per request | Time-to-first-token (TTFT) and total request duration |
+| Hallucination signals | Quality scoring against ground truth or reference documents |
+| Safety violations | Content policy breaches detected by safety filters |
+| Retrieval accuracy | Relevance and groundedness of RAG document retrieval |
+
+### System-Level Monitoring (Inference Servers)
+
+| Signal | Description |
+|--------|-------------|
+| GPU utilization | Percentage of GPU compute capacity in use |
+| GPU memory (VRAM) | Memory consumption per model and batch |
+| Throughput | Tokens generated per second across the inference cluster |
+| Queue latency | Time requests spend waiting before inference begins |
+| Model load time | Time to load model weights into GPU memory |
+| Batching efficiency | Ratio of actual batch size to maximum batch size |
+
+### Combined Monitoring with OpenLIT
+
+Tools like [OpenLIT](https://openlit.io/) combine both layers in a single OpenTelemetry-native observability stack, allowing a single dashboard to show GPU metrics alongside LLM call traces and token usage.
+
+OpenTelemetry helps in identifying bottlenecks in response time, managing costs per request, and analyzing the success of prompt engineering. For a complete introduction, see [An Introduction to Observability for LLM-based applications using OpenTelemetry](https://opentelemetry.io/blog/2024/llm-observability/).
+
+**A real-world cloud LLM inference architecture:**
+
+```
+[LLM App / API]
+      |
+(OpenLLMetry / Langfuse SDK)
+      |
+(OpenTelemetry Collector)
+      |
+----------------------------------
+| Grafana + Prometheus + Jaeger  |
+----------------------------------
+      |
+(Optional: OpenLIT / OpenObserve UI)
+```
+
+## Azure AI Observability
+
+Azure provides a comprehensive observability stack for large language models and generative AI applications, integrating purpose-built AI tools with enterprise monitoring infrastructure. Azure also integrates with platforms like Datadog and Elastic to provide specialized, full-stack observability for Azure OpenAI and AI Foundry users.
+
+Reference: [Observability in generative AI](https://learn.microsoft.com/en-us/azure/foundry/concepts/observability) and [Azure AI Foundry Observability](https://azure.microsoft.com/en-us/products/ai-foundry/observability)
+
+### Azure AI Foundry
+
+[Azure AI Foundry](https://azure.microsoft.com/en-us/products/ai-foundry/observability) is the core platform for managing the AI lifecycle, providing evaluation of AI responses regarding quality, safety, and reliability. It delivers three core observability capabilities:
+
+**Evaluation**: Evaluators measure the quality, safety, and reliability of AI responses throughout development. Microsoft Foundry provides built-in evaluators including:
+- General-purpose quality metrics (coherence, fluency)
+- RAG-specific metrics (groundedness, relevance)
+- Safety and security (hate/unfairness, violence, protected materials)
+- Agent-specific metrics (tool call accuracy, task completion)
+- Custom evaluators tailored to domain-specific requirements
+
+**Monitoring**: Production monitoring ensures deployed AI applications maintain quality in real-world conditions. Integrated with Azure Monitor Application Insights, Microsoft Foundry delivers real-time dashboards tracking:
+- Operational metrics (token consumption, latency, error rates)
+- Quality scores against configured thresholds
+- Continuous evaluation of production traffic at a sampled rate
+- Scheduled adversarial red teaming for safety and security probing
+
+**Tracing**: Distributed tracing captures the execution flow of AI applications, providing visibility into LLM calls, tool invocations, agent decisions, and inter-service dependencies. Tracing is built on OpenTelemetry standards and supports LangChain, LangGraph, OpenAI Agents SDK, and the Microsoft Agent Framework.
+
+The AI application lifecycle evaluation spans three stages:
+1. **Base model selection**: Compare foundation models on quality, task performance, ethical considerations, and safety profiles.
+2. **Pre-production evaluation**: Validate performance through evaluation datasets, identify edge cases, assess robustness, and measure task adherence, groundedness, relevance, and safety.
+3. **Post-production monitoring**: Continuous monitoring of quality and performance in real-world conditions, with alerts when outputs fail quality thresholds.
+
+**Prompt Flow**: A suite of development tools to streamline the LLM app development cycle from prototyping to deployment and monitoring. Note: Microsoft recommends migrating Prompt Flow workloads to the Microsoft Agent Framework.
+
+**Azure AI Content Safety**: Integrated within AI Foundry to enforce safety checks on LLM prompts and completions. Reference: [Enforce content safety checks on LLM requests](https://learn.microsoft.com/en-us/azure/api-management/llm-content-safety-policy).
+
+**AI Red Teaming**: The AI red teaming agent simulates complex attacks using Microsoft's PyRIT framework to identify safety and security vulnerabilities before deployment.
+
+### Azure Monitor Application Insights
+
+[Azure Monitor Application Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview) provides detailed tracing and metrics for AI applications. It features a specialized "Agent details" view to visualize agentic workflows and debug complex interactions.
+
+Key capabilities:
+- Real-time dashboards for operational metrics
+- Distributed tracing across AI application components
+- Token consumption and latency monitoring
+- Error rate tracking and alerting
+- Integration with OpenTelemetry for vendor-neutral instrumentation
+
+Reference: [Introduction to Application Insights - OpenTelemetry observability](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
+
+### Metrics to Track on Azure
+
+According to Microsoft and industry practices, effective LLM observability on Azure should focus on:
+
+| Metric | Description |
+|--------|-------------|
+| Latency | Time taken for requests to complete |
+| Token Usage | Cost and performance impact of input and output tokens |
+| Quality Metrics | Groundedness, relevance, and safety violations |
+| Retrieval Accuracy | Performance of RAG document retrieval |
+| Model Drift | Changes in model behavior over time |
+
+Reference: [LLM Observability for Azure AI Foundry](https://www.elastic.co/observability-labs/blog/llm-observability-azure-ai-foundry)
+
+### OpenTelemetry Integration with Azure
+
+Azure uses OpenTelemetry (OTel) to instrument applications, allowing for vendor-neutral tracing and collection of telemetry data. This ensures that Azure AI workloads can be monitored using any OTel-compatible backend.
+
+Reference: [Observability for pro-code generative AI solutions](https://learn.microsoft.com/en-us/microsoft-cloud/dev/copilot/isv/observability-for-ai)
+
+For comprehensive guidance on AI observability in production, see [Chapter 12: Keeping a Log: Observability](https://azure.github.io/AI-in-Production-Guide/chapters/chapter_12_keeping_log_observability).
 
 ## Implementing Observability in VS Code
 
@@ -540,6 +994,40 @@ This end-to-end approach demonstrates how observability becomes a critical enabl
 
 The autonomous nature of AI agents introduces unique security considerations that must be addressed through observability:
 
+### Malicious Tool Detection Analysis Document
+
+A companion reference document, [malicious-tool-detection-analysis.md](malicious-tool-detection-analysis.md), provides an in-depth technical analysis of how observability can and cannot detect malicious tools in VS Code and AI agent environments. The source code and documents in this repository are public and available for trial—anyone can clone and adapt both the tooling and the analysis for their own AI observability setup.
+
+**What the document covers:**
+
+| Section | Description |
+|---------|-------------|
+| Observability Capabilities | What behavioral indicators can be detected (file access rates, network patterns, command execution, credential access) |
+| Specific Detection Patterns | Quantified metrics and thresholds for detecting malicious file I/O, network exfiltration, process spawning, and VS Code extension abuse |
+| Fundamental Limitations | Why observability alone is insufficient: intentionality gap, adversarial evasion, baseline dependency, semantic blindness |
+| VS Code Security Architecture | Extension marketplace scanning, Workspace Trust model, permissions model, sandboxing gaps |
+| Real-World Case Studies | eslint-scope compromise, AquaSec VS Code extension malware research, CodeCov incident, event-stream npm attack, Copilot prompt injection research |
+| Best Practices | Defense-in-depth patterns, least-privilege tool registries, anomaly baselines, supply chain security, runtime detection rules |
+| Actionable Recommendations | Tiered alerting, immutable audit logs, circuit breakers, human-in-the-loop approval for high-risk tools |
+
+**Key finding from the document:**
+
+> Observability is necessary but not sufficient for detecting malicious tools in AI agent environments. It is a detective control, not a preventive one—it must be combined with sandboxing, least-privilege permissions, code signing, and runtime isolation for effective defense.
+
+**How to use this document with AI Agents and VS Code:**
+
+1. **During tool vetting**: Before installing a VS Code extension or adding a tool to an AI agent, consult Section 5 (Case Studies) and Section 6 (Best Practices) to understand what behavioral signatures to watch for and how to configure observability to catch them.
+
+2. **Configuring observability baselines**: Use the YAML baselines in Section 6.4 as a starting template for setting alert thresholds in OpenTelemetry-based systems (Langfuse, OpenLIT, Grafana). Instrument file reads, network requests, and process spawning with the attribute schemas shown in Section 6.3.
+
+3. **Implementing detection rules**: Copy the YAML detection rules from Section 6.7 into your alert manager (Grafana Alerting, Azure Monitor Alerts) to trigger notifications or automatic circuit breakers when agents access credential files, perform mass file reads, or contact unknown network destinations.
+
+4. **Incident response**: When a Langfuse or Azure Monitor alert fires during an AI agent session in VS Code, use the document's detection patterns (Sections 2 and 5) to cross-reference the telemetry and determine whether the behavior matches a known malicious pattern or is a false positive.
+
+5. **Extension auditing**: Use the extension vetting shell scripts in Section 6.6 to scan installed VS Code extensions for suspicious patterns (`child_process`, `eval`, `Function()`) before allowing them to run in environments where AI agents have elevated access.
+
+6. **Supply chain hardening**: Apply the dependency verification practices (Section 6.5) using tools such as Socket.dev, Snyk, and `pip-audit` to monitor the packages installed by AI-generated code suggestions before they enter your development environment.
+
 ### Detection of Malicious Tools
 
 A critical concern for practitioners is whether observability systems can detect malicious tools integrated into the development environment. This concern encompasses:
@@ -715,30 +1203,59 @@ The weather dashboard demonstrates how observability integrates seamlessly into 
 6. [VS Code - Agents Tutorial](https://code.visualstudio.com/docs/copilot/agents/agents-tutorial)
 7. [VS Code - Monitoring Agents with OpenTelemetry](https://code.visualstudio.com/docs/copilot/guides/monitoring-agents)
 
+### Companion Documents
+
+8. [malicious-tool-detection-analysis.md](malicious-tool-detection-analysis.md) — In-depth technical analysis of detecting malicious tools through observability in VS Code and AI agent environments. Covers behavioral detection patterns, VS Code security architecture gaps, real-world case studies (eslint-scope, CodeCov, event-stream), and actionable best practices with code examples for alert rules, circuit breakers, and supply chain security.
+
 ### Platform Documentation
 
-8. [Monte Carlo Data - API Documentation](https://docs.getmontecarlo.com/docs/api)
-9. [Monte Carlo Data - What is Data Observability?](https://www.montecarlodata.com/blog-what-is-data-observability/)
-10. [Monte Carlo Data - Developer-Friendly Observability](https://www.montecarlodata.com/blog-developer-friendly-data-observability)
-11. [Langfuse - LLM Observability Platform](https://langfuse.com/)
-12. [LangSmith - Observability](https://www.langchain.com/langsmith/observability)
+9. [Monte Carlo Data - API Documentation](https://docs.getmontecarlo.com/docs/api)
+10. [Monte Carlo Data - What is Data Observability?](https://www.montecarlodata.com/blog-what-is-data-observability/)
+11. [Monte Carlo Data - Developer-Friendly Observability](https://www.montecarlodata.com/blog-developer-friendly-data-observability)
+12. [Langfuse - LLM Observability Platform](https://langfuse.com/)
+13. [LangSmith - Observability](https://www.langchain.com/langsmith/observability)
 
 ### Case Studies and Tutorials
 
-13. [Anthropic - Claude Agent SDK: The Observability Agent](https://platform.claude.com/cookbook/claude-agent-sdk-02-the-observability-agent)
-14. [Microsoft - Building an End-to-End Agentic SDLC with Azure and GitHub](https://techcommunity.microsoft.com/blog/appsonazureblog/an-ai-led-sdlc-building-an-end-to-end-agentic-software-development-lifecycle-wit/4491896)
-15. [GitHub Blog - Spec-Driven Development with AI](https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/)
+14. [Anthropic - Claude Agent SDK: The Observability Agent](https://platform.claude.com/cookbook/claude-agent-sdk-02-the-observability-agent)
+15. [Microsoft - Building an End-to-End Agentic SDLC with Azure and GitHub](https://techcommunity.microsoft.com/blog/appsonazureblog/an-ai-led-sdlc-building-an-end-to-end-agentic-software-development-lifecycle-wit/4491896)
+16. [GitHub Blog - Spec-Driven Development with AI](https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/)
 
 ### Open Source Tools
 
-16. [GitHub Spec-Kit - Spec-Driven Development Toolkit](https://github.com/github/spec-kit)
+17. [GitHub Spec-Kit - Spec-Driven Development Toolkit](https://github.com/github/spec-kit)
+18. [Langfuse - Open Source LLM Observability](https://github.com/langfuse/langfuse)
+19. [OpenLIT - OpenTelemetry-native GenAI Observability](https://openlit.io/)
+20. [OpenLLMetry - OpenTelemetry for LLM Applications](https://github.com/traceloop/openllmetry)
+21. [OpenObserve - Unified Observability Platform](https://openobserve.ai/)
+22. [OpenClawWatch - Agent Behavior Monitoring](https://github.com/Metabuilder-Labs/openclawwatch)
+23. [Monocle2AI - OTel-style Tracing for LLM/Agent Systems](https://github.com/monocle2ai/monocle)
+
+### OpenTelemetry Resources
+
+24. [OpenTelemetry for Generative AI](https://opentelemetry.io/blog/2024/otel-generative-ai/)
+25. [An Introduction to Observability for LLM-based applications using OpenTelemetry](https://opentelemetry.io/blog/2024/llm-observability/)
+26. [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
+27. [OpenTelemetry - Client Apps](https://opentelemetry.io/docs/platforms/client-apps/)
+28. [OpenTelemetry - Functions as a Service](https://opentelemetry.io/docs/platforms/faas/)
+29. [OpenTelemetry - Kubernetes](https://opentelemetry.io/docs/platforms/kubernetes/)
+
+### Azure AI Observability Resources
+
+30. [Azure AI Foundry - Observability in Generative AI](https://learn.microsoft.com/en-us/azure/foundry/concepts/observability)
+31. [Azure AI Foundry Observability Portal](https://azure.microsoft.com/en-us/products/ai-foundry/observability)
+32. [Observability for pro-code generative AI solutions](https://learn.microsoft.com/en-us/microsoft-cloud/dev/copilot/isv/observability-for-ai)
+33. [Azure API Management - Enforce content safety checks on LLM requests](https://learn.microsoft.com/en-us/azure/api-management/llm-content-safety-policy)
+34. [Introduction to Application Insights - OpenTelemetry observability](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
+35. [LLM Observability for Azure AI Foundry (Elastic)](https://www.elastic.co/observability-labs/blog/llm-observability-azure-ai-foundry)
+36. [Chapter 12: Keeping a Log: Observability - AI in Production Guide](https://azure.github.io/AI-in-Production-Guide/chapters/chapter_12_keeping_log_observability)
 
 ## Conclusion
 
-Observability for AI agents in software development environments represents an essential capability for building reliable, transparent, and traceable AI systems. By implementing monitoring through OpenTelemetry, leveraging specialized platforms like Langfuse and Azure AI Foundry, and integrating observability throughout the development lifecycle, practitioners can gain deep insights into agent behavior, optimize performance, ensure security, and maintain compliance.
+Observability for AI agents within software development workflows and across local and cloud environments represents an essential capability for building reliable, transparent, and traceable AI systems. By implementing monitoring through OpenTelemetry, leveraging specialized platforms like Langfuse and Azure AI Foundry, and integrating observability throughout the development lifecycle, practitioners can gain deep insights into agent behavior, optimize performance, ensure security, and maintain compliance.
 
 ---
 
 **License**: MIT
 
-**Last Updated**: April 16, 2026
+**Last Updated**: May 5, 2026
