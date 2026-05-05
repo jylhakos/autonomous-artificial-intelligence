@@ -39,8 +39,19 @@ This document presents observability practices for AI agents within software dev
     - [Monocle2AI](#monocle2ai)
   - [General Telemetry Stack](#general-telemetry-stack)
   - [LangSmith](#langsmith)
+  - [LangWatch](#langwatch)
+  - [Langflow](#langflow)
+  - [LangSmith, Langfuse, and LangWatch: Feature Comparison](#langsmith-langfuse-and-langwatch-feature-comparison)
   - [Microsoft Azure AI Foundry](#microsoft-azure-ai-foundry)
 - [What You Monitor in LLM Inference Systems](#what-you-monitor-in-llm-inference-systems)
+  - [Four Pillars of LLM Monitoring](#four-pillars-of-llm-monitoring)
+  - [LLM Inference Stages](#llm-inference-stages)
+  - [Key Inference Metrics: TTFT, TPOT, TPS](#key-inference-metrics-ttft-tpot-tps)
+  - [Application-Level Monitoring (LLM-Specific)](#application-level-monitoring-llm-specific)
+  - [System-Level Monitoring (Inference Servers)](#system-level-monitoring-inference-servers)
+  - [Combined Monitoring with OpenLIT](#combined-monitoring-with-openlit)
+  - [vLLM Monitoring](#vllm-monitoring)
+  - [llama.cpp Monitoring](#llamacpp-monitoring)
 - [Azure AI Observability](#azure-ai-observability)
   - [Azure AI Foundry](#azure-ai-foundry)
   - [Azure Monitor Application Insights](#azure-monitor-application-insights)
@@ -146,7 +157,7 @@ Observability is the ability to understand the internal state of a system based 
 
 #### Modern Context
 
-In modern contexts—such as cloud applications, microservices, and DevOps—observability refers to how well you can understand what is happening inside a system based on its outputs. It goes beyond simple monitoring by enabling practitioners to diagnose and explore unknown issues, not just track known ones. Observability helps developers monitor, troubleshoot, and debug complex systems by providing a comprehensive view of their behavior and performance.
+In modern contexts—such as cloud applications, microservices, and DevOps—observability refers to how well you can understand what is happening inside a system based on its outputs. It goes beyond simple monitoring by enabling practitioners to diagnose and explore unknown issues, not just track known ones. Observability helps developers monitor, troubleshoot, and debug complex systems by providing a view of their behavior and performance.
 
 Implementing observability requires a toolbox of techniques and tools covering the three pillars:
 
@@ -210,7 +221,7 @@ Agent observability provides visibility into the telemetry of each span, includi
 
 ## Observability Signals for Generative AI
 
-The [Semantic Conventions for Generative AI](https://opentelemetry.io/docs/specs/semconv/gen-ai/) defined by OpenTelemetry focus on capturing insights into AI model behavior through three primary signals: Traces, Metrics, and Events. Together, these signals provide a comprehensive monitoring framework, enabling better cost management, performance tuning, and request tracing across LLM-based applications.
+The [Semantic Conventions for Generative AI](https://opentelemetry.io/docs/specs/semconv/gen-ai/) defined by OpenTelemetry focus on capturing insights into AI model behavior through three primary signals: Traces, Metrics, and Events. Together, these signals provide a monitoring framework, enabling better cost management, performance tuning, and request tracing across LLM-based applications.
 
 References: [OpenTelemetry for Generative AI](https://opentelemetry.io/blog/2024/otel-generative-ai/) and [An Introduction to Observability for LLM-based applications using OpenTelemetry](https://opentelemetry.io/blog/2024/llm-observability/)
 
@@ -552,6 +563,77 @@ Key features include:
 
 LangSmith supports the complete development lifecycle from prototyping through production monitoring.
 
+### LangWatch
+
+[LangWatch](https://github.com/langwatch/langwatch) is an open-source LLM monitoring and evaluation platform designed for frictionless integration. It captures traces from any LLM application with a single environment variable and provides a live, real-time view of requests as they arrive.
+
+Key features include:
+
+- **Single-line setup**: Set `LANGWATCH_API_KEY` and all LLM calls are automatically captured without additional instrumentation code
+- **Live trace feed**: A real-time scrolling feed of requests with immediate inspection of inputs, outputs, and intermediate steps
+- **Detailed trace breakdown**: Full breakdown of multi-step workflows showing parent-child span relationships, latency, and token counts per step
+- **Evaluation pipelines**: Automated quality checks, guardrails, and LLM-as-judge scoring on production traces
+- **Dataset management**: Collect production traces into datasets and run offline experiments
+
+LangWatch integrates with LangChain, OpenAI, and any framework that exposes standard model call interfaces.
+
+**Setup example:**
+
+```python
+import langwatch
+
+langwatch.init()  # Reads LANGWATCH_API_KEY from environment
+```
+
+Or configure entirely via environment variable for zero-code integration:
+
+```bash
+export LANGWATCH_API_KEY="your-api-key"
+```
+
+**Use case**: Open-source, zero-friction observability for LLM applications with emphasis on developer experience and rapid debugging.
+
+### Langflow
+
+[Langflow](https://github.com/langflow-ai/langflow) is a low-code platform for building, deploying, and managing AI-powered agents and workflows. It provides a visual drag-and-drop interface for composing LLM pipelines and integrates natively with LangSmith, Langfuse, and LangWatch for observability—each enabled by setting the appropriate environment variables.
+
+Key capabilities:
+
+- **Visual pipeline builder**: Drag-and-drop composition of LLM chains, RAG pipelines, and multi-agent workflows
+- **Native observability integrations** via environment variables:
+  - LangSmith: `LANGCHAIN_TRACING_V2=true`, `LANGCHAIN_API_KEY`, `LANGCHAIN_PROJECT`
+  - Langfuse: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`
+  - LangWatch: `LANGWATCH_API_KEY`
+- **Built-in API serving**: Deployed flows are immediately available as REST endpoints
+- **Component library**: Pre-built integrations for OpenAI, Anthropic, Hugging Face, vector databases, and retrieval tools
+
+**Use case**: Rapid prototyping and deployment of LLM pipelines with first-class observability integrations across all major platforms.
+
+Reference: [LLM Observability Explained with Langfuse, LangSmith, and LangWatch](https://www.langflow.org/blog/llm-observability-explained-feat-langfuse-langsmith-and-langwatch)
+
+### LangSmith, Langfuse, and LangWatch: Feature Comparison
+
+These three platforms each address LLM observability from a different angle. The central data structure for all three is the **trace**—a structured record of the complete request journey, capturing parent-child span relationships, latency, and token counts at each step.
+
+| Feature | LangSmith | Langfuse | LangWatch |
+|---------|-----------|----------|-----------|
+| Open Source | No | Yes (MIT / AGPL-3.0) | Yes |
+| Self-hosting | Enterprise plan | Docker, Kubernetes | Yes |
+| Primary ecosystem | LangChain / LangGraph | Framework-agnostic | Framework-agnostic |
+| Tracing | Yes | Yes | Yes |
+| Evaluation / LLM-as-judge | Yes (built-in) | Yes | Yes |
+| Prompt management | Yes | Yes | Yes |
+| Cost tracking | Yes | Yes (granular per operation) | Yes |
+| OpenTelemetry support | Partial | Yes | Yes |
+| Human feedback collection | Yes | Yes | Yes |
+| Best for | LangChain-heavy stacks, polished production UI | Complex agent chains, data privacy (self-host) | Frictionless zero-code setup, open-source simplicity |
+
+References:
+- [LangSmith Observability](https://www.langchain.com/langsmith/observability) — [LangSmith Monitoring](https://info.langchain.com/llm-monitoring)
+- [Langfuse](https://langfuse.com/) — [GitHub](https://github.com/langfuse/langfuse)
+- [LangWatch](https://github.com/langwatch/langwatch)
+- [LLM Observability Explained — Langflow Blog](https://www.langflow.org/blog/llm-observability-explained-feat-langfuse-langsmith-and-langwatch)
+
 ### Microsoft Azure AI Foundry
 
 [Microsoft Azure AI Foundry](https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry) (formerly known as Azure AI Studio) provides enterprise-grade infrastructure for building, training, and deploying AI applications with integrated observability.
@@ -567,7 +649,57 @@ The platform natively implements OpenTelemetry standards, enabling seamless inte
 
 ## What You Monitor in LLM Inference Systems
 
-Effective observability for LLM inference systems requires monitoring at two distinct levels: the application level (LLM-specific) and the system or infrastructure level.
+Effective observability for LLM inference systems requires monitoring at multiple levels, covering the full spectrum from user-facing quality and safety signals to infrastructure-level performance metrics. The sections below progress from conceptual framing (pillars, inference stages, metric definitions) to concrete monitoring tables and inference-server-specific instrumentation.
+
+### Four Pillars of LLM Monitoring
+
+Industry practice—as articulated by platforms such as [LangSmith](https://info.langchain.com/llm-monitoring)—organizes LLM monitoring around four key pillars:
+
+| Pillar | What to Track |
+|--------|---------------|
+| **Performance** | Latency (TTFT, E2E), throughput (TPS), error rates, p50/p99 response times, request queue depth |
+| **Quality** | Hallucination scores, groundedness, relevance, LLM-as-judge evaluations, user feedback signals, semantic drift over time |
+| **Cost** | Token usage (prompt + completion tokens), cost per request, cost per user session, cumulative cost trends |
+| **Safety** | Content policy violations, toxicity scores, bias signals, prompt injection attempts, PII leakage detection |
+
+These four pillars map directly to the capabilities provided by LangSmith, Langfuse, LangWatch, and OpenLIT. Together they provide a complete picture of both user experience (quality, safety) and operational efficiency (performance, cost).
+
+Reference: [Know When Your LLM Starts Failing — LangSmith Monitoring](https://info.langchain.com/llm-monitoring)
+
+### LLM Inference Stages
+
+Understanding the stages of LLM inference is essential for interpreting latency metrics correctly. A single request passes through four stages:
+
+1. **Prompt**: The user provides a query or input to the system.
+2. **Queuing**: The request joins a processing queue, waiting for compute resources to become available on the inference server.
+3. **Prefill**: The LLM processes the entire input prompt in a single parallel forward pass, computing the KV cache for all prompt tokens. This step scales with prompt length.
+4. **Generation (Decode)**: The model generates the response one token at a time, in an autoregressive loop. This step dominates total response time for long outputs and scales with the number of output tokens.
+
+```
+Prompt → Queuing → Prefill → Generation (autoregressive decode)
+```
+
+The transition from **Prefill** to **Generation** is where TTFT is measured. The **Generation** stage is where TPOT (inter-token latency) is observed.
+
+Reference: [LLM Benchmarking Fundamental Concepts — NVIDIA Developer Blog](https://developer.nvidia.com/blog/llm-benchmarking-fundamental-concepts/)
+
+### Key Inference Metrics: TTFT, TPOT, TPS
+
+| Metric | Full Name | Definition |
+|--------|-----------|------------|
+| **TTFT** | Time to First Token | Time from request receipt until the first output token is generated. Dominated by queue time and the prefill stage. Measures perceived responsiveness. |
+| **TPOT** | Time Per Output Token | Average time between consecutive generated tokens during the decode stage. Also called ITL (Inter-Token Latency). Determines streaming smoothness. |
+| **TPS** | Tokens Per Second | Total output tokens generated per second across all concurrent requests. The primary throughput metric for inference infrastructure. |
+| **E2E Latency** | End-to-End Latency | Total time from request receipt to last token returned. Equals TTFT plus the cumulative generation time. Represents the full user-perceived wait for a complete response. |
+
+$$\text{E2E Latency} = \text{TTFT} + \text{TPOT} \times (N_{\text{output tokens}} - 1)$$
+
+Diagnosing bottlenecks:
+- **High TTFT** → Prefill bottleneck (prompt too long, high queue depth, under-provisioned compute)
+- **High TPOT** → Decode bottleneck (model too large for available GPU memory bandwidth)
+- **Low TPS** → Batching inefficiency or hardware under-utilization
+
+Reference: [LLM Benchmarking Fundamental Concepts — NVIDIA Developer Blog](https://developer.nvidia.com/blog/llm-benchmarking-fundamental-concepts/)
 
 ### Application-Level Monitoring (LLM-Specific)
 
@@ -613,9 +745,98 @@ OpenTelemetry helps in identifying bottlenecks in response time, managing costs 
 (Optional: OpenLIT / OpenObserve UI)
 ```
 
+### vLLM Monitoring
+
+[vLLM](https://github.com/vllm-project/vllm) is a high-throughput, memory-efficient inference engine for LLMs. It exposes a Prometheus-compatible `/metrics` endpoint on the same port as its API server (default: 8000), enabling direct integration with any Prometheus-compatible monitoring stack.
+
+**Scraping the metrics endpoint:**
+
+```bash
+curl http://0.0.0.0:8000/metrics
+```
+
+Example output:
+
+```
+# HELP vllm:num_requests_running Number of requests in model execution batches.
+# TYPE vllm:num_requests_running gauge
+vllm:num_requests_running{model_name="meta-llama/Llama-3.1-8B-Instruct"} 8.0
+
+# HELP vllm:generation_tokens_total Number of generation tokens processed.
+# TYPE vllm:generation_tokens_total counter
+vllm:generation_tokens_total{model_name="meta-llama/Llama-3.1-8B-Instruct"} 27453.0
+
+# HELP vllm:time_to_first_token_seconds Histogram of time to first token in seconds.
+# TYPE vllm:time_to_first_token_seconds histogram
+vllm:time_to_first_token_seconds_bucket{le="0.02",model_name="..."} 13.0
+vllm:time_to_first_token_seconds_bucket{le="0.04",model_name="..."} 97.0
+```
+
+**Key vLLM Prometheus metrics:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `vllm:num_requests_running` | Gauge | Requests currently executing in model batches |
+| `vllm:num_requests_waiting` | Gauge | Requests queued, not yet scheduled |
+| `vllm:kv_cache_usage_perc` | Gauge | Fraction of KV cache blocks in use (0–1) |
+| `vllm:time_to_first_token_seconds` | Histogram | TTFT per request |
+| `vllm:inter_token_latency_seconds` | Histogram | TPOT / ITL per request |
+| `vllm:e2e_request_latency_seconds` | Histogram | End-to-end request latency |
+| `vllm:prompt_tokens_total` | Counter | Cumulative prompt tokens processed |
+| `vllm:generation_tokens_total` | Counter | Cumulative generated tokens |
+| `vllm:request_prefill_time_seconds` | Histogram | Time spent in prefill stage |
+| `vllm:request_decode_time_seconds` | Histogram | Time spent in decode stage |
+| `vllm:request_queue_time_seconds` | Histogram | Time requests spent waiting in queue |
+| `vllm:prefix_cache_queries` | Counter | Number of prefix cache queries (for caching efficiency) |
+| `vllm:prefix_cache_hits` | Counter | Number of prefix cache hits |
+
+**Grafana dashboard**: vLLM provides a [reference Prometheus + Grafana example](https://github.com/vllm-project/vllm/blob/main/examples/observability/prometheus_grafana/README.md) for collecting and visualizing these metrics with a pre-built dashboard. See also [Monitoring Dashboards](https://docs.vllm.ai/en/stable/examples/observability/dashboards/).
+
+**OpenTelemetry tracing** is also supported via the `--oltp-traces-endpoint` flag, integrating vLLM traces into any OTel-compatible backend.
+
+Reference: [vLLM Metrics Design](https://docs.vllm.ai/en/stable/design/metrics/)
+
+### llama.cpp Monitoring
+
+[llama.cpp](https://github.com/ggml-org/llama.cpp) is a C/C++ inference framework for running GGUF-quantized models on CPU and GPU. The `llama-server` component (previously `server`) exposes HTTP endpoints for health checking and metrics collection.
+
+**Key llama-server endpoints:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Returns server health status (`{"status": "ok"}` when ready) |
+| `GET /metrics` | Prometheus-compatible metrics (requires `--metrics` flag at startup) |
+
+**Starting the server with metrics enabled:**
+
+```bash
+./llama-server \
+  --model ./models/llama-3.2-3b-instruct-q4_k_m.gguf \
+  --port 8080 \
+  --metrics
+```
+
+**Key llama-server Prometheus metrics:**
+
+| Metric | Description |
+|--------|-------------|
+| `llamacpp:prompt_tokens_total` | Total prompt tokens processed |
+| `llamacpp:tokens_predicted_total` | Total generation tokens processed |
+| `llamacpp:prompt_tokens_seconds` | Average prompt throughput in tokens/s |
+| `llamacpp:predicted_tokens_seconds` | Average generation throughput in tokens/s |
+| `llamacpp:kv_cache_usage_ratio` | KV cache utilization (1 = 100%) |
+| `llamacpp:kv_cache_tokens` | Number of tokens currently in the KV cache |
+| `llamacpp:requests_processing` | Number of requests currently being processed |
+| `llamacpp:requests_deferred` | Number of requests deferred (queued) |
+| `llamacpp:n_tokens_max` | High watermark of context size observed |
+
+**Grafana integration**: The llama.cpp community maintains monitoring stack examples combining Prometheus and [Grafana](https://github.com/grafana/grafana) for dashboarding llama-server metrics.
+
+Reference: [llama.cpp server README](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)
+
 ## Azure AI Observability
 
-Azure provides a comprehensive observability stack for large language models and generative AI applications, integrating purpose-built AI tools with enterprise monitoring infrastructure. Azure also integrates with platforms like Datadog and Elastic to provide specialized, full-stack observability for Azure OpenAI and AI Foundry users.
+Azure provides an observability stack for large language models and generative AI applications, integrating purpose-built AI tools with enterprise monitoring infrastructure. Azure also integrates with platforms like Datadog and Elastic to provide specialized, full-stack observability for Azure OpenAI and AI Foundry users.
 
 Reference: [Observability in generative AI](https://learn.microsoft.com/en-us/azure/foundry/concepts/observability) and [Azure AI Foundry Observability](https://azure.microsoft.com/en-us/products/ai-foundry/observability)
 
@@ -682,7 +903,7 @@ Azure uses OpenTelemetry (OTel) to instrument applications, allowing for vendor-
 
 Reference: [Observability for pro-code generative AI solutions](https://learn.microsoft.com/en-us/microsoft-cloud/dev/copilot/isv/observability-for-ai)
 
-For comprehensive guidance on AI observability in production, see [Chapter 12: Keeping a Log: Observability](https://azure.github.io/AI-in-Production-Guide/chapters/chapter_12_keeping_log_observability).
+For tutorial on AI observability in production, see [Chapter 12: Keeping a Log: Observability](https://azure.github.io/AI-in-Production-Guide/chapters/chapter_12_keeping_log_observability).
 
 ## Implementing Observability in VS Code
 
@@ -1249,6 +1470,15 @@ The weather dashboard demonstrates how observability integrates seamlessly into 
 34. [Introduction to Application Insights - OpenTelemetry observability](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
 35. [LLM Observability for Azure AI Foundry (Elastic)](https://www.elastic.co/observability-labs/blog/llm-observability-azure-ai-foundry)
 36. [Chapter 12: Keeping a Log: Observability - AI in Production Guide](https://azure.github.io/AI-in-Production-Guide/chapters/chapter_12_keeping_log_observability)
+37. [LangWatch - Open Source LLM Monitoring](https://github.com/langwatch/langwatch)
+38. [Langflow - Low-code LLM Platform](https://github.com/langflow-ai/langflow)
+39. [LLM Observability Explained feat. Langfuse, LangSmith, and LangWatch (Langflow Blog)](https://www.langflow.org/blog/llm-observability-explained-feat-langfuse-langsmith-and-langwatch)
+40. [LangSmith Monitoring - Know When Your LLM Starts Failing](https://info.langchain.com/llm-monitoring)
+41. [LLM Benchmarking Fundamental Concepts — NVIDIA Developer Blog](https://developer.nvidia.com/blog/llm-benchmarking-fundamental-concepts/)
+42. [vLLM Metrics Design](https://docs.vllm.ai/en/stable/design/metrics/)
+43. [vLLM Prometheus + Grafana Reference Example](https://github.com/vllm-project/vllm/blob/main/examples/observability/prometheus_grafana/README.md)
+44. [llama.cpp Server Documentation](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)
+45. [Grafana - Open Source Observability Platform](https://github.com/grafana/grafana)
 
 ## Conclusion
 
