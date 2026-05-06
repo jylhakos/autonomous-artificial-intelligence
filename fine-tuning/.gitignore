@@ -1,0 +1,108 @@
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+virtualenv/
+.virtualenv/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution and packaging
+dist/
+build/
+*.egg-info/
+*.egg
+wheels/
+*.whl
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Model weights and large binary files
+*.bin
+*.safetensors
+*.gguf
+*.ggml
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npy
+*.npz
+
+# Hugging Face model cache
+.cache/
+models/
+model_cache/
+hub/
+
+# LoRA and adapter weights (local checkpoints)
+lora_model/
+adapter_weights/
+checkpoint-*/
+outputs/
+runs/
+
+# Dataset files
+*.jsonl
+*.parquet
+*.arrow
+*.csv
+data/
+
+# Environment and secrets
+.env
+.env.*
+*.secret
+secrets/
+config.yaml
+config.yml
+
+# Logs
+*.log
+logs/
+wandb/
+mlruns/
+lightning_logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CUDA and compiled extensions
+*.so
+*.dll
+*.dylib
+triton_cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Azure deployment artifacts
+.azure/
+*.tfstate
+*.tfstate.backup
+.terraform/

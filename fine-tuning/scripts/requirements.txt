@@ -1,0 +1,53 @@
+# ============================================================
+# requirements.txt — Fine-Tuning with Unsloth and Hugging Face PEFT
+# ============================================================
+# Install inside an activated virtual environment:
+#   source venv/bin/activate
+#   pip install -r scripts/requirements.txt
+#
+# NOTE: Unsloth requires a CUDA-capable GPU and a matching
+#       torch + CUDA version. Refer to README.md for setup.
+
+# ---- Core: Unsloth (install separately first; see README) ----
+# Unsloth must be installed before other packages to avoid conflicts.
+# See README.md Section 4 for the exact pip install command.
+unsloth
+
+# ---- Core: Hugging Face Ecosystem ----
+transformers>=4.45.0
+datasets>=2.21.0
+accelerate>=0.34.0
+peft>=0.13.0
+trl>=0.12.0
+tokenizers>=0.20.0
+huggingface_hub>=0.25.0
+
+# ---- Quantization (4-bit / 8-bit QLoRA) ----
+bitsandbytes>=0.44.0
+
+# ---- Flash Attention (optional but recommended for speed) ----
+# Install separately after torch; may require compilation:
+#   pip install flash-attn --no-build-isolation
+# flash-attn>=2.6.0
+
+# ---- Training utilities ----
+einops>=0.8.0
+sentencepiece>=0.2.0
+protobuf>=5.0.0
+
+# ---- Experiment tracking ----
+# wandb        # Uncomment to enable Weights & Biases logging
+# tensorboard  # Uncomment to enable TensorBoard logging
+
+# ---- Evaluation ----
+evaluate>=0.4.0
+rouge_score>=0.1.2
+bert_score>=0.3.13
+sacrebleu>=2.4.0
+
+# ---- Utilities ----
+numpy>=1.26.0
+pandas>=2.2.0
+tqdm>=4.66.0
+packaging>=24.0
+scipy>=1.13.0
