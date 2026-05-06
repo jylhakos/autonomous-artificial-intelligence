@@ -10,6 +10,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 collaboration/       # Multi-agent collaboration patterns
 ├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
+├── 📂 fine-tuning/         # LLM fine-tuning with Unsloth, PEFT, LoRA, and QLoRA
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 optimization/        # ML and LLM optimization techniques and tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
@@ -92,6 +93,30 @@ Autonomous agents must be reliable and measurable. This folder provides the infr
 - `agent_with_tracing.py` - Observable agent implementations
 - `online_evaluation.py` - Real-time performance monitoring
 - Workflow guides for structured evaluation processes
+
+### 📂 fine-tuning/
+
+**Key Points:**
+- Task-specific adaptation of pre-trained LLMs without training from scratch
+- Parameter-Efficient Fine-Tuning (PEFT) with LoRA and QLoRA for low-memory training on consumer GPUs
+- Unsloth integration providing 2x faster training with 60-80% less VRAM compared to standard Hugging Face training
+- Supervised Fine-Tuning (SFT) on instruction-following datasets to encode persistent behavior into model weights
+- Support for local environments (Linux/GPU, Docker with CUDA) and cloud deployment on Microsoft Azure
+- Coverage of full fine-tuning versus PEFT trade-offs, gradient checkpointing, and Flash Attention
+
+**Importance for Autonomous AI:**
+Fine-tuning enables autonomous agents to develop specialized behavior encoded directly in model weights rather than relying on long prompts or in-context examples. An agent fine-tuned on domain-specific data consistently applies correct reasoning patterns, output formats, and tool-use conventions across every inference call, without consuming context window space. For autonomous systems, this translates to lower latency, reduced cost, and more reliable behavior in specialized domains such as code generation, structured data extraction, or instruction-following in production workflows. PEFT techniques like LoRA make this practical on consumer hardware by training only a small fraction of added parameters — typically less than 1% of total model weights — rather than updating all model weights, making fine-tuning accessible without large-scale GPU clusters. Unsloth further reduces the barrier by applying hand-written CUDA kernels and memory-efficient backpropagation to cut training time and VRAM requirements significantly.
+
+**Key Components:**
+- `scripts/unsloth_finetune.py` - Fast fine-tuning pipeline using Unsloth with LoRA and QLoRA adapters
+- `scripts/peft_finetune.py` - Parameter-efficient fine-tuning using Hugging Face PEFT and LoRA
+- `scripts/requirements.txt` - Dependency list for Unsloth, PEFT, Transformers, and related training libraries
+- Unsloth - Optimized training framework with hand-written CUDA kernels delivering 2x faster throughput and 60-80% VRAM reduction
+- PEFT (Parameter-Efficient Fine-Tuning) - Hugging Face library for training lightweight adapter layers while keeping base model weights frozen
+- LoRA (Low-Rank Adaptation) - Injects trainable low-rank matrices into transformer attention layers, enabling fine-tuning on GPUs with 8-24 GB VRAM
+- QLoRA - Combines 4-bit quantization of the base model with LoRA adapters, allowing large models (13B-70B) to be fine-tuned on a single consumer GPU
+- Axolotl and LLaMA-Factory - Alternative fine-tuning frameworks covered in the documentation for production and multi-dataset workflows
+- DeepSpeed - Distributed training integration for scaling fine-tuning across multiple GPUs
 
 ### 📂 observability/
 
