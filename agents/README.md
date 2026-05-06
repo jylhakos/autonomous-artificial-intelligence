@@ -140,16 +140,16 @@ The most common sub-agent architecture is the **orchestrator-worker pattern**:
 User Request
      │
      ▼
-┌─────────────────────┐
+┌──────────────────────┐
 │   Orchestrator Agent │  ← Strong reasoning; breaks down the goal
 │   (Root / Supervisor)│
-└──────┬──────┬───────┘
+└──────┬──────┬────────┘
        │      │
        ▼      ▼
- ┌─────────┐  ┌─────────┐
- │Sub-agent│  │Sub-agent│  ← Execution focus; optimised for a narrow task
- │(Worker A)│  │(Worker B)│
- └─────────┘  └─────────┘
+ ┌──────────┐  ┌───────────┐
+ │Sub-agent │  │Sub-agent  │  ← Execution focus; optimised for a narrow task
+ │(Worker A)│  │(Worker B) │
+ └──────────┘  └───────────┘
 ```
 
 The orchestrator:
