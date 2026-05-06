@@ -6,6 +6,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 
 ```
 📁 autonomous-artificial-intelligence/
+├── 📂 agents/              # Single-agent, sub-agents, and multi-agents with Google ADK
 ├── 📂 autonomous/          # Core autonomous AI agent framework
 ├── 📂 collaboration/       # Multi-agent collaboration patterns
 ├── 📂 deployment/          # Production deployment strategies and guides
@@ -19,6 +20,43 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
 └── 📂 security/            # AI agent security and threat protection
 ```
+
+### 📂 agents/
+
+**Key Points:**
+- Tutorial of three agent architectures: single-agent, sub-agents, and multi-agents
+- Built entirely with **Google's Agent Development Kit (ADK)** — the open-source Python framework for building, testing, and deploying agents locally and on Google Cloud
+- **Single-agent** pattern using `LlmAgent` for bounded, self-contained tasks (researcher example with Gemini 2.0 Flash)
+- **Sub-agents** pattern using `SequentialAgent` (Researcher → Writer → Editor pipeline) and `ParallelAgent` (FlightFinder + HotelFinder fan-out)
+- **Multi-agents** supervisor pattern with four specialist agents (`ResearchAgent`, `AnalysisAgent`, `WriterAgent`, `ReviewerAgent`) coordinated by an orchestrator
+- Local development with ADK Web UI (`adk web`) and optional Ollama + Open WebUI for open-source LLM inference
+- Decision framework for choosing the right architecture, referencing Google ADK and Microsoft Cloud Adoption Framework guidance
+
+**Importance for Autonomous AI:**
+The `agents/` folder provides the clearest conceptual entry point into autonomous AI architectures. It demonstrates how a single `LlmAgent` is the right default for bounded tasks, when sub-agents become necessary to delegate stateful sub-processes within a shared session, and how a full multi-agent system with isolated specialists and a supervisor enables independent scaling, compliance boundaries, and parallel development by multiple teams. By implementing all three patterns with the same Google ADK framework, the trade-offs in latency, cost, context management, and operational complexity are directly comparable at the code level — making this the practical companion to the architectural theory covered in the `autonomous/` and `collaboration/` folders.
+
+**Key Components:**
+- `single_agent/agent.py` — Single `LlmAgent` researcher example; the foundational pattern using `Runner` and `InMemorySessionService`
+- `sub_agents/agent.py` — Sequential pipeline (Researcher → Writer → Editor) and parallel fan-out (FlightFinder + HotelFinder) sub-agent examples
+- `multi_agents/agent.py` — Supervisor pattern with four domain-specialist agents coordinated by a `SequentialAgent` orchestrator
+- `.env.example` — API key template (`GOOGLE_API_KEY`) for Gemini model access via Google AI Studio or Vertex AI
+- `requirements.txt` — `google-adk`, `python-dotenv`, and runtime dependencies
+- `README.md` — Architecture guide, orchestrator-worker decision framework, local setup (VS Code / Linux), ADK Web UI, Ollama integration, and prompt engineering tips
+
+```
+agents/
+├── 📄 .env.example              API key template (GOOGLE_API_KEY)
+├── 📄 requirements.txt          google-adk, python-dotenv, and dependencies
+├── 📄 README.md                 Architecture guide and local setup
+├── 📂 single_agent/
+│   └── agent.py                 LlmAgent researcher — single bounded task
+├── 📂 sub_agents/
+│   └── agent.py                 SequentialAgent pipeline + ParallelAgent fan-out
+└── 📂 multi_agents/
+    └── agent.py                 Supervisor pattern with 4 specialist agents
+```
+
+---
 
 ### 📂 autonomous/
 
