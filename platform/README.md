@@ -1,4 +1,4 @@
-# MLflow AI Engineering Platform: A Developer's Tutorial
+# A Platform: A Developer's Tutorial for MLflow
 
 A tutorial covering the steps involved in building, tracing, evaluating, and deploying AI agents, LLM applications, and ML models using [MLflow](https://github.com/mlflow/mlflow), featuring practical examples of vibe coding with VS Code and the Claude AI assistant across the full software development lifecycle.
 
