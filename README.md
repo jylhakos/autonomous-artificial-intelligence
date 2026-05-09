@@ -15,6 +15,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 optimization/        # ML and LLM optimization techniques and tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
+├── 📂 platform/            # MLflow platform for agents, LLMs, and ML models
 ├── 📂 reasoning/           # LLM reasoning techniques and training workflows
 ├── 📂 retrieval/           # Vector databases, vector search and RAG for LLMs
 ├── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
@@ -233,6 +234,56 @@ The software development life cycle is being fundamentally transformed by autono
 - Integration patterns for autonomous coding agents within traditional SDLC phases
 - Offline-capable AI development with complete data privacy and zero cloud dependencies
 - AGENTS.md format documentation for guiding coding agents with project-specific conventions
+
+### 📂 platform/
+
+**Key Points:**
+- Vendor-neutral, open-source AI engineering platform powered by [MLflow](https://github.com/mlflow/mlflow) for the full lifecycle of agents, LLM applications, and ML models
+- Four interconnected pillars: **Tracing**, **Evaluation and Human Feedback**, **Prompt Versioning**, and **AI Governance**
+- GenAI tracing with OpenTelemetry-compatible spans covering every LLM call, tool invocation, and agent step
+- Built-in and custom LLM judges with 70+ quality scorers for automated evaluation pipelines
+- Prompt Registry for versioned prompt management with lineage to evaluation results and traces
+- AI Gateway providing centralized LLM routing, cost control, and content guardrails across providers
+- Integrates with any agent framework including LangGraph, LangChain, OpenAI Agents SDK, Claude Agent SDK, Google ADK, Pydantic AI, AutoGen, CrewAI, and others
+- Local deployment via Docker Compose and cloud deployment on Amazon SageMaker, Google Cloud Vertex AI, and Microsoft Azure Machine Learning
+- Vibe coding workflow using VS Code and Claude to generate, trace, evaluate, and deploy MLflow applications through natural language prompts
+
+**Importance for Autonomous AI:**
+Autonomous agents and LLM applications fail silently — they produce plausible-sounding outputs that are incorrect, inconsistent, or subtly unsafe without raising exceptions or leaving obvious error traces. MLflow addresses this by providing the instrumentation, evaluation, and governance layer that transforms ad-hoc development into a measurable engineering discipline. Tracing captures every span of an agent's execution — LLM calls, tool invocations, retrieval steps, and intermediate reasoning — making failures visible and debuggable rather than opaque. Evaluation pipelines with LLM judges quantify quality across correctness, relevance, safety, and custom criteria, enabling regression testing between prompt versions or model updates. The Prompt Registry links prompt versions directly to their evaluation results, providing the kind of reproducibility and lineage tracking that production systems require. The AI Gateway centralizes access control and cost management across all LLM providers, which is essential when multiple autonomous agents operate concurrently against shared infrastructure. Together, these capabilities close the gap between prototype and production, giving teams the confidence to deploy autonomous agents at scale.
+
+**Key Components:**
+- `scripts/tracking/train_and_track.py` — Experiment tracking script logging parameters, metrics, and model artifacts for scikit-learn training runs
+- `scripts/agents/langchain_agent_trace.py` — MLflow automatic tracing for a LangChain agent including tool calls and LLM input/output spans
+- `scripts/agents/rag_pipeline_trace.py` — Manual span instrumentation for a RAG pipeline covering retrieval, prompt construction, and generation steps
+- `scripts/evaluation/evaluate_qa.py` — GenAI evaluation pipeline using built-in Correctness and RelevanceToQuery scorers via `mlflow.genai.evaluate()`
+- `scripts/evaluation/prompt_registry.py` — Prompt versioning workflow linking stored prompts to evaluation metrics and trace lineage
+- `scripts/deployment/register_model.py` — Model Registry workflow for packaging, versioning, and stage-transitioning ML models
+- `scripts/deployment/deploy_sagemaker.py` — Cloud deployment of a registered MLflow model to an Amazon SageMaker endpoint
+- `docker/Dockerfile` — Container image definition for the MLflow tracking server
+- `docker/docker-compose.yml` — Local deployment stack running the MLflow tracking server with a persistent artifact store
+- `README.md` — Full tutorial covering MLflow pillars, vibe coding prompts, SDLC integration, Docker setup, and cloud deployment guides
+
+```
+platform/
+├── 📄 README.md                         Full MLflow tutorial and deployment guide
+├── 📂 docker/
+│   ├── Dockerfile                       MLflow tracking server container image
+│   └── docker-compose.yml               Local deployment stack with artifact store
+└── 📂 scripts/
+    ├── 📂 tracking/
+    │   └── train_and_track.py           Experiment tracking with parameters and metrics
+    ├── 📂 agents/
+    │   ├── langchain_agent_trace.py     Automatic tracing for LangChain agents
+    │   └── rag_pipeline_trace.py        Manual span tracing for RAG pipelines
+    ├── 📂 evaluation/
+    │   ├── evaluate_qa.py               GenAI evaluation with built-in LLM judges
+    │   └── prompt_registry.py           Prompt versioning and evaluation lineage
+    └── 📂 deployment/
+        ├── register_model.py            Model Registry versioning and stage transitions
+        └── deploy_sagemaker.py          Cloud deployment to Amazon SageMaker
+```
+
+---
 
 ### 📂 optimization/
 
