@@ -2,6 +2,30 @@
 
 A tutorial for building and managing autonomous AI agents with advanced capabilities in collaboration, orchestration, evaluation, and observability. This repository explores collaborative AI agents and multi-agent systems and provides practical examples, step-by-step tutorials, and testing methodologies for building intelligent, autonomous agents that work together to solve tasks.
 
+## Table of Contents
+
+- [Folders Structure](#folders-structure)
+  - [agents/](#-agents)
+  - [autonomous/](#-autonomous)
+  - [collaboration/](#-collaboration)
+  - [deployment/](#-deployment)
+  - [evaluation/](#-evaluation)
+  - [fine-tuning/](#-fine-tuning)
+  - [memory/](#-memory)
+  - [observability/](#-observability)
+  - [optimization/](#-optimization)
+  - [orchestration/](#-orchestration)
+  - [platform/](#-platform)
+  - [reasoning/](#-reasoning)
+  - [retrieval/](#-retrieval)
+  - [security/](#-security)
+  - [workflows/](#-workflows)
+- [Getting Started](#getting-started)
+- [Documentation](#documentation)
+- [License](#license)
+
+---
+
 ## Folders Structure
 
 ```
@@ -12,6 +36,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 fine-tuning/         # LLM fine-tuning with Unsloth, PEFT, LoRA, and QLoRA
+├── 📂 memory/              # Context windows, short-term and long-term agent memory
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 optimization/        # ML and LLM optimization techniques and tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
@@ -156,6 +181,48 @@ Fine-tuning enables autonomous agents to develop specialized behavior encoded di
 - QLoRA - Combines 4-bit quantization of the base model with LoRA adapters, allowing large models (13B-70B) to be fine-tuned on a single consumer GPU
 - Axolotl and LLaMA-Factory - Alternative fine-tuning frameworks covered in the documentation for production and multi-dataset workflows
 - DeepSpeed - Distributed training integration for scaling fine-tuning across multiple GPUs
+
+### 📂 memory/
+
+**Key Points:**
+- Practical guide and runnable code samples for understanding how AI agents use **context**, **short-term memory**, and **long-term persistent memory**
+- Three-layer production-ready memory architecture: **context window** (active working memory), **retrieval layer** (RAG for semantic search), and **persistent memory store** (cross-session continuity)
+- Short-term memory (in-context / session state): conversation turns, tool call results, and state variables — scoped to the active session
+- Long-term persistent memory divided by nature: **episodic** (specific past events), **semantic** (general facts and user preferences), and **procedural** (workflows and behavioral rules)
+- **Google ADK** samples demonstrating `InMemorySessionService` for short-term session state and `MemoryService` for persistent cross-session memory retrieval
+- **Microsoft Foundry** samples demonstrating Foundry Memory Store for long-term persistence and Foundry Conversations API for short-term context management
+- Context engineering concepts: context window limits, attention budget management, context compaction, and prefix caching strategies
+
+**Importance for Autonomous AI:**
+Without persistent memory, every conversation starts from a blank slate — agents cannot reference prior decisions, user preferences, or accumulated knowledge. Memory is what transforms a stateless LLM call into a context-aware autonomous agent capable of sustained, goal-directed behavior across multiple sessions. Short-term memory (the context window) determines what the agent can reason about in the current request; long-term memory determines whether the agent can learn from and build upon past interactions. For production autonomous systems, the three-layer memory architecture — context window, RAG retrieval, and persistent store — allows agents to operate at scale without context overflows, while retaining the continuity of behavior that makes them genuinely useful over time. Google ADK's `MemoryService` and Microsoft Foundry's Memory Store provide the concrete infrastructure to implement this at both local-development and cloud-production scales, covering the full spectrum from in-session state variables to cross-session user profiles and episodic event logs.
+
+**Key Components:**
+- `samples/adk/short_term_memory.py` — ADK session state demo using `InMemorySessionService` for in-session context and state variables
+- `samples/adk/long_term_memory.py` — ADK `MemoryService` demo for persistent cross-session memory storage and retrieval
+- `samples/adk/README.md` — Google ADK memory architecture guide covering session state, `MemoryService`, and context compaction
+- `samples/foundry/foundry_memory.py` — Microsoft Foundry Memory Store demo for long-term persistent agent memory across sessions
+- `samples/foundry/foundry_short_term_context.py` — Foundry Conversations API demo for managing short-term context and message threads
+- `samples/foundry/README.md` — Foundry memory integration guide covering thread management, Memory Store, and deployment patterns
+- `requirements.txt` — Python dependencies for Google ADK, Microsoft Foundry, and related memory integrations
+- `README.md` — A guide covering context windows, all memory types, ADK and Foundry implementations, framework comparisons, and use cases
+
+```
+memory/
+├── 📄 .env.example                        Environment variable template
+├── 📄 requirements.txt                    Python dependencies
+├── 📄 README.md                           Context and memory guide
+└── 📂 samples/
+    ├── 📂 adk/
+    │   ├── short_term_memory.py           ADK session state demo (InMemorySessionService)
+    │   ├── long_term_memory.py            ADK MemoryService demo (persistent cross-session)
+    │   └── README.md                      ADK memory architecture and setup guide
+    └── 📂 foundry/
+        ├── foundry_memory.py              Foundry Memory Store demo (long-term persistence)
+        ├── foundry_short_term_context.py  Foundry Conversations API (short-term context)
+        └── README.md                      Foundry memory integration guide
+```
+
+---
 
 ### 📂 observability/
 
