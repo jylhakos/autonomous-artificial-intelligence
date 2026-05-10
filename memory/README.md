@@ -16,7 +16,7 @@
 6. [Context Window vs. Agent Memory](#6-context-window-vs-agent-memory)
 7. [How Agent Short-Term Memory Works](#7-how-agent-short-term-memory-works)
 8. [How Agent Long-Term Memory Works](#8-how-agent-long-term-memory-works)
-9. [Information Flow — Mermaid Diagram](#9-information-flow--mermaid-diagram)
+9. [Information Flow](#9-information-flow)
 10. [Memory in VS Code Agents](#10-memory-in-vs-code-agents)
 11. [Memory Fits Into the Agent Architecture](#11-memory-fits-into-the-agent-architecture)
 12. [Google ADK — Agent Development Kit](#12-google-adk--agent-development-kit)
@@ -453,7 +453,7 @@ awareness.
 
 ---
 
-## 9. Information Flow — Mermaid Diagram
+## 9. Information Flow
 
 The following diagram shows how information flows between **context**,
 **short-term memory**, **long-term memory**, and the **LLM** during an agent
