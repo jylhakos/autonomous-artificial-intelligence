@@ -189,9 +189,8 @@ The practical formula:
 
 ## 5. What Is a Context Window?
 
-A context window in AI agents acts as their **active working memory** —
-determining the maximum number of tokens (words or subwords) the model can
-"see" and process at once. It includes the current prompt, conversation history,
+A context window in AI agents acts as their **active** working memory and determines the maximum number of tokens 
+(words or subwords) the model can see and process at once. It includes the current prompt, conversation history, 
 tool outputs, and instructions.
 
 > "The context window is the model's active workspace, where it holds
