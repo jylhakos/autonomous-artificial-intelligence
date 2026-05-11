@@ -210,9 +210,8 @@ thin, creating a natural tension between context size and attention focus.
 
 ([Anthropic — Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents))
 
-When using Anthropic's Claude with extended thinking, all input and output
-tokens — including thinking tokens — count toward the context window limit.
-([Anthropic — Context Windows](https://platform.claude.com/docs/en/build-with-claude/context-windows))
+When using Anthropic's Claude with extended thinking, all input and output tokens, as well as thinking tokens, 
+count toward the context window limit. ([Anthropic — Context Windows](https://platform.claude.com/docs/en/build-with-claude/context-windows))
 
 ### Context Engineering
 
