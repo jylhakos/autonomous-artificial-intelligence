@@ -1,4 +1,4 @@
-# Memory: Context, Memory, and Persistent Data
+# Context, Memory, and Persistent Data
 
 > A practical guide and code reference for understanding how AI agents use
 > **context**, **short-term memory**, and **long-term persistent memory** —
