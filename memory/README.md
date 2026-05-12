@@ -1,8 +1,8 @@
 # Context, Memory, and Persistent Data
 
-> A practical guide and code reference for understanding how AI agents use
-> **context**, **short-term memory**, and **long-term persistent memory** —
-> with runnable Python samples using Google ADK and Microsoft Foundry.
+> A tutorial and code reference for understanding how AI agents use
+> **context**, **short-term memory**, and **long-term persistent memory**,
+> with runnable Python examples using Google ADK and Microsoft Foundry.
 
 ---
 
@@ -155,8 +155,7 @@ prompting, where agents learn from past sequences to perform tasks correctly.
 
 #### 4.2.2 Semantic Memory
 
-General knowledge and domain-specific information — user preferences, rules,
-and facts.
+General knowledge and domain-specific information that includes user preferences, rules, and facts.
 
 > "Semantic memory answers: what is generally true about this domain, this
 > process, this policy?"
@@ -189,8 +188,8 @@ The practical formula:
 
 ## 5. What Is a Context Window?
 
-A context window in AI agents acts as their **active** working memory and determines the maximum number of tokens 
-(words or subwords) the model can see and process at once. It includes the current prompt, conversation history, 
+A context window in AI agents acts as their **active** working memory and determines the maximum number of tokens
+(words or subwords) the model can see and process at once. It includes the current prompt, conversation history,
 tool outputs, and instructions.
 
 > "The context window is the model's active workspace, where it holds
@@ -261,13 +260,14 @@ The fundamental difference is **architectural**:
 - **Agent memory** is an external system outside the model that stores information beyond the context
   limit, makes it searchable, and loads relevant facts selectively into future context windows.
 
-Think of it this way: the context window is what the agent *currently sees*; agent memory is what the
-system *stores for later*. Memory is retrieved *into* context — context is not saved as memory unless
-the system explicitly extracts and persists it (for example, by calling `add_session_to_memory()` at
-session end).
+Think of it this way: the context window is what the agent *currently sees*, while agent memory is what
+the system *stores for later*. Memory is retrieved *into* context, whereas context is not saved as memory
+unless the system explicitly extracts and persists it (for example, by calling `add_session_to_memory()`
+at session end).
 
-A key practical consequence: if a fact is not in the current context window, the LLM has no knowledge
-of it — even if it was discussed in a previous session. Agent memory solves this by bridging sessions.
+A consequence is that if a fact is not present in the current context window, the large language model
+cannot access it, even if it was discussed in a previous session. Agent memory addresses this limitation
+by preserving information across sessions.
 
 | Feature | Context Window | Agent Memory |
 |---------|---------------|--------------|
@@ -342,9 +342,8 @@ objects** — durable containers that accumulate message items across turns. Pas
 
 ### LangGraph Short-Term Memory
 
-LangGraph provides in-thread memory with configurable persistence — add
-short-term memory as part of your agent's state to enable multi-turn
-conversations.
+LangGraph provides in-thread memory with configurable persistence, enabling developers
+to add short-term memory to an agent's state for multi-turn conversations.
 
 ([LangChain — Short-Term Memory](https://docs.langchain.com/oss/python/concepts/memory#short-term-memory))
 
@@ -352,8 +351,8 @@ conversations.
 
 ## 8. How Agent Long-Term Memory Works
 
-Long-term memory is **where persistence lives** — it stores what the agent
-needs to recall across sessions, decisions, and user lifecycles.
+Long-term memory is **where persistence lives**, storing what the agent needs
+to recall across sessions, decisions, and user lifecycles.
 
 ### Step-by-Step Lifecycle
 
