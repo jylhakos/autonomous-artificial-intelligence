@@ -8,6 +8,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
   - [agents/](#-agents)
   - [autonomous/](#-autonomous)
   - [collaboration/](#-collaboration)
+  - [datasets/](#-datasets)
   - [deployment/](#-deployment)
   - [evaluation/](#-evaluation)
   - [fine-tuning/](#-fine-tuning)
@@ -33,6 +34,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 agents/              # Single-agent, sub-agents, and multi-agents with Google ADK
 ├── 📂 autonomous/          # Core autonomous AI agent framework
 ├── 📂 collaboration/       # Multi-agent collaboration patterns
+├── 📂 datasets/            # Dataset preparation, cleaning, and synthetic generation for LLMs and ML
 ├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 fine-tuning/         # LLM fine-tuning with Unsloth, PEFT, LoRA, and QLoRA
@@ -118,6 +120,38 @@ Autonomous agents rarely operate in isolation. This folder provides patterns and
 - Hybrid agent collaboration (combining different AI frameworks)
 - Code collaboration and review workflows
 - Human feedback integration for guided autonomy
+
+### 📂 datasets/
+
+**Key Points:**
+- Reference and hands-on workspace for preparing, cleaning, and generating datasets for LLM and ML model training and fine-tuning
+- Implements the **Self-Instruct** technique for synthetic instruction-tuning dataset creation using a local Ollama model
+- Covers three distinct data preparation workflows: **pre-training corpora** (extraction, normalisation, deduplication, quality filtering), **instruction fine-tuning** (structured instruction-input-output triplets), and **preference fine-tuning** (RLHF/DPO chosen/rejected response pairs)
+- Dataset formats covered: instruction-tuning triplets (`system`, `instruction`, `input`, `output`) and preference-tuning pairs (`prompt`, `chosen`, `rejected`) compatible with SFT and DPO training pipelines
+- Dataset quality evaluation: near-duplicate detection, LLM-based quality scoring, statistical validation with TFDV, label error detection with Cleanlab, LLM-as-a-Judge, and discriminative testing
+- Synthetic data generation pipeline: prompt generation, filtering, query evolution, and styling customization using LLMs as data factories
+
+**Importance for Autonomous AI:**
+Dataset quality is the deterministic factor in the behavior of autonomous AI agents. A model's ability to follow instructions, reason through multi-step problems, and refuse harmful requests is entirely encoded in the data it was trained on — not in architecture choices or compute budget alone. The Self-Instruct technique allows autonomous systems to bootstrap their own training data, creating a feedback loop where a base model generates candidate instructions, filters low-quality examples, and produces instruction-response pairs that teach instruction-following behavior at scale. For fine-tuning autonomous agents on domain-specific tasks — whether code generation, structured data extraction, or tool-use protocols — the data preparation workflows covered here (cleaning, deduplication, format conversion, quality scoring) determine whether the resulting model reliably executes the target behavior or reverts to generic responses. Preference datasets (RLHF/DPO) further shape how autonomous agents balance helpfulness, safety, and alignment with human values across edge cases that rule-based guardrails cannot anticipate.
+
+**Key Components:**
+- `scripts/seed_tasks.py` — Human-written seed task definitions that initialize the Self-Instruct generation pipeline
+- `scripts/self_instruct_generator.py` — Full Self-Instruct pipeline using a local Ollama model to generate, filter, and format instruction-tuning datasets
+- `scripts/dataset_cleaner.py` — Text cleaning, deduplication, and quality filtering for raw corpora and generated datasets
+- `requirements.txt` — Python dependencies for dataset processing and generation workflows
+- `README.md` — Document to describe data preparation for pre-training and fine-tuning, dataset formats, synthetic data generation, quality evaluation methods, and environment setup
+
+```
+datasets/
+├── 📄 requirements.txt              Python dependencies
+├── 📄 README.md                     Dataset preparation, synthetic generation, and quality guide
+└── 📂 scripts/
+    ├── seed_tasks.py                Human-written seed task definitions
+    ├── self_instruct_generator.py   Full Self-Instruct pipeline with Ollama
+    └── dataset_cleaner.py           Text cleaning, deduplication, quality filtering
+```
+
+---
 
 ### 📂 deployment/
 
