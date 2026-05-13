@@ -1,0 +1,101 @@
+# Python virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pyc
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+wheels/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Installed packages and site-packages
+site-packages/
+lib/
+lib64/
+include/
+share/
+
+# Environment variable files
+.env
+.env.*
+!.env.example
+
+# Pip tools
+pip-log.txt
+pip-delete-this-directory.txt
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Binary / compiled files
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.a
+*.lib
+
+# Data files (large or generated)
+*.bin
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.parquet
+*.arrow
+*.npy
+*.npz
+
+# Model weights and checkpoints
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.gguf
+
+# Dataset raw downloads
+data/raw/
+data/cache/
+
+# Logs
+*.log
+logs/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# JSONL output (generated datasets - keep in git only if intentional)
+output/
+generated/

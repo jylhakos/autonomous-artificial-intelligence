@@ -1,0 +1,9 @@
+absl-py==2.4.0
+click==8.3.3
+joblib==1.5.3
+nltk==3.9.4
+numpy==2.4.4
+regex==2026.5.9
+rouge_score==0.1.2
+six==1.17.0
+tqdm==4.67.3
