@@ -57,6 +57,29 @@
 - [Testing Guardrails Scripts](#testing-guardrails-scripts)
   - [Running pytest](#running-pytest)
   - [Testing with curl](#testing-with-curl)
+- [Security, Privacy, Governance and Data Leakage Risks](#security-privacy-governance-and-data-leakage-risks)
+  - [Key Definitions and Concepts](#key-definitions-and-concepts)
+  - [Data Leakage Risks in Large Language Models](#data-leakage-risks-in-large-language-models)
+  - [Privacy Risks in AI](#privacy-risks-in-ai)
+  - [AI Governance Frameworks](#ai-governance-frameworks)
+  - [AI Lifecycle Phases and Privacy Impact](#ai-lifecycle-phases-and-privacy-impact)
+  - [Risk Assessment for LLM Systems](#risk-assessment-for-llm-systems)
+  - [Technical and Policy Controls](#technical-and-policy-controls)
+- [Automate Security Reviews](#automate-security-reviews)
+  - [Automated Security Reviews with Claude Code](#automated-security-reviews-with-claude-code)
+  - [GitHub Copilot Security Controls](#github-copilot-security-controls)
+- [Security Risks in Software Development Workflows](#security-risks-in-software-development-workflows)
+  - [Shadow AI in Software Development](#shadow-ai-in-software-development)
+  - [AI-Generated Code Vulnerabilities](#ai-generated-code-vulnerabilities)
+  - [Regulatory Compliance in Software Workflows](#regulatory-compliance-in-software-workflows)
+- [Identify Risk for Autonomous Agentic AI Systems](#identify-risk-for-autonomous-agentic-ai-systems)
+  - [Autonomous AI Agent Threat Model](#autonomous-ai-agent-threat-model)
+  - [Least Privilege and Just-in-Time Permissions](#least-privilege-and-just-in-time-permissions)
+  - [Defense in Depth for Autonomous AI Agents](#defense-in-depth-for-autonomous-ai-agents)
+- [Securing Vector Databases](#securing-vector-databases)
+  - [Vector Embeddings and Privacy](#vector-embeddings-and-privacy)
+  - [Tenant Isolation and RAG Permissions](#tenant-isolation-and-rag-permissions)
+  - [Security Recommendations for Vector Databases](#security-recommendations-for-vector-databases)
 - [Best Practices and Recommendations](#best-practices-and-recommendations)
 - [Resources](#resources)
 
@@ -1767,6 +1790,322 @@ deactivate
 
 ---
 
+## Security, Privacy, Governance and Data Leakage Risks
+
+Large Language Models introduce severe operational vulnerabilities. Primary threats include data leakage (unintended exposure of confidential information), privacy violations (memorizing and regurgitating PII), security exploits (prompt injection), and governance challenges (lack of transparency and regulatory compliance).
+
+### Key Definitions and Concepts
+
+**Data Leakage**: Data leakage occurs when a model exposes sensitive information, either from its training data or through its outputs. This includes accidental exposure of proprietary data, personally identifiable information (PII), or credentials.
+
+**Privacy Risk**: AI privacy risks revolve around the improper collection, retention, and dissemination of personal data. In enterprise contexts, LLM data privacy focuses on protecting sensitive information that passes through LLMs during their development and use.
+
+**Governance**: AI governance refers to the policies, standards, and oversight mechanisms that guide responsible AI development and deployment. Governance frameworks address transparency, accountability, fairness, and regulatory compliance.
+
+**Data Poisoning**: Manipulating the training data or fine-tuning datasets to introduce vulnerabilities, biases, or trigger backdoor behaviors in the model.
+
+**Shadow AI**: Employees deploying unvetted AI tools or scripts on corporate networks create blind spots for security teams. Unapproved use of third-party GenAI services by employees means that private data is continuously processed outside the organization's visibility and control.
+
+**Black Box Outputs**: Because LLMs operate probabilistically, it is incredibly difficult to audit why a model generated a specific response or to enforce fixed rules on its behavior.
+
+**Context Window Leakage**: Sending prompts with embedded sensitive context that the model then inadvertently includes in subsequent responses or shares with unauthorized users.
+
+### Data Leakage Risks in Large Language Models
+
+Data leakage in LLMs takes several forms:
+
+**Training Data Memorization**: Models ingest vast amounts of public or scraped text, which can inadvertently include API keys, passwords, or personal details. The model can later regurgitate these secrets during casual interactions. LLM training data sets may contain sensitive or proprietary information — sequence-level extraction of training data remains a major risk: attackers can prompt an LLM to output fragments of its training data.
+
+**User Input Leakage**: Employees frequently paste proprietary business data or personal health information (PHI) into public AI tools. This data may then be retained by the model provider or exposed to other users.
+
+**Fine-Tuning Privacy Trade-offs**: Fine-tuning is one of the biggest privacy trade-offs in AI. When organizations fine-tune models on their proprietary data, that data can become embedded in model weights and potentially exposed through carefully crafted queries.
+
+**Function Call Data Leakage**: Sensitive data could be transmitted to external applications without proper safeguards. Function calls may transmit excessive or unnecessary user data to external applications, especially if parameter filtering is not properly implemented. Third-party systems may not adhere to the same privacy and security standards.
+
+**RAG Privacy Complexity**: RAG is where privacy meets complexity. Every query pulls from live data, embeddings, and external knowledge. Without strict access controls, RAG pipelines can expose documents that users are not authorized to see.
+
+> Reference: [AI Privacy Risks and Mitigations in LLMs — European Data Protection Board (EDPB)](https://www.edpb.europa.eu/system/files/2025-04/ai-privacy-risks-and-mitigations-in-llms.pdf)
+
+### Privacy Risks in AI
+
+**PII Extraction and Re-identification**: Attackers use clever querying (membership inference attacks) to confirm if a specific person's data was used in the training set. LLMs can surface confidential details from prior interactions or internal knowledge bases.
+
+**Regulatory Non-Compliance**: Using models to correlate, index, or generate personal information leaves organizations open to non-compliance penalties under data laws like GDPR, HIPAA, or CPRA. Data privacy, mandated by the GDPR, is essential for EU citizens, as it protects their fundamental rights and freedoms with respect to their PII and PHI.
+
+**Training Data Poisoning**: Malicious actors intentionally introduce false or harmful data into the training datasets to alter model behavior, embed backdoors, or bypass privacy controls.
+
+**Data Lineage and Explainability**: LLMs are essentially "black boxes." Tracing the exact origin of a specific AI output or ensuring it has not violated third-party copyright laws is extremely difficult. LLMs trained on web-scraped or publicly available data often include copyrighted materials, raising concerns about intellectual property violations. Outputs generated by such models may unintentionally replicate protected content, creating legal risks for both providers and deployers.
+
+**Issues Affecting Output Accuracy**: Several factors can impact the accuracy of the outputs generated by LLMs. Threats are external factors that may exploit vulnerabilities within the LLM-based system, which are weaknesses that could be exploited to compromise functionality, security, or data protection.
+
+> Reference: [AI Privacy Risks and Mitigations in LLMs — European Data Protection Board (EDPB)](https://www.edpb.europa.eu/system/files/2025-04/ai-privacy-risks-and-mitigations-in-llms.pdf)
+
+### AI Governance Frameworks
+
+AI governance requires a structured approach to managing risk across the entire AI lifecycle.
+
+**NIST AI Risk Management Framework (AI RMF)**: Use the NIST AI Risk Management Framework to establish an organizational rulebook. It structures governance across four functions: Govern, Map, Measure, and Manage.
+
+**Taxonomy-Based Safety Testing**: Map out exactly what the AI system is authorized to do and what happens if it fails. For high-autonomy agents, classify the potential impact of incorrect or malicious model outputs on engineering and business processes.
+
+**Security Testing (Red Teaming)**: Continuously test LLM applications against simulated jailbreaks and prompt injections. Use AI runtime security tools to observe the model's responses to malicious or ambiguous inputs in real-time.
+
+**Data Privacy Audits**: Evaluate for Model Inversion and Membership Inference Attacks. Automated toolkits can systematically measure how much private data the LLM has memorized during training.
+
+**Policy Management**: Establish guidelines on what types of data classification (e.g., public, confidential, secret) are allowed in AI inputs and outputs.
+
+**Human Supervision**: Keep humans-in-the-loop for highly sensitive tasks to intercept vulnerabilities, hallucinations, or data exposures that automated tools might miss.
+
+> Reference: [Governance and Security for AI Agents across the Organization — Azure Cloud Adoption Framework](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/governance-security-across-organization)
+
+### AI Lifecycle Phases and Privacy Impact
+
+The AI lifecycle includes phases from data collection and model training through to deployment and ongoing operation. Each phase introduces distinct privacy risks.
+
+**Data Collection and Preparation**: Training datasets may contain PII, confidential business information, or copyrighted content gathered without explicit consent. Poor data hygiene at this stage propagates privacy violations throughout the entire model lifecycle.
+
+**Model Training and Fine-Tuning**: Models can memorize portions of training data and reproduce it in responses. Fine-tuning on proprietary organizational data amplifies this risk, as domain-specific information becomes embedded in model weights.
+
+**Deployment and Inference**: Every query sent to a deployed model creates a new privacy surface. RAG pipelines, tool-calling agents, and multi-model architectures each introduce additional points where sensitive data can leak.
+
+**Monitoring and Maintenance**: Logging inference requests for monitoring can inadvertently store sensitive user data. Retention policies and access controls for inference logs must be explicitly defined.
+
+> Reference: [AI Privacy Risks and Mitigations in LLMs — European Data Protection Board (EDPB)](https://www.edpb.europa.eu/system/files/2025-04/ai-privacy-risks-and-mitigations-in-llms.pdf)
+
+### Risk Assessment for LLM Systems
+
+Risk assessment is generally considered the first phase within risk management. It encompasses risk analysis, which involves identifying, estimating, and evaluating potential risks.
+
+To help identify risks associated with the use of LLMs, a variety of risk factors can be used. Risk factors are conditions associated with a higher probability of undesirable outcomes. They can help identify, assess, and prioritize potential risks. For instance, processing sensitive data and large volumes of data are two risk factors with a high level of risk.
+
+Evaluating LLM risks requires a dual approach:
+
+- **Assessing the model itself**: training data privacy, model vulnerabilities
+- **Assessing the application layer**: data leakage, system integration
+
+Once risks have been identified, the next steps within the risk analysis phase are the estimation and evaluation of the risks. This involves the classification and prioritization of risks based on their probability and severity or potential impact. Organizations mitigate these risks by adopting standardized, industry-recognized governance and security frameworks.
+
+> Reference: [AI Privacy Risks and Mitigations in LLMs — European Data Protection Board (EDPB)](https://www.edpb.europa.eu/system/files/2025-04/ai-privacy-risks-and-mitigations-in-llms.pdf)
+
+### Technical and Policy Controls
+
+Once risks are evaluated, concrete technical and policy controls must be implemented:
+
+**Dynamic Masking and Tokenization**: Use intelligent sanitization middleware to redact PII and secrets in prompts before they reach the LLM. Replace sensitive tokens with synthetic data so the model can process tasks without viewing raw proprietary information.
+
+**Input Redaction**: Automatically redact Personally Identifiable Information (PII), Protected Health Information (PHI), and API secrets from prompts before they are sent to the model.
+
+**Output Guards**: Deploy context-aware response mechanisms to block the model from leaking system prompts, exposing backend configurations, or accidentally regurgitating PII.
+
+**Input/Output Validation**: Filter prompts to block malicious code (such as SQL injections) and sanitize outputs using regex or DLP (Data Loss Prevention) checks to prevent sensitive corporate or personal data from leaking to the user.
+
+**Access Controls**: Never give an LLM global access to databases. Use Role-Based Access Controls (RBAC) and data masking so that when an LLM pulls from a knowledge base (e.g., via RAG), it only retrieves information the querying user is allowed to see.
+
+**Enterprise Gateway**: Prevent LLM data leakage by routing all usage through a governed enterprise gateway, minimizing and sanitizing data, and enforcing zero-trust access.
+
+**Local Deployment**: Run models locally (e.g., using Ollama) rather than via web APIs to ensure enterprise data never leaves secure local hardware.
+
+**Deploy Local or Domain-Specific Models**: Restrict the usage of public models in favor of privately hosted, open-source LLMs where the enterprise retains total control over the data environment.
+
+**Utilize RAG**: Rather than giving an LLM full access to an entire data lake, RAG dynamically pulls relevant data for a specific prompt, allowing the business to retain the data securely in its own library.
+
+---
+
+## Automate Security Reviews
+
+### Automated Security Reviews with Claude Code
+
+Automating security reviews with AI enables engineering teams to identify vulnerabilities continuously rather than in periodic manual audits. Claude Code can systematically review codebases, applying security knowledge at scale to catch issues that human reviewers might miss under time pressure.
+
+Automated security reviews with Claude Code provide:
+
+- **Continuous vulnerability scanning**: Analyze code changes in CI/CD pipelines to detect security issues before they reach production.
+- **Coverage**: Apply consistent security checks across entire codebases, not just recently changed files.
+- **Contextual understanding**: Claude Code understands code context and can identify complex vulnerabilities like authentication bypasses, insecure deserialization, and injection flaws that require reasoning across multiple files.
+- **Actionable remediation**: Rather than just flagging issues, Claude Code can suggest specific fixes aligned with the codebase's patterns and dependencies.
+- **Prioritized risk findings**: Security issues are ranked by severity, helping teams focus effort on critical vulnerabilities first.
+
+Practical applications include:
+
+- Reviewing pull requests for OWASP Top 10 vulnerabilities
+- Auditing third-party dependencies for known CVEs
+- Detecting hardcoded secrets and credentials
+- Identifying insecure cryptographic patterns
+- Reviewing infrastructure-as-code for misconfigurations
+
+> Reference: [Automate Security Reviews with Claude Code — Anthropic](https://claude.com/blog/automate-security-reviews-with-claude-code)
+
+### GitHub Copilot Security Controls
+
+GitHub Copilot introduces specific security considerations for software development workflows. Organizations deploying Copilot should implement controls to prevent data leakage and ensure generated code meets security standards.
+
+Key security controls for GitHub Copilot in enterprise environments:
+
+**Content Exclusions**: Configure Content Exclusions in organization settings or use `.copilotignore` files locally to block the AI from indexing `.env` files, deployment scripts, and highly sensitive repositories. This prevents Copilot from suggesting code that inadvertently exposes secrets or internal configurations.
+
+**Human in the Loop**: Make it a hard policy that developers must review and test all AI-generated code rather than blindly copy-pasting chat outputs into production. Copilot Chat can inadvertently suggest insecure coding patterns or introduce external dependencies with vulnerabilities.
+
+**Code Review Integration**: Integrate Copilot suggestions into existing code review workflows, ensuring that AI-generated code is subject to the same security review requirements as human-written code.
+
+**Dependency Auditing**: AI-generated code may introduce new dependencies. Regularly audit all dependencies — including those suggested by Copilot — using tools like `npm audit`, `pip audit`, or Dependabot.
+
+**Telemetry and Logging**: Monitor Copilot usage within the organization to detect patterns of sensitive data being submitted as context to the AI model.
+
+**Tenant Data Isolation**: Understand how GitHub Copilot handles organizational data. Enterprise versions provide stronger data isolation guarantees, ensuring that code from one organization is not used to train models or inform suggestions for other organizations.
+
+> Reference: [Demystifying GitHub Copilot Security Controls — Microsoft Tech Community](https://techcommunity.microsoft.com/blog/azuredevcommunityblog/demystifying-github-copilot-security-controls-easing-concerns-for-organizational/4468193)
+
+---
+
+## Security Risks in Software Development Workflows
+
+AI integration into software development workflows introduces security, privacy, governance, and data leakage risks that span the entire software development lifecycle (SDLC). These risks emerge when AI tools are used for code generation, code review, documentation, testing, and deployment automation.
+
+### Shadow AI in Software Development
+
+The shadow AI phenomenon is a growing threat vector in software development. Developers may use public or unapproved AI tools and paste internal team documents or proprietary content into generative-AI interfaces without organizational oversight.
+
+Risks of shadow AI in development workflows include:
+
+- **Intellectual property exposure**: Pasting proprietary source code into public AI tools risks exposing trade secrets and proprietary algorithms.
+- **Credential leakage**: Developers sharing configuration files or environment variables with AI tools risk exposing API keys, database credentials, and service tokens.
+- **Compliance violations**: Processing personal data through unapproved AI services may violate GDPR, HIPAA, or other data protection regulations.
+- **Supply chain risks**: AI-generated code that is not reviewed may introduce vulnerable or malicious dependencies into the software supply chain.
+
+Mitigation strategies:
+
+- Establish clear organizational policies on approved AI tools for development
+- Implement network-level controls to detect and block unauthorized AI service usage
+- Provide developers with approved, enterprise-managed AI tools that meet organizational security standards
+- Conduct regular training on the risks of sharing sensitive information with external AI services
+
+### AI-Generated Code Vulnerabilities
+
+AI code generation tools can introduce vulnerabilities into software:
+
+- **Insecure patterns**: AI models trained on public code repositories may suggest outdated or insecure coding patterns, such as deprecated cryptographic functions or SQL string concatenation that enables injection attacks.
+- **Hallucinated APIs and libraries**: AI tools may suggest functions or libraries that do not exist or have been deprecated, leading developers to install malicious packages with similar names (typosquatting).
+- **Context-blind suggestions**: Without understanding the full security context of an application, AI tools may generate code that appears correct but is insecure in the specific deployment environment.
+- **Over-privileged code**: AI-generated infrastructure code (e.g., IAM policies, Kubernetes RBAC) may grant excessive permissions if the model defaults to permissive configurations.
+
+Mitigation strategies:
+
+- Integrate Static Application Security Testing (SAST) tools into CI/CD pipelines to catch vulnerabilities in AI-generated code
+- Apply the principle of least privilege when reviewing AI-generated infrastructure and access control code
+- Use Software Composition Analysis (SCA) tools to audit all dependencies, including those introduced by AI suggestions
+
+### Regulatory Compliance in Software Workflows
+
+AI tools used in software development must comply with applicable data protection and security regulations:
+
+- **GDPR**: If developers share personal data with AI tools during debugging or testing, the AI service may become a data processor under GDPR, requiring data processing agreements and adherence to data subject rights.
+- **HIPAA**: AI tools that process Protected Health Information (PHI) during development workflows must meet HIPAA security and privacy requirements.
+- **CPRA/CCPA**: Organizations must be aware of state-level privacy laws when using AI tools that may process California residents' personal information.
+- **IP and Copyright**: AI-generated code may replicate copyrighted patterns from training data, creating intellectual property risks for organizations that deploy it in commercial products.
+
+> Reference: [Defense in Depth for Autonomous AI Agents — Microsoft Security Blog](https://www.microsoft.com/en-us/security/blog/2026/05/14/defense-in-depth-autonomous-ai-agents/)
+> Reference: [Governance and Security for AI Agents across the Organization — Azure Cloud Adoption Framework](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/governance-security-across-organization)
+
+---
+
+## Identify Risk for Autonomous Agentic AI Systems
+
+Autonomous agentic AI systems can plan, execute, and adapt actions toward goals rather than responding to a single prompt. Because they might invoke tools, call APIs, access data, and coordinate across services, they can produce real-world effects with limited human intervention.
+
+### Autonomous AI Agent Threat Model
+
+The expanded capabilities of autonomous agents create a distinct threat surface compared to traditional LLM chatbots:
+
+**Multi-step Execution Risk**: Agents that plan and execute multi-step workflows can amplify the impact of a single compromised decision. A malicious prompt injected early in a workflow may cause cascading harmful actions across many subsequent steps.
+
+**Tool and API Misuse**: Agents with access to external tools (web browsing, code execution, file systems, APIs) can be manipulated into using those tools in unintended ways. A prompt injection in a retrieved document could instruct the agent to exfiltrate data via an API call.
+
+**Cross-Service Coordination**: Agents that coordinate across services introduce trust boundary issues. An attacker who compromises one service in an agent's workflow may be able to influence the agent's actions across the entire system.
+
+**Memory and State Manipulation**: Persistent agents with long-term memory can be manipulated through carefully timed injection of false information into their memory, causing incorrect behavior in future tasks.
+
+**Blast Radius Amplification**: The more permissions an agent holds, the larger its blast radius when compromised. Agents with write access to critical systems can cause irreversible damage if manipulated.
+
+### Least Privilege and Just-in-Time Permissions
+
+**Least Privilege**: Restrict the agent's capabilities to only what is required to perform its specific task. If an agent only needs to read a database, never grant it write or delete permissions. Applying least privilege to autonomous agents is more complex than for human users because agents operate dynamically across many tasks and services.
+
+**Just-In-Time (JIT) Permissions**: Implement scoped permissions that expire as soon as the task completes, limiting the blast radius if the agent is compromised. JIT permissions ensure that elevated access exists only for the duration required and is automatically revoked.
+
+**Scope Binding**: Bind agent permissions to specific task scopes. An agent authorized to read customer records for a billing workflow should not retain that authorization when executing an unrelated task.
+
+**Permission Auditing**: Continuously audit agent permissions to identify and revoke unused or excessive privileges. Automated tooling should flag agents with permissions that have not been used within a defined period.
+
+### Defense in Depth for Autonomous AI Agents
+
+Defense in depth applies the principle of layered security to autonomous agents, ensuring that the failure of any single control does not result in a complete system compromise.
+
+Security layers for autonomous AI agents include:
+
+**Identity and Authentication Layer**: Each agent must have a verifiable, unique identity. Use certificate-based authentication or short-lived tokens issued by a trusted identity provider. Avoid shared credentials across agents.
+
+**Authorization and Policy Enforcement**: Apply fine-grained authorization policies that are enforced at each tool and service the agent calls, not just at the agent's entry point. Zero Trust architecture — verify explicitly, use least privilege, assume breach — is the appropriate model for agent deployments.
+
+**Input Validation and Prompt Inspection**: Inspect all inputs to the agent, including data retrieved from external sources (documents, APIs, web content), for prompt injection payloads. Do not trust content retrieved by the agent from external sources.
+
+**Output Monitoring and Action Approval**: Monitor agent outputs and planned actions before they are executed. For high-impact actions (deleting files, sending emails, making purchases), require explicit human approval or automated policy approval.
+
+**Audit Logging and Traceability**: Every action taken by an autonomous agent must be logged with sufficient detail to reconstruct the full chain of events. Logs must be immutable and stored outside the agent's execution environment.
+
+**Anomaly Detection and Circuit Breakers**: Deploy behavioral monitoring to detect when an agent is acting outside its expected patterns. Implement circuit breakers that pause agent execution and trigger human review when anomalous behavior is detected.
+
+> Reference: [Identify Risk for Autonomous Agentic AI Systems — Microsoft Learn Zero Trust](https://learn.microsoft.com/en-us/security/zero-trust/sfi/manage-agentic-risk)
+> Reference: [Defense in Depth for Autonomous AI Agents — Microsoft Security Blog](https://www.microsoft.com/en-us/security/blog/2026/05/14/defense-in-depth-autonomous-ai-agents/)
+> Reference: [Governance and Security for AI Agents across the Organization — Azure Cloud Adoption Framework](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/governance-security-across-organization)
+
+---
+
+## Securing Vector Databases
+
+Vector databases serve as the "memory" for AI applications by storing data as numerical representations called embeddings. While they enable powerful semantic search and Retrieval-Augmented Generation (RAG), they introduce significant security, privacy, and leakage risks.
+
+### Vector Embeddings and Privacy
+
+**Embeddings are not anonymized**: Vector embeddings are dense, compressed mathematical representations of raw data, not random noise. Research has demonstrated that embeddings can be reversed or used to reconstruct the original content with high fidelity, especially when the attacker has access to the embedding model.
+
+**Training Data Exposure via Embeddings**: If sensitive documents are embedded and stored in a vector database without access controls, any user with query access to the database can retrieve semantically similar content — including documents they are not authorized to view.
+
+**Inference Attacks on Embeddings**: Attackers with access to a vector database can probe the embedding space to infer the presence of specific documents or data points, effectively performing membership inference attacks against the knowledge base.
+
+**Embedding Model Inversion**: Techniques exist to approximately reconstruct the original text from a vector embedding. Storing embeddings of sensitive documents in a shared or inadequately secured vector database is functionally equivalent to storing the documents themselves without access controls.
+
+### Tenant Isolation and RAG Permissions
+
+**Tenant Isolation**: In multi-tenant systems (such as SaaS applications), failing to isolate vector spaces can result in one user's prompt or AI agent retrieving another customer's confidential information. Vector database queries that span tenant boundaries are a critical security vulnerability in RAG architectures.
+
+Isolation strategies include:
+
+- **Namespace partitioning**: Segregate vector spaces by tenant using database namespaces or collections. Ensure query routing logic enforces tenant boundaries.
+- **Metadata filtering**: Attach tenant ownership metadata to every embedded document. Require that all queries include tenant-scoped metadata filters.
+- **Separate index instances**: For high-security deployments, maintain entirely separate vector index instances per tenant.
+
+**RAG Permissions**: Ensure enterprise integrations use strict Role-Based Access Control (RBAC) so models only surface documents the user is legally permitted to see. The permissions model for RAG-retrieved documents must mirror the permissions model of the underlying document repository. If a user does not have permission to read a document in the source system, they must not receive content from that document through a RAG query.
+
+**Least-Privilege Access**: Govern user prompts using strict RBAC. Ensure that data retrieved via RAG respects the same file-level permissions as a standard user search.
+
+### Security Recommendations for Vector Databases
+
+**Encryption at Rest and in Transit**: Encrypt all data stored in vector databases at rest using AES-256 or equivalent. Enforce TLS for all connections between the application and the vector database.
+
+**Access Control and Authentication**: Require strong authentication for all access to the vector database. Implement API key rotation policies and prefer short-lived credentials over long-lived API keys.
+
+**Data Minimization**: Embed only the minimum information required to support the intended use case. Avoid embedding full documents if metadata or summaries are sufficient for the retrieval task.
+
+**Audit Logging**: Log all query and retrieval operations in the vector database. Include the user identity, query vector or query text, and the document identifiers retrieved. Audit logs enable detection of unauthorized access patterns.
+
+**Dynamic Masking Before Embedding**: Apply PII and secret detection to documents before they are embedded and stored. Redact or tokenize sensitive fields (names, email addresses, financial data) before the embedding step so that sensitive information is never captured in the vector store.
+
+**Regular Security Assessments**: Conduct penetration testing against RAG pipelines that use vector databases. Test for cross-tenant leakage, embedding inversion, and authorization bypass vulnerabilities.
+
+> Reference: [Securing Vector Databases — Cisco Security](https://sec.cloudapps.cisco.com/security/center/resources/securing-vector-databases)
+
+---
+
 ## Best Practices and Recommendations
 
 ### 1. Layered Security Approach
@@ -1833,6 +2172,12 @@ Do not rely on a single security mechanism:
 - [Anthropic: Prompt Injection Defenses](https://www.anthropic.com/news/prompt-injection-defenses)
 - [Microsoft: AI Recommendation Poisoning](https://www.microsoft.com/en-us/security/blog/2026/02/10/ai-recommendation-poisoning/)
 - [Microsoft: Enhancing AI Safety Through Red Teaming](https://www.microsoft.com/en-us/microsoft-cloud/blog/2025/01/14/enhancing-ai-safety-insights-and-lessons-from-red-teaming/)
+- [Microsoft: Defense in Depth for Autonomous AI Agents](https://www.microsoft.com/en-us/security/blog/2026/05/14/defense-in-depth-autonomous-ai-agents/)
+- [Microsoft: Identify Risk for Autonomous Agentic AI Systems](https://learn.microsoft.com/en-us/security/zero-trust/sfi/manage-agentic-risk)
+- [Microsoft Tech Community: Demystifying GitHub Copilot Security Controls](https://techcommunity.microsoft.com/blog/azuredevcommunityblog/demystifying-github-copilot-security-controls-easing-concerns-for-organizational/4468193)
+- [Anthropic: Automate Security Reviews with Claude Code](https://claude.com/blog/automate-security-reviews-with-claude-code)
+- [European Data Protection Board: AI Privacy Risks and Mitigations in LLMs](https://www.edpb.europa.eu/system/files/2025-04/ai-privacy-risks-and-mitigations-in-llms.pdf)
+- [Cisco Security: Securing Vector Databases](https://sec.cloudapps.cisco.com/security/center/resources/securing-vector-databases)
 
 ### Use Cases and Tutorials
 
@@ -1877,4 +2222,4 @@ deactivate
 
 ---
 
-**Last Updated**: April 26, 2026
+**Last Updated**: May 16, 2026
