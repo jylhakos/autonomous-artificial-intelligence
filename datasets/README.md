@@ -1,4 +1,4 @@
-# Datasets
+# Data Analysis: Datasets
 
 A reference and hands-on workspace for preparing, cleaning, and generating datasets used in the training and fine-tuning of **Large Language Models (LLMs)** and **Machine Learning (ML)** models. The project includes Python scripts that implement the **Self-Instruct** technique for synthetic instruction-tuning dataset creation using a local Ollama model.
 
@@ -83,7 +83,7 @@ Large Language Models are neural networks trained on massive text corpora to acq
 
 Classical and deep Machine Learning models require structured, well-labelled tabular, image, or time-series datasets. The guiding principle is that **data quality directly determines model performance**. Key dataset concerns differ from LLMs in scale: while LLM pre-training can consume petabytes, a well-crafted ML dataset of thousands to millions of labelled examples is often sufficient for supervised tasks such as classification, regression, or object detection.
 
-Feature engineering, class balance, and train/validation/test split discipline are critical. Exploration tools such as Pandas and NumPy support initial analysis, while large-scale frameworks such as Apache Spark and Dask handle datasets that exceed local memory.
+Feature engineering, class balance, and proper dataset partitioning are significant for preventing evaluation bias. Exploration tools such as Pandas and NumPy support initial analysis, while large-scale frameworks such as Apache Spark and Dask handle datasets that exceed local memory.
 
 ---
 
@@ -120,7 +120,7 @@ Apply heuristic and model-based quality filters:
 
 **4. Deduplication**
 
-Deduplication is critical. Duplicate content inflates training time and biases the model toward repeated text. Two complementary approaches are standard:
+Deduplication is essential. Duplicate content inflates training time and biases the model toward repeated text. Two complementary approaches are standard:
 
 - **Exact deduplication** — Compute SHA-256 or the first 64 bits of SHA-1 for each paragraph and discard those with matching hashes. Effective for verbatim copies.
 - **Near-duplicate detection (MinHash + LSH)** — Break text into overlapping k-shingles, compute MinHash signatures across multiple hash functions, and use Locality-Sensitive Hashing (LSH) to bucket similar documents without O(n²) comparisons. Estimate Jaccard similarity from the signatures. The `datasketch` library provides a production-ready implementation.
