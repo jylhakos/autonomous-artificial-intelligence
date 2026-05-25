@@ -1,0 +1,57 @@
+# Virtual environment
+venv/
+.venv/
+env/
+.env/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Python package directories (installed libraries)
+site-packages/
+lib/
+lib64/
+include/
+bin/
+Scripts/
+
+# PyTorch model checkpoints and binary artifacts
+checkpoints/
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.safetensors
+
+# NumPy binary files
+*.npy
+*.npz
+
+# Training data (plain text corpora can be large)
+data/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Distribution / packaging
+*.tar.gz
+*.zip
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE and editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
