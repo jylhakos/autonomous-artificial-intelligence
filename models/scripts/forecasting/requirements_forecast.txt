@@ -1,0 +1,10 @@
+# Service load forecasting dependencies
+# Install AFTER activating the virtual environment:
+#   source venv/bin/activate
+#   pip install -r requirements_forecast.txt
+
+tensorflow>=2.16.0
+scikit-learn>=1.4.0
+pandas>=2.2.0
+numpy>=1.26.0
+matplotlib>=3.8.0
