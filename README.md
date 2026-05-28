@@ -13,6 +13,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
   - [evaluation/](#-evaluation)
   - [fine-tuning/](#-fine-tuning)
   - [memory/](#-memory)
+  - [models/](#-models)
   - [observability/](#-observability)
   - [optimization/](#-optimization)
   - [orchestration/](#-orchestration)
@@ -39,6 +40,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 fine-tuning/         # LLM fine-tuning with Unsloth, PEFT, LoRA, and QLoRA
 ├── 📂 memory/              # Context windows, short-term and long-term agent memory
+├── 📂 models/              # Machine learning models, LLMs, and local inference server
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 optimization/        # ML and LLM optimization techniques and tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
@@ -254,6 +256,63 @@ memory/
         ├── foundry_memory.py              Foundry Memory Store demo (long-term persistence)
         ├── foundry_short_term_context.py  Foundry Conversations API (short-term context)
         └── README.md                      Foundry memory integration guide
+```
+
+---
+
+### 📂 models/
+
+**Key Points:**
+- Covers two primary model types in modern AI systems: **Machine Learning (ML) models** (RNN, LSTM) for sequential and time-series tasks, and **Large Language Models (LLMs)** for language understanding and generation
+- End-to-end pipeline for building a GPT-style LLM from scratch: tokenization, transformer architecture with multi-head attention, pre-training on a text corpus, supervised fine-tuning, and chatbot deployment
+- Custom **FastAPI inference server** for serving the locally-built LLM via REST API endpoints, enabling fully private and offline-capable model deployment without third-party API dependencies
+- **Nginx reverse proxy** with token-based authorization (`auth_request`) to secure the inference server and control access
+- **Open WebUI** chat frontend integration providing a conversational interface to the locally-running model
+- **RNN and LSTM** models for time-series forecasting of service request volumes, illustrating how classical ML complements LLMs in autonomous systems
+- Service load forecasting pipeline: data preparation, LSTM training, next-day usage prediction, and visualization with evaluation metrics (MAE, RMSE)
+- Request logging and CSV dataset generation from live inference traffic to feed back into ML training workflows
+
+**Importance for Autonomous AI:**
+Understanding how large language models are built from the ground up — tokenization, attention mechanisms, transformer blocks, pre-training objectives, and supervised fine-tuning — gives autonomous AI practitioners the architectural intuition required to diagnose failure modes, select the right model for a task, and make informed decisions about fine-tuning versus prompting versus RAG. Building and deploying a model's own inference server removes the dependency on third-party APIs, enabling fully private, offline-capable autonomous agents with deterministic latency and no per-token billing. The LSTM forecasting pipeline demonstrates how classical ML models complement LLMs within autonomous systems: while LLMs handle language understanding and generation, sequential models like LSTMs excel at predicting resource demand from historical time-series data, enabling autonomous agents to proactively adapt behavior or scale infrastructure based on anticipated load patterns. Together, the from-scratch LLM and the forecasting pipeline establish the full spectrum of model engineering knowledge that underpins every component in this repository.
+
+**Key Components:**
+- `scripts/llm_from_scratch/model.py` — GPT-style transformer model implementation with multi-head self-attention and feed-forward layers
+- `scripts/llm_from_scratch/tokenizer.py` — Tokenizer for text preprocessing used during pre-training and inference
+- `scripts/llm_from_scratch/train.py` — Pre-training script for the GPT-style model on a text corpus
+- `scripts/llm_from_scratch/text_classifier.py` — Fine-tuning the pre-trained model as a text classifier
+- `scripts/llm_from_scratch/chatbot.py` — Interactive chatbot using the pre-trained model for text generation
+- `scripts/llm_from_scratch/api_server.py` — FastAPI inference server exposing the model via REST API endpoints with chat completion support
+- `scripts/nginx/nginx.conf` — Nginx reverse proxy configuration with `auth_request`-based token authorization for securing the inference server
+- `scripts/logging/log_analyzer.py` — Request logging and analysis tool that produces CSV datasets from live inference traffic for ML training
+- `scripts/forecasting/prepare_data.py` — Data preparation and normalization pipeline for LSTM training
+- `scripts/forecasting/train_lstm.py` — LSTM model training for service load time-series forecasting
+- `scripts/forecasting/forecast.py` — Next-day usage prediction using the trained LSTM model
+- `scripts/forecasting/plot_forecast.py` — Visualization of forecast results against historical usage data
+- `requirements.txt` — Python dependencies for model training, inference server, and forecasting workflows
+- `README.md` — Full guide covering the ML model development lifecycle, LLM pipeline stages, inference server setup, Nginx proxy, Open WebUI integration, and LSTM forecasting
+
+```
+models/
+├── 📄 requirements.txt                  Python dependencies
+├── 📄 README.md                         ML models, LLM pipeline, and inference server guide
+└── 📂 scripts/
+    ├── 📂 llm_from_scratch/
+    │   ├── model.py                     GPT-style transformer architecture
+    │   ├── tokenizer.py                 Tokenizer for pre-training and inference
+    │   ├── train.py                     Pre-training script
+    │   ├── text_classifier.py           Fine-tuning as a text classifier
+    │   ├── chatbot.py                   Interactive chatbot with the pre-trained model
+    │   ├── api_server.py                FastAPI inference server with REST endpoints
+    │   └── requirements.txt             Dependencies for LLM training and inference
+    ├── 📂 nginx/
+    │   └── nginx.conf                   Nginx reverse proxy with token-based authorization
+    ├── 📂 logging/
+    │   └── log_analyzer.py              Request logging and CSV dataset generation
+    └── 📂 forecasting/
+        ├── prepare_data.py              Data preparation and normalization for LSTM
+        ├── train_lstm.py                LSTM model training for load forecasting
+        ├── forecast.py                  Next-day usage prediction
+        └── plot_forecast.py             Forecast visualization against historical data
 ```
 
 ---
