@@ -10,7 +10,12 @@ A collection of training scripts covering the full development lifecycle of both
 - [Large Language Model Training](#large-language-model-training)
   - [LLM Training Pipeline Diagram](#llm-training-pipeline-diagram)
   - [Pre-training](#pre-training)
+    - [Choosing a Pre-training Dataset](#choosing-a-pre-training-dataset)
   - [Post-training](#post-training)
+    - [Alignment?](#alignment)
+      - [What is Large Language Model Alignment?](#what-is-large-language-model-alignment)
+      - [How Does Large Language Model Alignment Work?](#how-does-large-language-model-alignment-work)
+      - [How Do You Train?](#how-do-you-train)
   - [Adaptation Methods](#adaptation-methods)
   - [llm/ Scripts Reference](#llm-scripts-reference)
   - [LLM Quick Start](#llm-quick-start)
@@ -134,6 +139,68 @@ Pre-training is the most resource-intensive stage of LLM development. The model 
 | Pipeline Parallelism | Different model layers reside on different GPUs; micro-batches flow through the pipeline. |
 | 3D Parallelism | Combines all three strategies, used by Megatron-LM and GPT-NeoX. |
 
+#### Choosing a Pre-training Dataset
+
+Selecting the right dataset is one of the most impactful decisions you will make before writing a single line of training code. The quality and relevance of your corpus determines the factual knowledge, linguistic register, and reasoning patterns your model can acquire. As scaling-law research has shown, a smaller model trained on a high-quality, well-curated corpus often outperforms a larger model trained on noisy, poorly filtered data.
+
+**Key factors to consider**
+
+| Factor | Questions to ask |
+|---|---|
+| **Compute capacity** | How many GPUs do you have? What model size are you targeting? Larger corpora are only beneficial if you have sufficient compute to train over them for enough tokens. A 1–7 B parameter model typically needs 20–100 B tokens of quality data; scaling the corpus beyond what your budget can cover adds diminishing returns. |
+| **Primary domain or target language** | Are you building a general English model, a multilingual model, or a domain-specific model (e.g. biomedical, legal, financial, code)? Domain concentration improves task-specific performance but may reduce general capability, so consider mixing rather than replacing. |
+| **Generic corpus vs. curated mixture** | Do you need a single all-in-one corpus, or a carefully weighted mixture of specialised datasets? State-of-the-art models such as Llama 3 and Qwen 2 use curated mixtures combining web data, code, books, and scientific papers, with explicit token-budget allocation per source. |
+| **General domain vs. specialised domain** | If your target application is coding, legal reasoning, or scientific summarisation, use a domain-specific corpus for pre-training or continual pre-training rather than relying solely on general web data. |
+| **Licensing and provenance** | Does the dataset have a licence compatible with your deployment use case? Can you audit provenance and reproduce the filtering pipeline? Reproducibility is essential for compliance and debugging. |
+
+**Lightweight datasets for rapid experimentation**
+
+The default configuration in `pretrain.py` uses `wikitext-103-raw-v1`, a clean English Wikipedia extract small enough to download in seconds and iterate on with a single GPU. Use the alternatives below to validate architecture changes or debug training code before committing to larger corpora:
+
+| Dataset | HuggingFace id | Approx. size | Best for |
+|---|---|---|---|
+| `wikitext-2-raw-v1` | `wikitext` / `wikitext-2-raw-v1` | ~2 MB | Minimal smoke tests on a laptop CPU |
+| `wikitext-103-raw-v1` *(default)* | `wikitext` / `wikitext-103-raw-v1` | ~500 MB | Single-GPU debugging and small-scale ablations |
+| `roneneldan/TinyStories` | `roneneldan/TinyStories` | ~475 MB | Tiny decoder models; simple narrative language |
+| `wikimedia/wikipedia` (EN 20231101) | `wikimedia/wikipedia` | ~20 GB | Clean encyclopaedic text; reliable general-purpose baseline |
+| `EleutherAI/pile` (streaming) | `EleutherAI/pile` | 800 GB total | Mix of academic and professional text; use `streaming=True` |
+| `togethercomputer/RedPajama-Data-1T` | `togethercomputer/RedPajama-Data-1T` | 1.2 T tokens | Documented LLaMA-replica mixture; streaming recommended |
+| `tiiuae/falcon-refinedweb` | `tiiuae/falcon-refinedweb` | 600 B tokens (public) | High-quality deduplicated web text; trained Falcon-40B |
+| `bigcode/starcoderdata` | `bigcode/starcoderdata` | 783 GB, 86 languages | Code-focused pre-training |
+
+To switch the dataset in `pretrain.py`, update `dataset_name` and `dataset_config` in your JSON config:
+
+```json
+{
+    "dataset_name": "roneneldan/TinyStories",
+    "dataset_config": null
+}
+```
+
+**Data preprocessing pipeline**
+
+Raw corpora must pass through a preprocessing pipeline before they can be used as training signal. Never assume open-source datasets are production-ready without preprocessing — they contain redundant, missing, or improperly formatted data that language models will learn and reproduce.
+
+*Data cleaning* removes noisy data and outliers from raw text. ML teams use techniques like statistical filtering and clustering to identify and remove content that doesn't belong.
+
+*Normalization* ensures features in datasets are uniformly structured. When normalizing text data, engineers apply techniques like Unicode normalization, whitespace standardization, and encoding fixes.
+
+*Tokenization* segments text into discrete units — tokens — organized as n-grams that NLP models can process. An n-gram is a contiguous sequence of n items from text, enabling models to group words together and process them as units. This reduces the vocabulary complexity while preserving semantic relationships.
+
+*Vectorization* assigns each token a unique numerical representation. Common techniques include bag-of-words, Term Frequency–Inverse Document Frequency (TF-IDF), and learned embeddings like Word2Vec.
+
+**Fine-tuning and domain adaptation**
+
+*Instruction fine-tuning* enables models to learn domain-specific knowledge and follow particular instruction patterns while maintaining linguistic capabilities. For code-focused models, the [`iamtarun/code_instructions_120k_alpaca`](https://huggingface.co/datasets/iamtarun/code_instructions_120k_alpaca) dataset provides 120 k coding instruction–response pairs in the Alpaca format and can be passed directly to `finetune.py`:
+
+```bash
+python finetune.py --dataset_name iamtarun/code_instructions_120k_alpaca
+```
+
+*Beyond instruction following*, preference tuning aligns models with human values and quality expectations — see the [Alignment?](#alignment) section for the full post-training pipeline.
+
+> **Further reading:** Kili Technology — [Open-Sourced Training Datasets for Large Language Models](https://kili-technology.com/blog/9-open-sourced-datasets-for-training-large-language-models)
+
 ### Post-training
 
 The output of pre-training is a base model that can complete sequences but has not been aligned to follow instructions or match human preferences. Post-training addresses this through supervised instruction fine-tuning followed by one or more alignment steps.
@@ -145,6 +212,68 @@ The output of pre-training is a base model that can complete sequences but has n
 **RLHF with PPO.** The classical approach trains a reward model on human-ranked response pairs, then optimises the policy using proximal policy optimisation. Apple's AFM uses a committee of models together with rejection sampling and RLHF with mirror descent, achieving strong results at small model sizes.
 
 **Rejection sampling.** The model generates multiple candidate responses; a reward model selects the highest-quality response for the next training round. This "online" refinement step is used by Qwen 2, Llama 3.1, and Apple's AFM as an intermediate between offline DPO and full PPO.
+
+### Alignment?
+
+Post-training is sometimes referred to as **"alignment"** — and for good reason. It is the key component of modern LLM development that teaches a model *how to answer in a way that humans like*, how to reason through problems, and how to refuse dangerous or unhelpful requests. Without alignment, even the most capable base model is an unreliable, unguided sequence completer.
+
+> For a deep dive into the full post-training and alignment landscape, see:
+> - PyTorch Blog — [A Primer on LLM Post-Training](https://pytorch.org/blog/a-primer-on-llm-post-training/)
+> - Sebastian Raschka — [New LLM Pre-training and Post-training Paradigms](https://magazine.sebastianraschka.com/p/new-llm-pre-training-and-post-training)
+> - Snorkel AI — [LLM Alignment Techniques: 4 Post-Training Approaches](https://snorkel.ai/blog/llm-alignment-techniques-4-post-training-approaches/)
+
+#### What is Large Language Model Alignment?
+
+LLM alignment in the post-training phase bridges the gap between a base model's broad language knowledge and the **useful, safe, and context-appropriate behaviour** that real-world deployments require.
+
+Upon deployment, a model's architecture, pre-training, and fine-tuning may enable it to mimic an organisation's style and preferred format, but it needs explicit guidance to reliably achieve that goal. The three canonical alignment objectives are:
+
+| Goal | Description |
+|---|---|
+| **Helpfulness** | The model accurately and completely fulfils the user's requested task. |
+| **Honesty / Factuality** | Hallucinations are minimised; the model reliably cites accurate information and acknowledges uncertainty. |
+| **Harmlessness** | The model refuses to generate dangerous, illegal, hateful, or toxic content. |
+
+These three goals — often abbreviated **HHH** — define the target behaviour that alignment techniques work to instil.
+
+#### How Does Large Language Model Alignment Work?
+
+Alignment is achieved through a three-stage pipeline that progressively shapes the model's behaviour:
+
+**1. Supervised Fine-Tuning (SFT)**
+
+SFT takes the pre-trained base model and trains it on highly curated, high-quality datasets of instructions paired with desired responses (e.g. chat transcripts, coding question-answer pairs, tool-use demonstrations). Training uses standard cross-entropy loss, predicting the next token, but **only on the response tokens** — the prompt is masked from the loss.
+
+This teaches the LLM the basic format of a helpful assistant: how to open and close a conversation, how to actually answer a prompt rather than simply continuing it, and how to follow instruction templates. SFT data combines human-annotated examples with synthetically generated pairs produced by stronger, already-aligned models.
+
+**2. Reward Modelling (RM)**
+
+To align the model with human preferences beyond basic conversational structure, a **Reward Model** is trained as a proxy for human judgement:
+
+1. Human annotators (or an AI acting as a proxy) are shown multiple responses to the same prompt and rank them from best to worst.
+2. These labelled preference pairs are used to train a secondary model — the Reward Model — to output a **scalar score** representing how much a human would prefer a given response.
+
+The Reward Model captures nuanced human preferences that are difficult to specify with rules: appropriate tone, correct level of detail, safe handling of sensitive topics, and so on.
+
+**3. Policy Optimisation (Alignment Tuning)**
+
+The goal is to update the LLM's **policy** (its strategy for generating text) so it consistently produces outputs that receive high scores from the Reward Model. Several approaches exist:
+
+| Method | Description |
+|---|---|
+| **RLHF with PPO** | The classical approach. The LLM generates responses, the Reward Model scores them, and the LLM's weights are updated using Proximal Policy Optimisation (PPO) to maximise that reward. A **KL-divergence penalty** prevents the model from drifting too far from its original linguistic capabilities, preserving the fluency gained during pre-training. |
+| **Direct Preference Optimisation (DPO)** | A simpler, widely adopted alternative. Instead of training a separate Reward Model, DPO treats the LLM itself as an implicit reward function. It mathematically optimises the policy directly on human preference pairs (chosen vs. rejected), saving substantial compute and avoiding the training instability inherent in online RL. Llama 3.1, Qwen 2, and most recent open models use SFT + iterative DPO. |
+| **ORPO** (Odds Ratio Preference Optimisation) | Combines SFT and preference optimisation into a single training step using an odds-ratio penalty on rejected responses. Eliminates the need for a separate SFT phase, reducing pipeline complexity and compute cost. |
+| **KTO** (Kahneman-Tversky Optimisation) | Inspired by prospect theory in behavioural economics. Optimises the model directly from binary *good / bad* labels rather than preference pairs, making data collection cheaper and the method applicable when paired comparisons are unavailable. |
+
+#### How Do You Train?
+
+Backpropagation does occur during RL-based alignment (e.g. PPO), but with a critical difference from the clean forward–backward loops used in supervised learning:
+
+- In supervised learning, the loss function (cross-entropy, MSE) is **differentiable** — gradients flow smoothly from the loss back through every parameter.
+- In RL-based alignment, the **reward signal is not differentiable**. Rewards come from a Reward Model or external tools (browsers, code interpreters, search engines), none of which can be backpropagated through directly.
+
+Instead, RL algorithms such as PPO use **policy gradient methods**: the model samples actions (generated tokens), receives a scalar reward, and estimates the gradient of the expected reward using the REINFORCE trick or advantage estimation. This makes RL-based training noisier, more compute-intensive, and harder to stabilise than supervised fine-tuning — which is a primary motivation for the popularity of DPO, ORPO, and KTO, all of which reframe preference optimisation as a supervised-style problem with differentiable objectives.
 
 ### Adaptation Methods
 
@@ -533,3 +662,9 @@ The `.gitignore` file at the `training/` root prevents generated artefacts, bina
 - Hu, E. et al. (2021). *LoRA: Low-Rank Adaptation of Large Language Models*. arXiv:2106.09685.
 - NVIDIA. *Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism*. https://github.com/NVIDIA/Megatron-LM
 - EleutherAI. *GPT-NeoX: Large Scale Autoregressive Language Modeling in PyTorch*. https://github.com/EleutherAI/gpt-neox
+- PyTorch Blog. (2024). *A Primer on LLM Post-Training*. https://pytorch.org/blog/a-primer-on-llm-post-training/
+- Snorkel AI. (2024). *LLM Alignment Techniques: 4 Post-Training Approaches*. https://snorkel.ai/blog/llm-alignment-techniques-4-post-training-approaches/
+- Hong, J. et al. (2024). *ORPO: Monolithic Preference Optimization without Reference Model*. arXiv:2403.07691.
+- Ethayarajh, K. et al. (2024). *KTO: Model Alignment as Prospect Theoretic Optimization*. arXiv:2402.01306.
+- Kili Technology. (2024). *Open-Sourced Training Datasets for Large Language Models*. https://kili-technology.com/blog/9-open-sourced-datasets-for-training-large-language-models
+- iamtarun. (2023). *code_instructions_120k_alpaca — 120 k coding instruction–response pairs in Alpaca format*. HuggingFace Datasets. https://huggingface.co/datasets/iamtarun/code_instructions_120k_alpaca
