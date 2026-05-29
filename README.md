@@ -21,6 +21,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
   - [reasoning/](#-reasoning)
   - [retrieval/](#-retrieval)
   - [security/](#-security)
+  - [training/](#-training)
   - [workflows/](#-workflows)
 - [Getting Started](#getting-started)
 - [Documentation](#documentation)
@@ -47,8 +48,9 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 platform/            # MLflow platform for agents, LLMs, and ML models
 ├── 📂 reasoning/           # LLM reasoning techniques and training workflows
 ├── 📂 retrieval/           # Vector databases, vector search and RAG for LLMs
-├── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
-└── 📂 security/            # AI agent security and threat protection
+├── 📂 security/            # AI agent security and threat protection
+├── 📂 training/            # Pre-training, post-training, alignment, and fine-tuning for LLMs and ML
+└── 📂 workflows/           # SDLC integration with Vibe Coding and Foundry Local
 ```
 
 ### 📂 agents/
@@ -505,6 +507,82 @@ Autonomous AI agents execute code, manage files, and access multiple application
 - Protection against prompt injections, indirect attacks, and AI memory poisoning
 - Practical implementations with Ollama and Google Agent Development Kit
 - Use cases for securing Amazon Bedrock Agents and GKE deployments
+
+---
+
+### 📂 training/
+
+**Key Points:**
+- Full training lifecycle for both **Large Language Models (LLMs)** and classical **Machine Learning (ML)** models
+- LLM pipeline organised into two broad phases: **pre-training** (building general language capabilities from massive unlabelled corpora) and **post-training** (aligning and adapting those capabilities for instruction-following and human preferences)
+- Multi-stage pre-training covering core pre-training, context-length extension, and annealing — the approach used by Llama 3.1, Qwen 2, and Apple's AFM
+- Post-training alignment pipeline: Supervised Fine-Tuning (SFT) → Reward Modelling → Policy Optimisation (RLHF/PPO, DPO, ORPO, KTO)
+- Parameter-Efficient Fine-Tuning (PEFT) with LoRA for task-specific adaptation at 0.1–6 % of total parameters
+- ML model training for classification and regression with PyTorch and scikit-learn, including a reusable data pipeline
+- Distributed training strategies: Data Parallelism (DDP/FSDP), Tensor Parallelism, Pipeline Parallelism, and 3D Parallelism
+
+**Importance for Autonomous AI:**
+Training is the process that creates the intelligence powering every autonomous agent in this repository. Pre-training on trillions of tokens gives a model its factual knowledge, language patterns, and commonsense reasoning — the raw capability that all downstream use depends on. Post-training alignment transforms that raw capability into reliable, instruction-following behaviour: an unaligned base model will complete sequences unpredictably, whereas an aligned model consistently answers helpfully, honestly, and safely. For autonomous systems, alignment is not optional — agents that execute code, access APIs, and operate with minimal human oversight must refuse dangerous instructions, acknowledge uncertainty, and produce outputs that match human expectations across edge cases no rule-based filter can anticipate. Fine-tuning with LoRA allows teams to encode domain-specific behaviour directly into model weights at low compute cost, while the ML training scripts provide the classical forecasting and classification capabilities that complement LLMs in production pipelines.
+
+**Key Components:**
+- `llm/pretrain.py` — GPT-style causal language model pre-training from scratch; supports multi-GPU via `torchrun` and `accelerate`; configurable architecture via JSON config
+- `llm/finetune.py` — Instruction fine-tuning with LoRA/PEFT adapters in the Alpaca prompt format; masks prompt tokens from the loss; saves adapter-only checkpoints
+- `llm/requirements.txt` — LLM training dependencies: `torch`, `transformers`, `datasets`, `peft`, `accelerate`, `wandb`, `tensorboard`
+- `llm/setup_venv.sh` — Virtual environment setup for the LLM training scripts
+- `ml/data_pipeline.py` — Reusable data preparation module; handles missing values, categorical encoding, `StandardScaler` on train only, stratified splits, and `DataLoader` objects
+- `ml/train_classifier.py` — MLP/CNN classifier training with `OneCycleLR` scheduling and `CrossEntropyLoss`; saves best-validation-accuracy checkpoint
+- `ml/train_regression.py` — MLP regressor training with `CosineAnnealingLR`; evaluates with RMSE, MAE, and R²; saves best-validation-RMSE checkpoint
+- `ml/requirements.txt` — ML training dependencies: `torch`, `scikit-learn`, `pandas`, `numpy`, `datasets`, `wandb`, `tensorboard`
+- `ml/setup_venv.sh` — Virtual environment setup for the ML training scripts
+- `README.md` — Full guide covering the LLM training pipeline, alignment techniques, dataset selection, distributed training strategies, adaptation methods, and ML model lifecycle
+
+**LLM Training Stages:**
+
+| Stage | Phase | Description |
+|---|---|---|
+| Core pre-training | Pre-training | Next-token prediction on a broad, diverse corpus; acquires factual knowledge and language patterns |
+| Continued pre-training | Pre-training | Context-length extension to 32k–128k tokens using long-document data |
+| Annealing | Pre-training | Short final phase on a small, high-quality curated mix to sharpen benchmark performance |
+| Supervised Fine-Tuning (SFT) | Post-training | Trains on instruction-response pairs; teaches the model to follow instructions and adopt an assistant format |
+| Reward Modelling | Post-training | Trains a secondary model on human preference rankings to output a scalar quality score |
+| Policy Optimisation | Post-training | RLHF/PPO, DPO, ORPO, or KTO to align the policy with the reward signal |
+| LoRA / PEFT | Adaptation | Adapter-only fine-tuning for task-specific domains at ~0.1–6 % of parameters |
+
+**Alignment of Large Language Models:**
+
+Post-training is often called **alignment** because it is the phase that closes the gap between a base model's raw sequence-completion capability and behaviour that is *helpful, honest, and harmless* (HHH) — the three canonical alignment goals.
+
+The alignment pipeline has three stages:
+
+1. **Supervised Fine-Tuning (SFT).** The base model is trained on curated instruction-response pairs using cross-entropy loss applied only to the response tokens. SFT teaches the model the basic structure of an assistant interaction — how to answer a prompt rather than continue it — and is the foundation for all subsequent alignment steps. Training data combines human-annotated examples with synthetically generated pairs produced by stronger, already-aligned models.
+
+2. **Reward Modelling (RM).** Human annotators (or AI proxies) rank multiple model responses to the same prompt. These preference comparisons train a Reward Model to output a scalar score representing how much a human would prefer a given response, capturing nuanced judgements about tone, accuracy, safety, and helpfulness that rules cannot encode.
+
+3. **Policy Optimisation.** The LLM's generation policy is updated to consistently produce responses that score highly on the Reward Model. Four principal algorithms are used in production today:
+
+   - **RLHF with PPO** — The classical approach. The model generates responses, the Reward Model scores them, and weights are updated via Proximal Policy Optimisation. A KL-divergence penalty prevents the model from drifting too far from the pre-trained distribution, preserving fluency. High compute cost and training instability have motivated simpler alternatives.
+   - **Direct Preference Optimisation (DPO)** — Treats the LLM itself as an implicit reward function and optimises directly on preference pairs (chosen vs. rejected) without training a separate Reward Model. More stable, cheaper, and widely adopted — Llama 3.1, Qwen 2, and most recent open-weight models use SFT + iterative DPO.
+   - **ORPO (Odds Ratio Preference Optimisation)** — Combines SFT and preference optimisation into a single training step using an odds-ratio penalty on rejected responses, eliminating the need for a separate SFT phase and reducing pipeline complexity.
+   - **KTO (Kahneman-Tversky Optimisation)** — Inspired by behavioural economics prospect theory. Optimises from binary *good / bad* labels rather than pairwise comparisons, making data collection cheaper and the method applicable when paired examples are unavailable.
+
+Without alignment, a capable base model is an unreliable sequence completer that may produce harmful, factually incorrect, or unhelpful outputs with no mechanism for refusal or self-correction. Alignment is what transforms raw model capability into the trustworthy, goal-directed behaviour that production autonomous agents require.
+
+```
+training/
+├── 📄 .gitignore                        Excludes virtual environments, model outputs, and build artefacts
+├── 📄 README.md                         LLM and ML training guide with alignment deep dive
+├── 📂 llm/
+│   ├── requirements.txt                 Python dependencies for LLM pre-training and fine-tuning
+│   ├── setup_venv.sh                    Creates and activates a virtual environment
+│   ├── pretrain.py                      GPT-style causal LM pre-training from scratch
+│   └── finetune.py                      Instruction fine-tuning with LoRA / PEFT adapters
+└── 📂 ml/
+    ├── requirements.txt                 Python dependencies for ML training
+    ├── setup_venv.sh                    Creates and activates a virtual environment
+    ├── data_pipeline.py                 Load, clean, split, scale, and wrap data as PyTorch DataLoaders
+    ├── train_classifier.py              MLP / CNN classifier training with TensorBoard logging
+    └── train_regression.py              MLP regressor training (RMSE, MAE, R²)
+```
 
 ---
 
