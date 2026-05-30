@@ -1,0 +1,39 @@
+### model parameters
+model_name_or_path: openai-community/gpt2-xl
+
+### method parameters
+stage: pt
+do_train: true
+finetuning_type: full
+
+### dataset parameters
+dataset: c4_demo
+cutoff_len: 1024
+max_samples: 10000
+overwrite_cache: true
+preprocessing_num_workers: 4
+
+### output parameters
+output_dir: outputs/gpt2xl_pretrain_ds_z2
+logging_steps: 10
+save_steps: 500
+plot_loss: true
+overwrite_output_dir: true
+
+### training parameters
+# GPT-2 XL (1.5 B, bf16) model alone takes ~3 GB per GPU.
+# ZeRO-2 shards gradients and optimizer states across both GPUs so total
+# per-GPU VRAM stays within 12 GB.  gradient_checkpointing trades compute
+# for memory to further reduce activation memory.
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+learning_rate: 3.0e-5
+num_train_epochs: 1
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+gradient_checkpointing: true
+ddp_timeout: 180000000
+
+### deepspeed
+deepspeed: configs/ds_z2_config.json

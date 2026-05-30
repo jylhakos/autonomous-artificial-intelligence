@@ -10,6 +10,8 @@ A collection of training scripts covering the full development lifecycle of both
 - [Large Language Model Training](#large-language-model-training)
   - [LLM Training Pipeline Diagram](#llm-training-pipeline-diagram)
   - [Pre-training](#pre-training)
+    - [Distributed Training](#distributed-training)
+      - [Distributed Pre-training of Large Language Models](#distributed-pre-training-of-large-language-models)
     - [Choosing a Pre-training Dataset](#choosing-a-pre-training-dataset)
   - [Post-training](#post-training)
     - [Alignment?](#alignment)
@@ -19,6 +21,8 @@ A collection of training scripts covering the full development lifecycle of both
   - [Adaptation Methods](#adaptation-methods)
   - [llm/ Scripts Reference](#llm-scripts-reference)
   - [LLM Quick Start](#llm-quick-start)
+  - [Training Large Language Models with LLaMA-Factory](#training-large-language-models-with-llama-factory)
+    - [scripts/ Scripts Reference](#scripts-scripts-reference)
 - [Machine Learning Model Training](#machine-learning-model-training)
   - [ML Training Pipeline Diagram](#ml-training-pipeline-diagram)
   - [Data Pipeline](#data-pipeline)
@@ -42,12 +46,30 @@ training/
 │   ├── setup_venv.sh        Creates and activates a virtual environment
 │   ├── pretrain.py          GPT-style causal language model pre-training from scratch
 │   └── finetune.py          Instruction fine-tuning with LoRA / PEFT adapters
-└── ml/
-    ├── requirements.txt     Python dependencies for ML training
-    ├── setup_venv.sh        Creates and activates a virtual environment
-    ├── data_pipeline.py     Load, clean, split, scale, and wrap data as PyTorch DataLoaders
-    ├── train_classifier.py  MLP / CNN classifier training with TensorBoard logging
-    └── train_regression.py  MLP regressor training (RMSE, MAE, R2)
+├── ml/
+│   ├── requirements.txt     Python dependencies for ML training
+│   ├── setup_venv.sh        Creates and activates a virtual environment
+│   ├── data_pipeline.py     Load, clean, split, scale, and wrap data as PyTorch DataLoaders
+│   ├── train_classifier.py  MLP / CNN classifier training with TensorBoard logging
+│   └── train_regression.py  MLP regressor training (RMSE, MAE, R2)
+└── scripts/
+    ├── setup.sh                             Install LLaMA-Factory, DeepSpeed, and venv
+    ├── run_ddp.sh                           NativeDDP pre-training on 2 GPUs (GPT-2 124 M)
+    ├── run_deepspeed_z2.sh                  DeepSpeed ZeRO-2 pre-training (GPT-2 XL 1.5 B)
+    ├── run_deepspeed_z2_offload.sh          DeepSpeed ZeRO-2 + CPU offload pre-training
+    ├── run_deepspeed_z3_offload.sh          DeepSpeed ZeRO-3 + full CPU offload pre-training
+    ├── run_fsdp.sh                          FSDP FULL_SHARD pre-training via accelerate
+    └── configs/
+        ├── pretrain_gpt2_ddp.yaml           Training config: DDP, GPT-2 (124 M), fp16
+        ├── pretrain_gpt2xl_ds_z2.yaml       Training config: ZeRO-2, GPT-2 XL (1.5 B), bf16
+        ├── pretrain_gpt2xl_ds_z2_offload.yaml  Training config: ZeRO-2 + CPU offload
+        ├── pretrain_gpt2xl_ds_z3_offload.yaml  Training config: ZeRO-3 + CPU offload
+        ├── pretrain_gpt2xl_fsdp.yaml        Training config: FSDP, fp16
+        ├── accelerate_ddp_2gpu.yaml         Accelerate: MULTI_GPU, 2 processes, fp16
+        ├── accelerate_fsdp_2gpu.yaml        Accelerate: FSDP FULL_SHARD + CPU param offload
+        ├── ds_z2_config.json                DeepSpeed ZeRO-2
+        ├── ds_z2_offload_config.json        DeepSpeed ZeRO-2 + optimizer CPU offload
+        └── ds_z3_offload_config.json        DeepSpeed ZeRO-3 + full CPU offload
 ```
 
 ### Script Reference
@@ -63,6 +85,13 @@ training/
 | `ml/data_pipeline.py` | Reusable data preparation module; loads scikit-learn toy datasets or CSV files; handles missing values, encodes categoricals, applies `StandardScaler` on train only, performs stratified splits, and returns `DataLoader` objects |
 | `ml/train_classifier.py` | Trains an MLP (tabular) or CNN (image) classifier; uses `OneCycleLR` scheduling and `CrossEntropyLoss`; saves the best-validation-accuracy checkpoint as `checkpoints/classifier/best_model.pt` |
 | `ml/train_regression.py` | Trains an MLP regressor; uses `CosineAnnealingLR` and `MSELoss`; evaluates with RMSE, MAE, and R2; saves the best-validation-RMSE checkpoint as `checkpoints/regressor/best_model.pt` |
+| `scripts/setup.sh` | Creates `scripts/.venv/`, clones LLaMA-Factory, installs DeepSpeed and optional Flash Attention 2; verifies Python 3.11+, GPU count, and CUDA before installing |
+| `scripts/run_ddp.sh` | Launches `stage: pt` pre-training of GPT-2 (124 M) on 2 GPUs via `FORCE_TORCHRUN=1`; auto-activates `scripts/.venv` if present; DDP all-reduces gradients through NCCL |
+| `scripts/run_deepspeed_z2.sh` | Launches GPT-2 XL (1.5 B) pre-training with DeepSpeed ZeRO-2; shards optimizer states and gradients across 2 GPUs |
+| `scripts/run_deepspeed_z2_offload.sh` | Same as ZeRO-2 but additionally offloads optimizer states to CPU RAM; frees ~6 GB VRAM at a 20-40% throughput cost; requires >= 32 GB system RAM |
+| `scripts/run_deepspeed_z3_offload.sh` | Launches pre-training with DeepSpeed ZeRO-3 and full CPU offload (params + optimizer); maximises model size at significant throughput cost; requires >= 64 GB system RAM |
+| `scripts/run_fsdp.sh` | Launches pre-training via `accelerate launch` with FSDP FULL_SHARD and parameter CPU offload; equivalent to ZeRO-3 but uses PyTorch-native sharding; requires `LLAMA_FACTORY_DIR` or editable install |
+| `scripts/configs/` | Ten YAML and JSON config files covering all five training strategies; DeepSpeed JSON configs use `"auto"` for batch and accumulation fields so they inherit values from the training YAML |
 
 ---
 
@@ -130,14 +159,152 @@ Pre-training is the most resource-intensive stage of LLM development. The model 
 
 **Reinforcement pre-training (RPT)**, introduced by Microsoft in 2025, reformulates next-token prediction as a sequential decision-making problem. The model generates a chain-of-thought rationale before predicting each token, receiving reward signals based on prediction accuracy. This eliminates the need for labelled data while promoting more systematic internal reasoning.
 
-**Distributed training.** Pre-training at scale requires distributing work across hundreds or thousands of GPUs. The principal strategies are:
+#### Distributed Training
+
+Pre-training at scale requires distributing work across hundreds or thousands of GPUs. Training Large Language Models involves processing vast amounts of data and running complex computations that demand powerful hardware and efficient communication protocols. Single-GPU setups are often insufficient for handling the scale and complexity of modern LLMs. Distributed training across GPU clusters, such as NVIDIA H100 clusters, becomes essential to enable faster training and manage larger datasets effectively.
+
+**Hardware Requirements**
+
+To successfully pre-train an LLM, a cluster must be designed for low-latency, high-bandwidth communication:
+
+| Component | Recommended Specification | Purpose |
+|---|---|---|
+| Accelerators | NVIDIA H100 or A100 ($\ge 80\text{GB}$ VRAM) or Google Cloud TPUs | High-throughput matrix computation |
+| Interconnect | InfiniBand ($\ge 200\text{Gbps}$ per node) or RDMA over Converged Ethernet (RoCE) | Low-latency inter-node gradient synchronisation |
+| Storage | Parallel file systems (NFS, Ceph, or NVMe-based distributed storage) | High-throughput streaming of massive training datasets |
+| Host Nodes | Server-grade CPUs with ample system RAM | Prevent data-loading bottlenecks |
+
+**Software Stack**
+
+| Layer | Technology | Role |
+|---|---|---|
+| OS and Drivers | Ubuntu Linux, NVIDIA Driver, CUDA Toolkit | Base platform and hardware acceleration |
+| Deep Learning Framework | PyTorch or JAX | Core computation engine |
+| Distributed Communication | NCCL (NVIDIA Collective Communications Library) | Inter-GPU and inter-node collective operations |
+| Distributed Training Libraries | DeepSpeed, Megatron-LM, PyTorch FSDP | Memory scaling and parallelism strategies |
+| Job Scheduling | SLURM | Node allocation, job queues, and fault tolerance |
+| Containerisation | Docker | Identical software environment across all nodes |
+| Monitoring | Weights and Biases, Prometheus + Grafana | Training loss, hardware utilisation, network throughput |
+
+**Communication Protocols**
+
+Two libraries dominate distributed LLM training communication:
+
+- **UCX (Unified Communication X):** An open-source, community-driven project that provides flexibility and support for various communication protocols including InfiniBand, RDMA over Converged Ethernet (RoCE), and shared memory. UCX serves as the underlying transport layer in multi-node training environments, offering portability across heterogeneous hardware configurations.
+- **NCCL (NVIDIA Collective Communications Library):** Optimised specifically for NVIDIA GPUs and interconnects. NCCL delivers exceptional performance in homogeneous GPU environments by leveraging NVLink, NVSwitch, and InfiniBand topology-aware routing. It implements collective operations — `AllReduce`, `AllGather`, `ReduceScatter`, `Broadcast`, `Reduce` — that underpin gradient synchronisation in DDP, FSDP, and ZeRO-based training.
+
+**Parallelism Strategies**
+
+Modern LLMs exceed the memory capacity of a single GPU. A single server cannot hold the weights and gradients of large LLMs; hybrid parallelism distributes both data and model parameters across the cluster:
+
+| Strategy | Description | Typical Use |
+|---|---|---|
+| Data Parallelism (DDP / FSDP) | Each GPU holds the full model; gradients are synchronised across replicas using AllReduce. | Standard multi-GPU baseline |
+| ZeRO (Zero Redundancy Optimizer) | Partitions optimizer states, gradients, and parameters across data-parallel ranks. Three stages: ZeRO-1 (optimizer states), ZeRO-2 (+ gradients), ZeRO-3 (+ parameters). | Memory-constrained multi-node training |
+| Tensor Parallelism | Individual weight matrices (attention heads, feed-forward layers) are sharded horizontally across GPUs within a layer. | Very large individual transformer layers |
+| Pipeline Parallelism | Sequential model layers are assigned to different nodes; micro-batches flow through the pipeline, reducing idle time. | Models spanning many nodes |
+| 3D Parallelism | Combines Data, Tensor, and Pipeline Parallelism. Scales to models with trillions of parameters. | Ultra-large-scale pre-training |
+
+**How FSDP2 Works**
+
+In DistributedDataParallel (DDP) training, each rank owns a model replica and processes a batch of data; it then uses all-reduce to sync gradients across ranks. FSDP (Fully Sharded Data Parallel) reduces GPU memory footprint by sharding model parameters, gradients, and optimizer states across data-parallel workers:
+
+- Outside of forward and backward computation, parameters are fully sharded across ranks.
+- Before forward and backward passes, sharded parameters are all-gathered into unsharded parameters.
+- Inside backward, local unsharded gradients are reduce-scattered into sharded gradients.
+- The optimizer updates sharded parameters with sharded gradients, producing sharded optimizer states.
+
+FSDP can be considered a decomposition of DDP's all-reduce operation into reduce-scatter and all-gather operations. FSDP2 (the current generation) represents sharded parameters as `DTensor` objects sharded on dimension 0, enabling communication-free sharded state dicts and a simpler meta-device initialisation flow. See the [PyTorch FSDP2 tutorial](https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html) for a complete walkthrough.
+
+**Distributed Training Frameworks**
+
+| Framework | Developer | Key Feature | Parallelism Support |
+|---|---|---|---|
+| [DeepSpeed](https://github.com/microsoft/DeepSpeed) | Microsoft | ZeRO optimizer stages 1–3; pipeline engine | DP, PP, TP |
+| [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) | NVIDIA | 3D parallelism; highly optimised for H100/A100 | DP, TP, PP |
+| [PyTorch FSDP](https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html) | Meta / PyTorch | Native PyTorch sharding with DTensor | FSDP (DP) |
+| [GPT-NeoX](https://github.com/EleutherAI/gpt-neox) | EleutherAI | Megatron-DeepSpeed combined stack | DP, TP, PP |
+
+> **Further reading:** HuggingFace Transformers — [Parallelism Methods](https://huggingface.co/docs/transformers/en/perf_train_gpu_many) | Intel Developer Zone — [Set Up Cloud-Based Distributed Training](https://www.intel.com/content/www/us/en/developer/articles/technical/set-up-cloud-based-distributed-training.html)
+
+##### Distributed Pre-training of Large Language Models
+
+Distributed pre-training of Large Language Models on cloud platforms requires specialised multi-node GPU/TPU clusters connected by ultra-high-speed networks. Open source tools for decentralised LLM pre-training allow users to harness geographically distributed GPUs or volunteer nodes across the internet. You must configure hybrid parallelism (Tensor, Pipeline, and Fully Sharded Data Parallelism) using frameworks like DeepSpeed or PyTorch FSDP, set up data streaming, and manage fault-tolerant checkpointing across instances.
+
+**Provisioning Infrastructure**
+
+Choose specialised ML instance families optimised for high-bandwidth, inter-node communication required for LLMs:
+
+| Cloud Platform | Recommended Instances | Key Technology |
+|---|---|---|
+| Google Cloud | Cloud TPU v5e / v5p or A3 VMs with NVIDIA H100s | Ultra-fast Inter-Chip Interconnect (ICI) and NVLink |
+| AWS | EC2 P5 instances (H100) or Amazon SageMaker HyperPod | Managed distributed training at scale |
+
+> **Further reading:** AWS Machine Learning Blog — [Training Large Language Models on Amazon SageMaker: Best Practices](https://aws.amazon.com/blogs/machine-learning/training-large-language-models-on-amazon-sagemaker-best-practices/)
+
+**Configuring Training Software and Parallelism**
+
+Apply hybrid parallelism using the following strategies:
+
+- **Fully Sharded Data Parallelism (FSDP):** Shards model states (parameters, gradients, and optimizer states) across data-parallel ranks.
+- **Tensor Parallelism (TP):** Splits individual transformer layers (attention heads, feed-forward networks) across multiple GPUs.
+- **Pipeline Parallelism (PP):** Divides sequential model layers across different nodes so different batches can be processed simultaneously.
+
+Use [DeepSpeed](https://github.com/microsoft/DeepSpeed) or [PyTorch FSDP](https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html) to apply these sharding strategies transparently.
+
+**Pre-training a GPT-2 Style Model from Scratch**
+
+Pre-training a GPT-2 style language model from scratch involves training on raw text data starting from randomly initialised weights, rather than fine-tuning or adapting a pre-trained model. The key steps are:
+
+1. **Distributed training:** Split the model across multiple GPUs using FSDP (Fully Sharded Data Parallel).
+2. **Data streaming:** Pull training data on-demand instead of downloading terabytes upfront.
+3. **Checkpointing:** Save progress regularly so a failure does not wipe out days of compute.
+4. **Observability:** Monitor what is happening inside a multi-day training run.
+
+**Implementing Data Streaming**
+
+Pre-training datasets typically span terabytes. Do not download them to local instance storage before training:
+
+- **Cloud Storage:** Host raw datasets on highly scalable object storage such as Amazon S3 or Google Cloud Storage.
+- **Streaming Loaders:** Use the [Hugging Face `datasets` library](https://huggingface.co/docs/datasets) with `streaming=True` to stream tokenised data on-demand during training. This prevents disk space bottlenecks and significantly reduces initialisation times.
+
+**Managing Fault-Tolerant Checkpoints**
+
+Because pre-training runs can take weeks, intermittent hardware failures are inevitable:
 
 | Strategy | Description |
 |---|---|
-| Data Parallelism (DDP / FSDP) | Each GPU holds the full model; gradients are synchronised across replicas. |
-| Tensor Parallelism | Individual weight matrices are sharded across GPUs within a layer. |
-| Pipeline Parallelism | Different model layers reside on different GPUs; micro-batches flow through the pipeline. |
-| 3D Parallelism | Combines all three strategies, used by Megatron-LM and GPT-NeoX. |
+| Async Checkpointing | Save model checkpoints asynchronously to cloud object storage to avoid blocking the training loop. |
+| Hierarchical Strategy | Save state locally to a node first, then asynchronously sync to Amazon S3 or Google Cloud Storage to prevent IO blocking. |
+| Orchestration | Use tools like Kubeflow or Flyte to automatically resume and re-initialise training jobs if a node drops out. |
+
+**Data Parallelism in Depth**
+
+Data parallelism evenly distributes data across multiple GPUs. Each GPU holds a copy of the model and concurrently processes its portion of the data; at the end the results are synchronised and combined. Data parallelism significantly reduces training time and is scalable to the number of GPUs available, but synchronising results from each GPU adds communication overhead.
+
+There are two primary types of data parallelism:
+
+- **DataParallel (DP):** The default GPU reads a batch, sends mini-batches to other GPUs, replicates the model, collects forward outputs, distributes the loss, collects gradients, and averages them. Simple but creates a communication bottleneck on GPU 0.
+- **DistributedDataParallel (DDP):** Each GPU directly processes a mini-batch; local gradients are averaged across all GPUs during the backward pass using NCCL AllReduce. Recommended for multi-machine training because it reduces communication overhead and scales efficiently.
+
+**Open Source Tools for Distributed LLM Pre-training**
+
+The table below compares the main open source frameworks used for distributed pre-training of large language models:
+
+| Tool | Developer | Parallelism | Key Feature | License |
+|---|---|---|---|---|
+| [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) | NVIDIA | DP, TP, PP (3D) | State-of-the-art 3D parallelism; highly optimised CUDA kernels for H100/A100 | Custom |
+| [DeepSpeed](https://github.com/microsoft/DeepSpeed) | Microsoft | DP, PP, TP | ZeRO stages 1–3; pipeline engine; scales to trillion-parameter models | Apache 2.0 |
+| [torchtitan](https://github.com/pytorch/torchtitan) | Meta / PyTorch | FSDP, TP, PP | Reference production implementation; DTensor-based; Flash Attention integration | BSD |
+| [GPT-NeoX](https://github.com/EleutherAI/gpt-neox) | EleutherAI | DP, TP, PP | Megatron-DeepSpeed combined; trained GPT-NeoX-20B and the Pythia series | Apache 2.0 |
+| [Nanotron](https://github.com/huggingface/nanotron) | Hugging Face | DP, TP, PP | Minimal, readable codebase; 3D parallelism for research and production | Apache 2.0 |
+| [LLaMA-Factory](https://github.com/hiyouga/LlamaFactory) | hiyouga | DP, FSDP, DeepSpeed | Zero-code CLI and Web UI; supports 100+ models; pre-training via stage `pt` | Apache 2.0 |
+| [FedML](https://github.com/FedML-AI/FedML) | FedML-AI | Federated, Distributed | Unified ML library for training anywhere at any scale; supports decentralised volunteer-node training | Apache 2.0 |
+| [Axolotl](https://github.com/axolotl-ai-cloud/axolotl) | Axolotl | DP, FSDP, DeepSpeed | Config-driven pre-training and fine-tuning; multi-GPU support via FSDP and DeepSpeed | Apache 2.0 |
+
+**FedML: Unified Scalable Machine Learning**
+
+[FedML Open Source](https://github.com/FedML-AI/FedML) is a unified and scalable machine learning library for running training and deployment anywhere at any scale. It supports decentralised pre-training across geographically distributed GPUs or volunteer nodes across the internet, making it suitable for scenarios where centralised GPU clusters are unavailable or where privacy-preserving distributed training is required.
 
 #### Choosing a Pre-training Dataset
 
@@ -389,6 +556,200 @@ accelerate launch --num_processes 2 finetune.py \
 ```
 
 Checkpoints are written to `./checkpoints/pretrain/` and `./checkpoints/finetune/` respectively. TensorBoard logs are saved alongside each checkpoint directory.
+
+---
+
+### Training Large Language Models with LLaMA-Factory
+
+[LLaMA-Factory](https://llamafactory.readthedocs.io/en/latest/index.html) is an open-source, unified framework for efficiently pre-training and fine-tuning 100+ large language models through a zero-code CLI and Web UI (`LlamaBoard`). It covers the full training lifecycle — pre-training (`stage: pt`), supervised fine-tuning (SFT), reward modelling, and preference alignment (DPO, PPO, KTO, ORPO) — and integrates natively with DeepSpeed ZeRO (stages 1–3), PyTorch FSDP, and Flash Attention 2 for distributed multi-GPU and multi-node workloads. LLaMA-Factory is used in production by Amazon, NVIDIA, and Alibaba Cloud.
+
+One practical application of distributed training is training large language models using the [LLaMA-Factory](https://github.com/hiyouga/LlamaFactory) framework. By distributing training across multiple GPUs and nodes, SLURM and LLaMA-Factory together help reduce training time while ensuring stable and efficient execution.
+
+**Prerequisites**
+
+Before starting, ensure your system meets the following requirements:
+
+| Requirement | Minimum | Recommended |
+|---|---|---|
+| Python | 3.11 | 3.11+ |
+| PyTorch | 2.0.0 | 2.6.0 |
+| CUDA | 11.6 | 12.2 |
+| GPU Memory | 16 GB (LoRA / freeze tuning) | 80 GB (full pre-training) |
+| transformers | 4.49.0 | 4.50.0+ |
+| accelerate | 0.34.0 | 1.2.1+ |
+
+**Installation**
+
+Clone the LLaMA-Factory repository and install its dependencies:
+
+```bash
+git clone https://github.com/hiyouga/LlamaFactory.git
+cd LlamaFactory
+pip install -e ".[torch,metrics]"
+```
+
+Optional: install DeepSpeed support alongside the core package:
+
+```bash
+pip install -e ".[torch,metrics]" && pip install -r requirements/deepspeed.txt
+```
+
+**Pre-training with LLaMA-Factory**
+
+Setting up large language model pre-training in LLaMA-Factory involves configuring foundational data, defining pre-training arguments, and initiating the run. Because pre-training trains models from scratch on raw corpora, the training stage must be set to `pt`.
+
+**Step 1: Prepare Pre-training Data**
+
+Pre-training requires massive amounts of raw text (unsupervised data). Place your corpus in LLaMA-Factory's designated data directory and register it:
+
+1. **Format your data:** Pre-training data in LLaMA-Factory should be formatted as plain text or JSON/JSONL depending on how it is parsed.
+2. **Register the dataset:** Update `data/dataset_info.json` to include your dataset:
+
+```json
+"my_pretrain_data": {
+  "file_name": "your_corpus_file.txt",
+  "file_format": "text"
+}
+```
+
+**Step 2: Configure the Training Run**
+
+Option A: Using LlamaBoard (Web UI)
+
+```bash
+FORCE_TORCHRUN=1 llamafactory-cli webui
+```
+
+In the UI, navigate to the **Train** tab, set **Stage** to `pt` (Pre-training), choose your base model, select the registered dataset, configure hyperparameters, and click **Start**.
+
+Option B: Using YAML Configuration (CLI)
+
+Create a YAML file (e.g., `pretrain_config.yaml`) with the following structure:
+
+```yaml
+### model parameters
+model_name_or_path: path_to_your_base_model_or_empty
+
+### method parameters
+stage: pt
+do_train: true
+finetuning_type: full
+
+### dataset parameters
+dataset: my_pretrain_data
+cutoff_len: 2048
+
+### training parameters
+output_dir: saves/my_pretrain_model/pt
+overwrite_output_dir: true
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 4
+learning_rate: 1.0e-4
+num_train_epochs: 1
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+fp16: true
+```
+
+Then launch training:
+
+```bash
+llamafactory-cli train pretrain_config.yaml
+```
+
+**Distributed Training with FSDP and DeepSpeed**
+
+LLaMA-Factory supports distributed training via both PyTorch FSDP and DeepSpeed. Add the following to your YAML configuration to enable FSDP:
+
+```yaml
+fsdp: full_shard auto_wrap
+fsdp_config: examples/accelerate/fsdp_config.yaml
+```
+
+For DeepSpeed ZeRO-3:
+
+```yaml
+deepspeed: examples/deepspeed/ds_z3_config.json
+```
+
+**Running with SLURM on a Metal Cloud Cluster**
+
+SLURM is a widely used open-source workload manager designed for high-performance computing (HPC) environments. It provides efficient job scheduling, resource allocation, and scalability, making it an excellent choice for AI training on Metal Cloud. By distributing training across multiple GPUs and nodes, SLURM helps reduce training time while ensuring stable and efficient execution.
+
+The workflow includes:
+
+1. Preparing the infrastructure with SLURM, CUDA, and NCCL for efficient multi-GPU communication.
+2. Installing LLaMA-Factory and configuring the system to enable seamless model training.
+3. Running a pre-training or fine-tuning task using the desired model and dataset.
+4. Leveraging SLURM's job scheduling capabilities to allocate resources and monitor performance efficiently.
+
+A sample SLURM batch script for distributed LLaMA-Factory training across 4 nodes with 8 GPUs each:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=llama-pretrain
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=8
+#SBATCH --gres=gpu:8
+#SBATCH --partition=gpu
+
+module load cuda/12.2 nccl/2.18
+
+torchrun \
+  --nproc_per_node=8 \
+  --nnodes=4 \
+  --rdzv_backend=c10d \
+  --rdzv_endpoint=$SLURM_NODELIST \
+  $(which llamafactory-cli) train pretrain_config.yaml
+```
+
+**Communication: UCX and NCCL in Practice**
+
+Efficient multi-node training depends on the correct pairing of hardware and communication library:
+
+| Scenario | Recommended Protocol | Notes |
+|---|---|---|
+| Homogeneous NVIDIA GPU cluster | NCCL | Leverages NVLink and InfiniBand topology awareness for maximum bandwidth |
+| Heterogeneous hardware | UCX | Portable across InfiniBand, RoCE, and shared memory; configurable via environment variables |
+| Single-node multi-GPU | NCCL (NVLink) | Highest bandwidth path within a single node |
+
+Set the communication backend when launching training:
+
+```bash
+export NCCL_IB_DISABLE=0        # Enable InfiniBand
+export NCCL_DEBUG=INFO           # Verbose logging for debugging
+torchrun --nproc_per_node=8 llamafactory-cli train pretrain_config.yaml
+```
+
+> **Further reading:** LLaMA-Factory Documentation — [Trainers](https://llamafactory.readthedocs.io/en/latest/advanced/trainers.html) | LLaMA-Factory — [Distributed Training](https://llamafactory.readthedocs.io/en/latest/advanced/distributed.html) | LLaMA-Factory GitHub — [hiyouga/LlamaFactory](https://github.com/hiyouga/LlamaFactory)
+
+#### scripts/ Scripts Reference
+
+The `scripts/` folder provides ready-to-run distributed pre-training scripts for a single Ubuntu node with 2x 12 GB GPU VRAM. All scripts call `llamafactory-cli train` with `stage: pt` and the `c4_demo` dataset bundled with LLaMA-Factory. Run `setup.sh` once to create the virtual environment and install all dependencies; every run script automatically activates `scripts/.venv` if it exists.
+
+**Quick start**
+
+```bash
+# Install once
+bash scripts/setup.sh
+
+# Run from anywhere -- venv is activated automatically
+bash scripts/run_ddp.sh                   # NativeDDP,    GPT-2 (124 M),  ~3 GB/GPU
+bash scripts/run_deepspeed_z2.sh          # ZeRO-2,       GPT-2 XL (1.5 B), ~11 GB/GPU
+bash scripts/run_deepspeed_z2_offload.sh  # ZeRO-2 + CPU offload
+bash scripts/run_deepspeed_z3_offload.sh  # ZeRO-3 + CPU offload
+bash scripts/run_fsdp.sh                  # FSDP FULL_SHARD
+```
+
+| Script | Engine | Model | VRAM strategy | Approx per-GPU VRAM |
+|---|---|---|---|---|
+| `run_ddp.sh` | NativeDDP | GPT-2 (124 M) | Full replica on each GPU | ~3 GB |
+| `run_deepspeed_z2.sh` | DeepSpeed ZeRO-2 | GPT-2 XL (1.5 B) | Shards optimizer + gradients | ~11 GB |
+| `run_deepspeed_z2_offload.sh` | DeepSpeed ZeRO-2 + CPU | GPT-2 XL (1.5 B) | Optimizer offloaded to RAM | ~6 GB + RAM |
+| `run_deepspeed_z3_offload.sh` | DeepSpeed ZeRO-3 + CPU | GPT-2 XL (1.5 B) | All states offloaded to RAM | ~3 GB + RAM |
+| `run_fsdp.sh` | FSDP FULL_SHARD | GPT-2 XL (1.5 B) | Shards params + grads + optimizer + CPU | ~5 GB + RAM |
+
+To adapt any script to a different model or corpus, edit `model_name_or_path` and `dataset` in the corresponding YAML under `scripts/configs/`, then register any custom dataset in LLaMA-Factory's `data/dataset_info.json`.
 
 ---
 
@@ -668,3 +1029,14 @@ The `.gitignore` file at the `training/` root prevents generated artefacts, bina
 - Ethayarajh, K. et al. (2024). *KTO: Model Alignment as Prospect Theoretic Optimization*. arXiv:2402.01306.
 - Kili Technology. (2024). *Open-Sourced Training Datasets for Large Language Models*. https://kili-technology.com/blog/9-open-sourced-datasets-for-training-large-language-models
 - iamtarun. (2023). *code_instructions_120k_alpaca — 120 k coding instruction–response pairs in Alpaca format*. HuggingFace Datasets. https://huggingface.co/datasets/iamtarun/code_instructions_120k_alpaca
+- HuggingFace Transformers. (2025). *Parallelism Methods: Multi-GPU Training*. https://huggingface.co/docs/transformers/en/perf_train_gpu_many
+- PyTorch. (2025). *Getting Started with Fully Sharded Data Parallel (FSDP2)*. https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html
+- Intel Developer Zone. (2024). *Set Up Cloud-Based Distributed Training*. https://www.intel.com/content/www/us/en/developer/articles/technical/set-up-cloud-based-distributed-training.html
+- AWS Machine Learning Blog. (2024). *Training Large Language Models on Amazon SageMaker: Best Practices*. https://aws.amazon.com/blogs/machine-learning/training-large-language-models-on-amazon-sagemaker-best-practices/
+- hiyouga. (2024). *LLaMA-Factory: Unified Efficient Fine-Tuning of 100+ Language Models*. GitHub. https://github.com/hiyouga/LlamaFactory
+- LLaMA-Factory Documentation. (2025). *Trainers*. https://llamafactory.readthedocs.io/en/latest/advanced/trainers.html
+- LLaMA-Factory Documentation. (2025). *Distributed Training*. https://llamafactory.readthedocs.io/en/latest/advanced/distributed.html
+- FedML-AI. (2024). *FedML: A Unified and Scalable Machine Learning Library for Running Training and Deployment Anywhere at Any Scale*. https://github.com/FedML-AI/FedML
+- Zheng, Y. et al. (2024). *LlamaFactory: Unified Efficient Fine-Tuning of 100+ Language Models*. Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024). arXiv:2403.13372.
+- PyTorch. (2025). *torchtitan: Reference Implementation for Distributed LLM Pre-training*. https://github.com/pytorch/torchtitan
+- Hugging Face. (2025). *Nanotron: Minimal 3D Parallelism for LLM Pre-training*. https://github.com/huggingface/nanotron

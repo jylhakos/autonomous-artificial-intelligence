@@ -516,6 +516,9 @@ Autonomous AI agents execute code, manage files, and access multiple application
 - Full training lifecycle for both **Large Language Models (LLMs)** and classical **Machine Learning (ML)** models
 - LLM pipeline organised into two broad phases: **pre-training** (building general language capabilities from massive unlabelled corpora) and **post-training** (aligning and adapting those capabilities for instruction-following and human preferences)
 - Multi-stage pre-training covering core pre-training, context-length extension, and annealing — the approach used by Llama 3.1, Qwen 2, and Apple's AFM
+- **Distributed pre-training of large language models** across multi-GPU clusters using NativeDDP, DeepSpeed ZeRO (stages 1–3), and PyTorch FSDP — parallelism strategies, hardware requirements, communication protocols (NCCL / UCX), and fault-tolerant checkpointing are covered in depth
+- Ready-to-run distributed pre-training scripts in `scripts/` for DDP, DeepSpeed ZeRO-2/3, and FSDP, with YAML configs for GPT-2 (124 M) and GPT-2 XL (1.5 B)
+- **[LLaMA-Factory](https://llamafactory.readthedocs.io/en/latest/index.html)** — open-source unified framework for pre-training and fine-tuning 100+ LLMs through a zero-code CLI and Web UI; integrates DeepSpeed ZeRO, FSDP, and Flash Attention 2; supports SLURM-based multi-node scheduling; used in production by Amazon, NVIDIA, and Alibaba Cloud
 - Post-training alignment pipeline: Supervised Fine-Tuning (SFT) → Reward Modelling → Policy Optimisation (RLHF/PPO, DPO, ORPO, KTO)
 - Parameter-Efficient Fine-Tuning (PEFT) with LoRA for task-specific adaptation at 0.1–6 % of total parameters
 - ML model training for classification and regression with PyTorch and scikit-learn, including a reusable data pipeline
@@ -534,6 +537,13 @@ Training is the process that creates the intelligence powering every autonomous 
 - `ml/train_regression.py` — MLP regressor training with `CosineAnnealingLR`; evaluates with RMSE, MAE, and R²; saves best-validation-RMSE checkpoint
 - `ml/requirements.txt` — ML training dependencies: `torch`, `scikit-learn`, `pandas`, `numpy`, `datasets`, `wandb`, `tensorboard`
 - `ml/setup_venv.sh` — Virtual environment setup for the ML training scripts
+- `scripts/setup.sh` — Installs LLaMA-Factory, DeepSpeed, and creates `scripts/.venv`; verifies Python 3.11+, GPU count, and CUDA
+- `scripts/run_ddp.sh` — NativeDDP pre-training of GPT-2 (124 M) on 2 GPUs via `FORCE_TORCHRUN=1`
+- `scripts/run_deepspeed_z2.sh` — DeepSpeed ZeRO-2 pre-training of GPT-2 XL (1.5 B); shards optimizer states and gradients
+- `scripts/run_deepspeed_z2_offload.sh` — ZeRO-2 with optimizer CPU offload; reduces VRAM ~6 GB at ~20–40 % throughput cost
+- `scripts/run_deepspeed_z3_offload.sh` — ZeRO-3 with full CPU offload (params + optimizer); maximises model size at throughput cost
+- `scripts/run_fsdp.sh` — FSDP FULL_SHARD pre-training via `accelerate launch`; equivalent to ZeRO-3 with PyTorch-native sharding
+- `scripts/configs/` — Ten YAML and JSON configs covering DDP, DeepSpeed ZeRO-2/3 (with and without CPU offload), and FSDP strategies
 - `README.md` — Full guide covering the LLM training pipeline, alignment techniques, dataset selection, distributed training strategies, adaptation methods, and ML model lifecycle
 
 **LLM Training Stages:**
@@ -576,12 +586,20 @@ training/
 │   ├── setup_venv.sh                    Creates and activates a virtual environment
 │   ├── pretrain.py                      GPT-style causal LM pre-training from scratch
 │   └── finetune.py                      Instruction fine-tuning with LoRA / PEFT adapters
-└── 📂 ml/
-    ├── requirements.txt                 Python dependencies for ML training
-    ├── setup_venv.sh                    Creates and activates a virtual environment
-    ├── data_pipeline.py                 Load, clean, split, scale, and wrap data as PyTorch DataLoaders
-    ├── train_classifier.py              MLP / CNN classifier training with TensorBoard logging
-    └── train_regression.py              MLP regressor training (RMSE, MAE, R²)
+├── 📂 ml/
+│   ├── requirements.txt                 Python dependencies for ML training
+│   ├── setup_venv.sh                    Creates and activates a virtual environment
+│   ├── data_pipeline.py                 Load, clean, split, scale, and wrap data as PyTorch DataLoaders
+│   ├── train_classifier.py              MLP / CNN classifier training with TensorBoard logging
+│   └── train_regression.py              MLP regressor training (RMSE, MAE, R²)
+└── 📂 scripts/
+    ├── setup.sh                         Install LLaMA-Factory, DeepSpeed, and venv
+    ├── run_ddp.sh                       NativeDDP pre-training on 2 GPUs (GPT-2 124 M)
+    ├── run_deepspeed_z2.sh              DeepSpeed ZeRO-2 pre-training (GPT-2 XL 1.5 B)
+    ├── run_deepspeed_z2_offload.sh      DeepSpeed ZeRO-2 + CPU offload pre-training
+    ├── run_deepspeed_z3_offload.sh      DeepSpeed ZeRO-3 + full CPU offload pre-training
+    ├── run_fsdp.sh                      FSDP FULL_SHARD pre-training via accelerate
+    └── configs/                         YAML and JSON configs for all five distributed strategies
 ```
 
 ---
