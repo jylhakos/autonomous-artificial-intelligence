@@ -26,6 +26,8 @@ A collection of training scripts covering the full development lifecycle of both
 - [Machine Learning Model Training](#machine-learning-model-training)
   - [ML Training Pipeline Diagram](#ml-training-pipeline-diagram)
   - [Data Pipeline](#data-pipeline)
+  - [Parallel GPU Processing for ML Pipelines](#parallel-gpu-processing-for-ml-pipelines)
+  - [Multi-GPU Pre-training Pipeline for RNNs](#multi-gpu-pre-training-pipeline-for-rnns)
   - [Training and Validation](#training-and-validation)
   - [Serving and Monitoring](#serving-and-monitoring)
   - [ml/ Scripts Reference](#ml-scripts-reference)
@@ -51,7 +53,8 @@ training/
 │   ├── setup_venv.sh        Creates and activates a virtual environment
 │   ├── data_pipeline.py     Load, clean, split, scale, and wrap data as PyTorch DataLoaders
 │   ├── train_classifier.py  MLP / CNN classifier training with TensorBoard logging
-│   └── train_regression.py  MLP regressor training (RMSE, MAE, R2)
+│   ├── train_regression.py  MLP regressor training (RMSE, MAE, R2)
+│   └── train_rnn_ddp.py     Multi-GPU LSTM / GRU pre-training with torchrun and PyTorch DDP
 └── scripts/
     ├── setup.sh                             Install LLaMA-Factory, DeepSpeed, and venv
     ├── run_ddp.sh                           NativeDDP pre-training on 2 GPUs (GPT-2 124 M)
@@ -85,6 +88,7 @@ training/
 | `ml/data_pipeline.py` | Reusable data preparation module; loads scikit-learn toy datasets or CSV files; handles missing values, encodes categoricals, applies `StandardScaler` on train only, performs stratified splits, and returns `DataLoader` objects |
 | `ml/train_classifier.py` | Trains an MLP (tabular) or CNN (image) classifier; uses `OneCycleLR` scheduling and `CrossEntropyLoss`; saves the best-validation-accuracy checkpoint as `checkpoints/classifier/best_model.pt` |
 | `ml/train_regression.py` | Trains an MLP regressor; uses `CosineAnnealingLR` and `MSELoss`; evaluates with RMSE, MAE, and R2; saves the best-validation-RMSE checkpoint as `checkpoints/regressor/best_model.pt` |
+| `ml/train_rnn_ddp.py` | Pre-trains an LSTM or GRU for multivariate time-series forecasting across multiple Linux GPUs; uses `torchrun`, NCCL, `DistributedSampler`, and `DistributedDataParallel`; saves rank-0 checkpoints under `checkpoints/rnn_ddp/` |
 | `scripts/setup.sh` | Creates `scripts/.venv/`, clones LLaMA-Factory, installs DeepSpeed and optional Flash Attention 2; verifies Python 3.11+, GPU count, and CUDA before installing |
 | `scripts/run_ddp.sh` | Launches `stage: pt` pre-training of GPT-2 (124 M) on 2 GPUs via `FORCE_TORCHRUN=1`; auto-activates `scripts/.venv` if present; DDP all-reduces gradients through NCCL |
 | `scripts/run_deepspeed_z2.sh` | Launches GPT-2 XL (1.5 B) pre-training with DeepSpeed ZeRO-2; shards optimizer states and gradients across 2 GPUs |
@@ -826,6 +830,72 @@ The data pipeline is responsible for transforming raw application data into clea
 
 **Model staleness.** As the Google ML pipelines guide notes, almost all models go stale after deployment because the world changes and data distributions shift. Automated data pipelines ensure that fresh training and test datasets are continuously generated, enabling regular retraining without manual intervention.
 
+### Parallel GPU Processing for ML Pipelines
+
+When the bottleneck moves from experimentation to throughput, the most effective production design is to split the pipeline into two layers: a distributed data-processing layer for feature engineering and a distributed training layer for gradient computation. On Linux GPU systems, that usually means using a DataFrame or task engine such as [RAPIDS cuDF](https://github.com/rapidsai/cudf), [Ray](https://github.com/ray-project/ray), or [Dask](https://github.com/dask/dask) for parallel tabular or time-series preparation, then handing contiguous batches to PyTorch for model training.
+
+**Why this split matters.** GPU training only stays efficient if the data pipeline can feed devices fast enough. cuDF accelerates DataFrame transforms directly on CUDA devices, while Ray and Dask distribute feature engineering, window generation, and dataset partitioning across CPU or GPU workers before the training loop begins. This is especially useful for large time-series corpora where sliding-window generation, resampling, and aggregation can dominate end-to-end runtime.
+
+**Distributed training libraries.** Once features are materialised into batches, the deep learning layer should use a library that coordinates gradient synchronisation and launcher semantics:
+
+| Tool | Best use in this repository | Notes |
+|---|---|---|
+| [PyTorch DistributedDataParallel](https://docs.pytorch.org/tutorials/intermediate/ddp_tutorial.html) | Native multi-GPU baseline for RNNs and feed-forward models | Most direct choice when the full model fits on each GPU |
+| [Hugging Face Accelerate](https://huggingface.co/docs/accelerate/index) | Lightweight wrapper around DDP, FSDP, and DeepSpeed launches | Useful when you want the same script to scale from 1 GPU to many GPUs |
+| [PyTorch Lightning](https://github.com/lightning-ai/pytorch-lightning) | Higher-level training orchestration | Reduces boilerplate by scaling from `Trainer(devices=4, accelerator="gpu")` |
+| [DeepSpeed](https://github.com/microsoft/DeepSpeed) | Large recurrent stacks or hybrid RNN-transformer models | ZeRO shards optimizer state, gradients, and optionally parameters |
+| [NVIDIA DALI](https://developer.nvidia.com/dali) | GPU-resident preprocessing when transforms are tensor-friendly | Useful for decode, augmentation, and input-pipeline acceleration |
+
+PyTorch DDP is the default recommendation for recurrent models because it launches one Python process per GPU and avoids the coordinator bottlenecks and skewed memory usage of `nn.DataParallel`. For an overview of multi-GPU training strategies and trade-offs, see the Hugging Face Transformers guide on [Parallelism Methods](https://huggingface.co/docs/transformers/en/perf_train_gpu_many).
+
+### Multi-GPU Pre-training Pipeline for RNNs
+
+For pre-training a recurrent neural network such as an LSTM or GRU across multiple GPUs on Linux, PyTorch DDP launched with `torchrun` is the most practical native pipeline. Recurrent models are sequential in time, so the hidden state at step $t$ depends on the state at step $t-1$; that dependency makes time-axis parallelism inside a single sequence hard to scale. In practice, the industry-standard solution is data parallelism: each GPU keeps a full copy of the RNN while `DistributedSampler` partitions different sequence batches across ranks.
+
+**Recommended architecture.** An end-to-end pipeline typically looks like this:
+
+1. Parallelise feature engineering and sliding-window generation with cuDF, Ray, or Dask.
+2. Materialise fixed-length sequences and targets into shard-friendly datasets.
+3. Launch one process per GPU with `torchrun` and initialise the NCCL backend.
+4. Wrap the model with `DistributedDataParallel` so gradients are averaged during backpropagation.
+5. Save checkpoints only on rank 0 to avoid redundant writes.
+
+```mermaid
+flowchart LR
+  A[Raw time-series data\nlogs, sensors, ticks] --> B[Parallel feature engineering\ncuDF, Ray, or Dask]
+  B --> C[Windowing and sharding\nfixed-length sequences]
+  C --> D[torchrun launcher\none process per GPU]
+  D --> E[PyTorch DDP + NCCL\ngradient all-reduce]
+  E --> F[RNN model\nLSTM or GRU]
+  F --> G[Checkpoint + metrics\nrank 0 only]
+```
+
+**Why DDP over pipeline parallelism.** Pipeline parallelism splits model layers across GPUs, which is useful only when the recurrent stack is too large to fit on one device. For standard RNN pre-training, DDP is simpler and faster because it preserves the full recurrent layer on each GPU and only synchronises gradients. Choose your scaling strategy by memory fit:
+
+| Strategy | When to use it | Trade-off |
+|---|---|---|
+| Distributed Data Parallel (DDP) | The full RNN fits on one GPU | Best throughput and simplest implementation |
+| DeepSpeed ZeRO | Optimizer or gradient state becomes the memory bottleneck | Lower memory footprint with additional orchestration |
+| Pipeline Parallelism | The stacked recurrent model no longer fits on one GPU | More complex scheduling and micro-batch tuning |
+
+**Operational guidance for Linux multi-GPU runs.** Use the `nccl` backend on NVIDIA systems, keep `pin_memory=True` in the `DataLoader`, and shard datasets with `DistributedSampler` so that batches do not overlap across ranks. If you use packed sequences with `pack_padded_sequence`, keep the sort order valid inside each GPU-local batch to avoid padding and collation bugs.
+
+**Repository example.** The new `ml/train_rnn_ddp.py` script provides a ready-to-run DDP pre-training example for synthetic multivariate time-series forecasting. It builds sliding windows, supports both LSTM and GRU cells, launches with `torchrun`, and writes a single checkpoint from rank 0.
+
+Usage:
+
+```bash
+cd training/ml
+
+# 2 GPUs, standalone launch
+torchrun --standalone --nproc_per_node=2 train_rnn_ddp.py
+
+# 4 GPUs, GRU variant
+torchrun --standalone --nproc_per_node=4 train_rnn_ddp.py --cell_type gru --epochs 10
+```
+
+The script is intentionally native PyTorch so it can serve as the lowest-level reference pipeline before you move to [PyTorch Lightning](https://github.com/lightning-ai/pytorch-lightning), [Accelerate](https://huggingface.co/docs/accelerate/index), or [DeepSpeed](https://github.com/microsoft/DeepSpeed) for larger orchestration needs.
+
 ### Training and Validation
 
 **Training pipeline.** The training loop follows a standard pattern: forward pass, loss computation, backward pass, gradient clipping, optimiser step, and learning rate scheduler step. Both training scripts use the AdamW optimiser with weight decay and gradient norm clipping to stabilise training.
@@ -855,6 +925,14 @@ The serving pipeline delivers predictions to end users in one of two modes:
 Regardless of serving mode, prediction logging is essential. By monitoring the distribution of model outputs over time and comparing against ground truth labels when they become available, teams can detect when a model starts to degrade and trigger retraining.
 
 ### ml/ Scripts Reference
+
+The `ml/` folder contains three training entry points aimed at different model families and execution environments. If you only need a fast rule of thumb: use `train_classifier.py` for supervised classification, `train_regression.py` for supervised numeric prediction, and `train_rnn_ddp.py` when you need multi-GPU recurrent training for sequential or time-series data.
+
+| Script | Use it when | Model / execution style |
+|---|---|---|
+| `train_classifier.py` | Your target is a discrete label such as class, category, or diagnosis | Single-process MLP for tabular data or CNN for image data |
+| `train_regression.py` | Your target is a continuous numeric value such as price, demand, or score | Single-process MLP regressor for tabular data |
+| `train_rnn_ddp.py` | Your data is ordered by timestep and you want to scale recurrent training across multiple CUDA GPUs | Multi-process LSTM or GRU training with `torchrun` and PyTorch DDP |
 
 #### `data_pipeline.py`
 
@@ -886,6 +964,8 @@ python data_pipeline.py
 #### `train_classifier.py`
 
 Trains a configurable neural network classifier. For tabular data a multi-layer perceptron (MLP) with batch normalisation and dropout is used. For image data (e.g. MNIST) a three-block convolutional neural network is used.
+
+Choose this script when the output is a class label rather than a numeric forecast. Typical use cases include tabular classification problems such as churn prediction or fraud flags, and image classification tasks such as MNIST digit recognition.
 
 Key features:
 - Plugs directly into `data_pipeline.build_pipeline` for tabular tasks.
@@ -921,6 +1001,8 @@ Key arguments:
 
 Trains a fully connected MLP regressor on tabular data. Uses `CosineAnnealingLR` scheduling and MSE loss. Evaluates with RMSE, MAE, and R2 on both validation and test sets.
 
+Choose this script when the target is a continuous value. Typical use cases include house-price prediction, demand forecasting from tabular features, or any supervised problem where the output is a scalar number instead of a category.
+
 Usage:
 ```bash
 # Default: scikit-learn diabetes dataset
@@ -939,6 +1021,47 @@ Key arguments:
 | `--num_epochs` | `50` | Number of training epochs |
 | `--learning_rate` | `1e-3` | Initial learning rate |
 | `--dropout` | `0.2` | Dropout probability |
+
+#### `train_rnn_ddp.py`
+
+Pre-trains an LSTM or GRU on multivariate time-series windows with native PyTorch Distributed Data Parallel. The script is designed for Linux systems with CUDA-enabled GPUs and uses the NCCL backend for gradient synchronisation.
+
+Choose this script when the order of observations matters and the model must learn from sequences rather than independent rows. It is intended for recurrent workloads such as sensor streams, telemetry, financial series, or other timestep-driven data where you want to distribute batches across multiple GPUs while keeping a full recurrent model replica on each device.
+
+Key features:
+- Launches with `torchrun`, which injects `LOCAL_RANK`, `RANK`, and `WORLD_SIZE` automatically.
+- Uses `DistributedSampler` so every GPU processes a unique shard of the sequence dataset.
+- Supports both `lstm` and `gru` recurrent cells.
+- Applies gradient clipping and saves checkpoints only from rank 0.
+- Uses `pin_memory=True` and non-blocking CUDA transfers for efficient host-to-device copies.
+
+Usage:
+```bash
+# 2 GPUs
+torchrun --standalone --nproc_per_node=2 train_rnn_ddp.py
+
+# 4 GPUs, custom shape
+torchrun --standalone --nproc_per_node=4 train_rnn_ddp.py \
+  --cell_type gru \
+  --window_size 256 \
+  --input_dim 16 \
+  --hidden_dim 256 \
+  --epochs 10
+```
+
+Key arguments:
+
+| Argument | Default | Description |
+|---|---|---|
+| `--cell_type` | `lstm` | Recurrent cell type: `lstm` or `gru` |
+| `--num_samples` | `20000` | Number of synthetic timesteps used to build windows |
+| `--window_size` | `168` | Input sequence length per training sample |
+| `--input_dim` | `8` | Number of parallel features per timestep |
+| `--hidden_dim` | `128` | Hidden state size |
+| `--num_layers` | `2` | Number of stacked recurrent layers |
+| `--batch_size` | `256` | Per-process batch size |
+| `--epochs` | `5` | Number of training epochs |
+| `--output_dir` | `./checkpoints/rnn_ddp` | Rank-0 checkpoint directory |
 
 #### `requirements.txt`
 
@@ -963,6 +1086,8 @@ source .venv/bin/activate
 
 ### ML Quick Start
 
+The quick start below is ordered from simplest to most specialised: first verify the shared data pipeline, then run single-process classification or regression, and finally launch the distributed recurrent example when a Linux machine has multiple CUDA GPUs available.
+
 ```bash
 cd training/ml
 
@@ -986,7 +1111,10 @@ python train_classifier.py \
 # 5. Train a regressor (diabetes dataset, MLP, 50 epochs)
 python train_regression.py
 
-# 6. View training curves in TensorBoard
+# 6. Pre-train an LSTM across 2 GPUs with native DDP
+torchrun --standalone --nproc_per_node=2 train_rnn_ddp.py
+
+# 7. View training curves in TensorBoard
 tensorboard --logdir checkpoints/
 ```
 
@@ -1030,7 +1158,10 @@ The `.gitignore` file at the `training/` root prevents generated artefacts, bina
 - Kili Technology. (2024). *Open-Sourced Training Datasets for Large Language Models*. https://kili-technology.com/blog/9-open-sourced-datasets-for-training-large-language-models
 - iamtarun. (2023). *code_instructions_120k_alpaca — 120 k coding instruction–response pairs in Alpaca format*. HuggingFace Datasets. https://huggingface.co/datasets/iamtarun/code_instructions_120k_alpaca
 - HuggingFace Transformers. (2025). *Parallelism Methods: Multi-GPU Training*. https://huggingface.co/docs/transformers/en/perf_train_gpu_many
+- PyTorch. (2025). *Getting Started with Distributed Data Parallel*. https://docs.pytorch.org/tutorials/intermediate/ddp_tutorial.html
+- PyTorch. (2025). *Optional Data Parallel Tutorial*. https://docs.pytorch.org/tutorials/beginner/blitz/data_parallel_tutorial.html
 - PyTorch. (2025). *Getting Started with Fully Sharded Data Parallel (FSDP2)*. https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html
+- Dive into Deep Learning. (2025). *Multiple GPUs*. https://d2l.ai/chapter_computational-performance/multiple-gpus.html
 - Intel Developer Zone. (2024). *Set Up Cloud-Based Distributed Training*. https://www.intel.com/content/www/us/en/developer/articles/technical/set-up-cloud-based-distributed-training.html
 - AWS Machine Learning Blog. (2024). *Training Large Language Models on Amazon SageMaker: Best Practices*. https://aws.amazon.com/blogs/machine-learning/training-large-language-models-on-amazon-sagemaker-best-practices/
 - hiyouga. (2024). *LLaMA-Factory: Unified Efficient Fine-Tuning of 100+ Language Models*. GitHub. https://github.com/hiyouga/LlamaFactory
@@ -1040,3 +1171,8 @@ The `.gitignore` file at the `training/` root prevents generated artefacts, bina
 - Zheng, Y. et al. (2024). *LlamaFactory: Unified Efficient Fine-Tuning of 100+ Language Models*. Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024). arXiv:2403.13372.
 - PyTorch. (2025). *torchtitan: Reference Implementation for Distributed LLM Pre-training*. https://github.com/pytorch/torchtitan
 - Hugging Face. (2025). *Nanotron: Minimal 3D Parallelism for LLM Pre-training*. https://github.com/huggingface/nanotron
+- RAPIDS AI. (2025). *cuDF: GPU DataFrame Library*. https://github.com/rapidsai/cudf
+- Ray Project. (2025). *Ray*. https://github.com/ray-project/ray
+- Dask. (2025). *Dask*. https://github.com/dask/dask
+- Lightning AI. (2025). *PyTorch Lightning*. https://github.com/lightning-ai/pytorch-lightning
+- NVIDIA. (2025). *DALI: Data Loading Library*. https://developer.nvidia.com/dali
