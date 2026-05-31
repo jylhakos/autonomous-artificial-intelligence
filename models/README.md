@@ -19,10 +19,13 @@ This document covers two primary model types found in modern AI systems:
   - [The Development Lifecycle](#the-development-lifecycle)
   - [Coding Algorithms](#coding-algorithms)
 - [Large Language Models (LLMs)](#large-language-models-llms)
+  - [Generative Pre-trained Transformer (GPT)](#generative-pre-trained-transformer-gpt)
+  - [Llama and GPT at a Glance](#llama-and-gpt-at-a-glance)
   - [A Pipeline to Build a GPT-Style Model](#a-pipeline-to-build-a-gpt-style-model)
   - [Stage 1: Data Preparation](#stage-1-data-preparation)
   - [Stage 2: Model Architecture](#stage-2-model-architecture)
   - [Stage 3: Pre-training](#stage-3-pre-training)
+    - [Parallel Pre-training on Multiple GPUs](#parallel-pre-training-on-multiple-gpus)
   - [Stage 4: Fine-Tuning](#stage-4-fine-tuning)
 - [LLM Alignment](#llm-alignment)
   - [What is LLM Alignment?](#what-is-llm-alignment)
@@ -158,6 +161,34 @@ The GPT acronym stands for three core concepts:
 - **Generative**: The AI's ability to create new, original content rather than just selecting from pre-written answers.
 - **Pre-trained**: The model is initially trained on a massive, broad dataset of internet text before it is fine-tuned for specific tasks.
 - **Transformer**: The underlying neural network architecture that allows the AI to parse context and relationships between words in a sentence.
+
+### Llama and GPT at a Glance
+
+Llama and GPT belong to the same broad family of **decoder-only transformer** language models. Both read tokens from left to right and learn by predicting the next token given all previous tokens. In practice, this means they share the same high-level training objective and the same autoregressive generation pattern used by chatbots, code assistants, and text completion systems.
+
+The main architectural difference is not that one is a transformer and the other is something else; both are transformers. The difference is in the engineering choices inside each transformer block. GPT-style models traditionally use **multi-head attention**, **LayerNorm**, learned positional embeddings, and a GELU-based feed-forward network. Llama keeps the same decoder-only structure but swaps in newer components that improve efficiency and scaling, especially for open-weight large models.
+
+Key Llama versus GPT-style differences:
+
+- **Attention**: GPT commonly uses multi-head attention (MHA), while Llama uses **grouped-query attention (GQA)**, which reduces the number of key-value heads relative to query heads to improve inference efficiency.
+- **Normalization**: GPT-style implementations often use **LayerNorm**. Llama uses **RMSNorm**, which skips mean-centering and is slightly cheaper to compute.
+- **Position handling**: Older GPT models use learned absolute positional embeddings. Llama uses **RoPE** (rotary positional embeddings), which is applied inside attention and tends to generalize better to longer contexts.
+- **Feed-forward activation**: GPT commonly uses **GELU**. Llama uses **SwiGLU**, which adds a gating mechanism and typically improves training stability and model capacity.
+- **Tokenizer**: GPT families often use byte-pair encoding variants. Llama uses a **SentencePiece**-style tokenizer, and Llama 3 expanded the tokenizer vocabulary to improve token efficiency.
+
+Meta's Llama 3 release keeps this decoder-only pattern while emphasizing a more efficient tokenizer, GQA across both 8B and 70B models, and large-scale pre-training on publicly available data. Meta reports that Llama 3 was trained on sequences up to 8,192 tokens and on more than 15 trillion tokens of filtered training data. For an accessible overview, see [Introducing Meta Llama 3](https://ai.meta.com/blog/meta-llama-3/).
+
+From an implementation standpoint, creating either a small GPT-like model or a Llama-like model for **next-token prediction** follows the same recipe:
+
+1. Tokenize text into integer IDs.
+2. Embed the tokens into vectors.
+3. Pass them through a stack of causal transformer blocks.
+4. Project the final hidden states to vocabulary logits with a linear language-model head.
+5. Train with cross-entropy loss so the model assigns high probability to the true next token.
+
+In PyTorch or Hugging Face Transformers, the pre-training head is usually just a final linear projection from hidden size to vocabulary size. Softmax is applied outside the model when computing probabilities or sampling. This is the standard setup for both GPT-style and Llama-style causal language models.
+
+If you want a compact implementation reference, the Hugging Face `LlamaForCausalLM` class provides the base Llama decoder plus the pre-training head, while the code in this repository implements the same idea for a small GPT-style model in `scripts/llm_from_scratch/model.py`.
 
 ### Architectural Pattern: Decoder-Only Transformer
 
@@ -300,6 +331,22 @@ It is worth noting that different model families use different pre-training obje
 For large generative models that produce free-form text — including the GPT-style model built in this project — the **autoregressive next-token (CLM) approach has become the standard**. MLM requires seeing the full sequence to fill in blanks, which is incompatible with left-to-right generation. CLM naturally supports autoregressive generation because the model only looks at past tokens at every step, both during training and at inference time.
 
 The output of pre-training is a **base model** (also called a foundation model): a model that has absorbed a broad distribution of facts, language patterns, and coding styles, but has not yet been aligned or fine-tuned for specific tasks.
+
+#### Parallel Pre-training on Multiple GPUs
+
+Once models grow from millions to billions of parameters, pre-training no longer fits comfortably on a single GPU. Large-scale Llama and GPT training therefore relies on **distributed training**, where the work is split across multiple GPUs and often multiple machines.
+
+The main parallelism patterns are:
+
+- **Data parallelism (DP)**: replicate the model on several GPUs and split each training batch across them.
+- **Tensor parallelism (TP)**: shard large weight matrices so each GPU computes only part of an attention or feed-forward operation.
+- **Pipeline parallelism (PP)**: split the model by layers so different GPUs process different stages of the network.
+
+Two practical frameworks for this are **PyTorch FSDP** and **DeepSpeed**. FSDP (Fully Sharded Data Parallel) shards model parameters, gradients, and optimizer state across data-parallel workers, which greatly reduces per-GPU memory pressure. DeepSpeed offers similar memory savings through **ZeRO** stages and is commonly combined with tensor or pipeline parallelism for very large runs.
+
+In real Llama or GPT pre-training systems, these approaches are usually combined. Meta notes that Llama 3 training used data, model, and pipeline parallelization together across very large GPU clusters. For local experimentation, Hugging Face Accelerate, torchtune, and Transformers provide a more accessible path to launch distributed pre-training or full-parameter fine-tuning across multiple GPUs.
+
+If you are pre-training and fine-tuning open-source models in parallel, full-parameter updates can exhaust VRAM quickly. In that situation, **LoRA** or **QLoRA** is often a better companion strategy for fine-tuning, because the base model weights remain frozen while only small adapter layers are trained.
 
 #### The Pre-training Data
 
@@ -1598,6 +1645,14 @@ Finetuning to Follow Instructions https://github.com/rasbt/LLMs-from-scratch/tre
 LLM from scratch https://www.gilesthomas.com/llm-from-scratch
 
 Pretraining: Breaking Down the Modern LLM Training Pipeline https://mlops.community/blog/pretraining-breaking-down-the-modern-llm-training-pipeline
+
+Introducing Meta Llama 3: The most capable openly available LLM to date https://ai.meta.com/blog/meta-llama-3/
+
+Creating a Llama or GPT Model for Next-Token Prediction https://machinelearningmastery.com/creating-a-llama-or-gpt-model-for-next-token-prediction/
+
+Llama fine-tuning guide https://www.llama.com/docs/how-to-guides/fine-tuning/
+
+Fine-Tuning Open Source Models https://rcpedia.stanford.edu/blog/2025/11/07/fine-tuning-open-source-models/
 
 Our approach to alignment research (OpenAI) https://openai.com/index/our-approach-to-alignment-research/
 
