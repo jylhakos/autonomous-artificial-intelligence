@@ -80,6 +80,17 @@
   - [Vector Embeddings and Privacy](#vector-embeddings-and-privacy)
   - [Tenant Isolation and RAG Permissions](#tenant-isolation-and-rag-permissions)
   - [Security Recommendations for Vector Databases](#security-recommendations-for-vector-databases)
+- [Alignment of Large Language Models](#alignment-of-large-language-models)
+  - [What is LLM Alignment?](#what-is-llm-alignment)
+  - [Alignment and Security](#alignment-and-security)
+  - [Alignment Techniques](#alignment-techniques)
+  - [What is an Alignment Rating?](#what-is-an-alignment-rating)
+  - [How Alignment is Rated](#how-alignment-is-rated)
+  - [Alignment Workflow Diagram](#alignment-workflow-diagram)
+  - [Evaluating Alignment](#evaluating-alignment)
+  - [Creating an Alignment Dataset](#creating-an-alignment-dataset)
+  - [Structuring Prompt and Response Files](#structuring-prompt-and-response-files)
+  - [Implementing Alignment with DPO](#implementing-alignment-with-dpo)
 - [Best Practices and Recommendations](#best-practices-and-recommendations)
 - [Resources](#resources)
 
@@ -531,7 +542,7 @@ except Exception as e:
     print(f"Guardrail blocked response: {e}")
 ```
 
-The full implementation is in [guardrails_ai_example.py](guardrails_ai_example.py).
+The full implementation is in [scripts/guardrails_ai_example.py](scripts/guardrails_ai_example.py).
 
 ---
 
@@ -561,7 +572,7 @@ result = agent.run_sync('What are the benefits of exercise?')
 print(result.output.model_dump())
 ```
 
-The full implementation is in [pydantic_ai_example.py](pydantic_ai_example.py).
+The full implementation is in [scripts/pydantic_ai_example.py](scripts/pydantic_ai_example.py).
 
 ---
 
@@ -604,7 +615,7 @@ print(f"Sanitized Response: {sanitized_output}")
 # Output: The person you are looking for is reachable at [EMAIL_ADDRESS].
 ```
 
-The full implementation is in [llm_guard_example.py](llm_guard_example.py).
+The full implementation is in [scripts/llm_guard_example.py](scripts/llm_guard_example.py).
 
 ---
 
@@ -847,7 +858,7 @@ my_agent = Agent(
 )
 ```
 
-The practical demonstration of CrewAI guardrails with Ollama is implemented in [crewai_guardrails.py](crewai_guardrails.py).
+The practical demonstration of CrewAI guardrails with Ollama is implemented in [scripts/crewai_guardrails.py](scripts/crewai_guardrails.py).
 
 ---
 
@@ -1084,7 +1095,7 @@ ollama pull llama-guard3
 
 #### Step 3: Create Guard Model Wrapper
 
-Create a file named `llama_guard.py`:
+Create a file named `scripts/llama_guard.py`:
 
 ```python
 import subprocess
@@ -1183,7 +1194,7 @@ if __name__ == "__main__":
 ```bash
 # Ensure virtual environment is activated
 if [ -n "$VIRTUAL_ENV" ]; then
-    python llama_guard.py
+    python scripts/llama_guard.py
 else
     echo "Error: Please activate virtual environment first"
     echo "Run: source venv/bin/activate"
@@ -1195,7 +1206,7 @@ fi
 
 ### Example: ADK Guard Model Integration
 
-Create a file named `adk_guard_example.py`:
+Create a file named `scripts/adk_guard_example.py`:
 
 ```python
 from typing import Dict, Any
@@ -1342,7 +1353,7 @@ if __name__ == "__main__":
 ```bash
 # Ensure virtual environment is activated
 if [ -n "$VIRTUAL_ENV" ]; then
-    python adk_guard_example.py
+    python scripts/adk_guard_example.py
 else
     echo "Error: Please activate virtual environment first"
     echo "Run: source venv/bin/activate"
@@ -1360,20 +1371,21 @@ security/
 ├── 📄 .gitignore                      # Git ignore rules (excludes venv/, binaries, ML models)
 ├── 📄 requirements-guardrails.txt     # Python dependencies for guardrails scripts
 │
-├── 🐍 guardrails_ai_example.py        # Guardrails AI + LiteLLM + Ollama example
-├── 🐍 pydantic_ai_example.py          # Pydantic AI structured output + Ollama example
-├── 🐍 llm_guard_example.py            # LLM Guard input/output scanning example
-├── 🐍 crewai_guardrails.py            # CrewAI multi-agent guardrails with Ollama
-│
-├── 🐍 llama_guard.py                  # Llama Guard 3 safety wrapper (Ollama)
-├── 🐍 adk_guard_example.py            # ADK Guard model integration example
+├── � scripts/
+│   ├── 🐍 guardrails_ai_example.py    # Guardrails AI + LiteLLM + Ollama example
+│   ├── 🐍 pydantic_ai_example.py      # Pydantic AI structured output + Ollama example
+│   ├── 🐍 llm_guard_example.py        # LLM Guard input/output scanning example
+│   ├── 🐍 crewai_guardrails.py        # CrewAI multi-agent guardrails with Ollama
+│   ├── 🐍 llama_guard.py              # Llama Guard 3 safety wrapper (Ollama)
+│   ├── 🐍 adk_guard_example.py        # ADK Guard model integration example
+│   └── 🐍 dpo_alignment.py            # DPO security alignment script (PyTorch + Hugging Face)
 │
 └── 📁 tests/
-    ├── 🐍 conftest.py                 # pytest configuration (adds project root to sys.path)
-    ├── 🧪 test_guardrails_ai.py       # Tests for guardrails_ai_example.py
-    ├── 🧪 test_pydantic_ai.py         # Tests for pydantic_ai_example.py
-    ├── 🧪 test_llm_guard.py           # Tests for llm_guard_example.py
-    └── 🧪 test_crewai_guardrails.py   # Tests for crewai_guardrails.py
+    ├── 🐍 conftest.py                 # pytest configuration (adds scripts/ and project root to sys.path)
+    ├── 🧪 test_guardrails_ai.py       # Tests for scripts/guardrails_ai_example.py
+    ├── 🧪 test_pydantic_ai.py         # Tests for scripts/pydantic_ai_example.py
+    ├── 🧪 test_llm_guard.py           # Tests for scripts/llm_guard_example.py
+    └── 🧪 test_crewai_guardrails.py   # Tests for scripts/crewai_guardrails.py
 ```
 
 > **Note:** The `venv/` folder, `*.bin`, `*.safetensors`, `*.pt`, `*.onnx`, and `.guardrails/` cache
@@ -1539,7 +1551,7 @@ source venv/bin/activate
 Validates LLM responses from Ollama using the ProfanityFree guard. Requires Ollama to be running with the `llama3` model available.
 
 ```bash
-python guardrails_ai_example.py
+python scripts/guardrails_ai_example.py
 ```
 
 Expected output:
@@ -1559,7 +1571,7 @@ Prompt: Say hello in a friendly way.
 Sends queries to Ollama and validates that responses conform to the `SafeResponse` schema. Requires Ollama to be running with the `llama3` model available.
 
 ```bash
-python pydantic_ai_example.py
+python scripts/pydantic_ai_example.py
 ```
 
 Expected output:
@@ -1578,7 +1590,7 @@ Query: What are the benefits of regular exercise?
 Scans prompts for injection attacks and banned topics, and redacts PII from simulated LLM responses. This script does **not** require Ollama — it runs entirely locally using HuggingFace models.
 
 ```bash
-python llm_guard_example.py
+python scripts/llm_guard_example.py
 ```
 
 Expected output:
@@ -1607,7 +1619,7 @@ Demonstrates function-based, string-based, and hallucination guardrail types usi
 The `--demo` flag runs all guardrail functions locally against mock outputs. No LLM server is needed. This is the quickest way to verify the guardrail logic.
 
 ```bash
-python crewai_guardrails.py --demo
+python scripts/crewai_guardrails.py --demo
 ```
 
 Expected output:
@@ -1645,7 +1657,7 @@ ollama serve
 ollama pull llama3
 
 # Run the full multi-agent crew
-python crewai_guardrails.py
+python scripts/crewai_guardrails.py
 ```
 
 Expected output:
@@ -2106,6 +2118,360 @@ Isolation strategies include:
 
 ---
 
+## Alignment of Large Language Models
+
+### What is LLM Alignment?
+
+**LLM alignment** is the process of ensuring that a Large Language Model behaves safely, ethically, and in accordance with human intentions and organizational values. It uses a data-centric approach to encourage generative AI outputs to abide by defined principles or best practices, then uses human feedback or automated signals to nudge the model towards those preferred responses.
+
+Think of alignment as on-the-job training. A fully pre-trained model can execute tasks, but that does not mean it will do so safely or correctly within workplace guidelines from day one. Alignment is the mechanism by which data scientists guide the model to produce responses that are both useful and compliant with the intended policy.
+
+An important note: alignment nudges responses to mimic the preferences of the users who label it. A model aligned to one organization's guidelines may produce responses quite different from one aligned to another organization's guidelines.
+
+> References:
+> - [What is large language model (LLM) alignment? — Snorkel AI](https://snorkel.ai/blog/what-is-large-language-model-llm-alignment/)
+> - [A one-prompt attack that breaks LLM safety alignment — Microsoft Security Blog](https://www.microsoft.com/en-us/security/blog/2026/02/09/prompt-attack-breaks-llm-safety/)
+> - [An introduction to preparing your own dataset for LLM training — AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/an-introduction-to-preparing-your-own-dataset-for-llm-training/)
+
+---
+
+### Alignment and Security
+
+The alignment of Large Language Models (LLMs) ensures these systems act safely, ethically, and as intended. Alignment is directly tied to AI security because it mitigates vulnerabilities such as prompt injection, prevents the generation of dangerous or malicious content, and safeguards sensitive data from being leaked.
+
+**Vulnerability Prevention**: Aligned models are trained to resist jailbreaks and prompt injection attacks, where malicious actors manipulate system instructions to bypass safety filters.
+
+**Malicious Content Control**: Alignment prevents models from generating code for malware, writing phishing emails, or providing instructions for illegal acts, reducing the democratization of cyberattacks.
+
+**Data Privacy**: Alignment techniques include guardrails against leaking Personally Identifiable Information (PII) or proprietary corporate data that may have been ingested during training.
+
+---
+
+### Alignment Techniques
+
+Training a Large Language Model requires three phases: pre-training, fine-tuning, and alignment. Every phase demands data. Alignment specifically requires prompts, the model's responses to those prompts, and some form of human feedback for each prompt/response pairing.
+
+A technique called **preference tuning** is used to align large models with human preferences and values. This approach aims to improve the quality, safety, and desirability of AI-generated outputs by incorporating human feedback into the training process. In the case of Meta Llama 3, instruction-tuned models go through an iterative process of DPO preference alignment, and the dataset typically consists of triplets — a user prompt and two model responses, with one response preferred over the other.
+
+Researchers and engineers have developed several approaches to turn user response data into useful alignment directions:
+
+**Reinforcement Learning from Human Feedback (RLHF)**
+
+The earliest and most widely used approach. Data scientists use collected human feedback to train a reward model. The reward model accepts a prompt/response pair and predicts how the average human in the labeling cohort would rate it. This reward signal is then used to update the LLM's neural network weights via Proximal Policy Optimization (PPO), encouraging responses that earn higher predicted scores.
+
+**Direct Preference Optimization (DPO)**
+
+DPO fits the model to human preferences directly, without using an intermediary reward model. DPO has achieved results comparable to — or better than — RLHF while vastly simplifying the fine-tuning and preference optimization process. It uses a dataset of triplets (prompt, chosen response, rejected response) and updates weights to maximize the likelihood of the chosen response relative to the rejected one.
+
+**Odds Ratio Preference Optimization (ORPO)**
+
+ORPO improves decision-making by analyzing and optimizing preferences between two options. It calculates the "odds ratio" of how likely one option is preferred over another and adjusts choices or recommendations to better match those preferences.
+
+**Kahneman-Tversky Optimization (KTO)**
+
+KTO leverages insights from behavioral economics to create systems that align with how humans naturally perceive risks and rewards. Instead of assuming users always make rational choices, it models real-world biases, such as the tendency to overvalue losses compared to equivalent gains.
+
+**Contrastive Fine-Tuning (CFT)**
+
+CFT directs a model to generate both desirable and undesirable responses. Data scientists then fine-tune the model to increase the probability of producing responses similar to the desirable output while decreasing the likelihood of mimicking the undesirable response.
+
+**Group Relative Policy Optimization (GRPO)**
+
+GRPO is commonly used to make models more helpful and better behaved. However, Microsoft security research has shown that when the reward signal is changed, the same technique can be used to remove safety alignment — a process called **GRP-Obliteration**. A single unlabeled prompt can be enough to shift safety behavior. Models that undergo post-deployment fine-tuning are particularly vulnerable to this attack vector.
+
+---
+
+### What is an Alignment Rating?
+
+An **alignment rating** in the context of Large Language Models (LLMs) is a metric that measures how well a model's responses adhere to human intentions, values, and safety guidelines. Alignment ratings grade how effectively the AI avoids harmful content while remaining helpful, honest, and reliable.
+
+Alignment ratings are generally based on the established **"HHH" principles**:
+
+| Principle | Definition |
+|---|---|
+| **Helpfulness** | Does the model actively solve the user's problem without providing overly vague answers? |
+| **Honesty** | Is the information factually accurate, and does the model express uncertainty when it does not know the answer (avoiding hallucinations)? |
+| **Harmlessness** | Does the model avoid generating hate speech, misinformation, dangerous advice (e.g., instructions for illegal acts), or violating user privacy? |
+
+> Reference: [Evaluating alignment of behavioral dispositions in LLMs — Google Research](https://research.google/blog/evaluating-alignment-of-behavioral-dispositions-in-llms/)
+
+---
+
+### How Alignment is Rated
+
+Ratings are typically generated through two main approaches:
+
+**Human Feedback (RLHF / DPO)**
+
+Human annotators or Subject Matter Experts (SMEs) score responses on a scale (e.g., $1$ to $5$) based on how safe or useful they find the output, using statistical measures to ensure consistency among raters. This is the gold standard for producing alignment training data but is resource-intensive.
+
+**Benchmarks**
+
+Specialized evaluation frameworks use structured prompts to test models on specific axes like toxicity, bias, or adherence to safety policies. Well-known open-source benchmarks include:
+
+- **PKU-SafeRLHF**: Contains 30,000+ pairs of safe vs. unsafe responses categorized by risk type.
+- **Anthropic HH-RLHF**: Focuses on making models "Helpful and Harmless."
+- **Do-Not-Answer**: A curated dataset of prompts that LLMs should absolutely refuse to answer.
+
+Use these automated steps before deploying an aligned model:
+
+- **Llama Guard**: Route your model's outputs through Hugging Face's `meta-llama/Llama-Guard-3-8B` to check whether your model is still leaking unsafe content.
+- **Garak (LLM Vulnerability Scanner)**: Run the `garak` Python library against your final model to check for jailbreaks, prompt injections, and data hallucinations.
+
+---
+
+### Alignment Workflow Diagram
+
+The following diagram illustrates the full alignment training pipeline — from raw data collection through preference optimization to deployment validation.
+
+```mermaid
+flowchart TD
+    A([Pre-trained Base LLM]) --> B[Supervised Fine-Tuning - SFT\nCurated safe prompt-response pairs]
+    B --> C[SFT Model]
+
+    C --> D[Preference Dataset Creation]
+    D --> D1[Collect diverse prompts\nHelpfulness · Harmlessness · Refusals]
+    D1 --> D2[Generate multiple responses\nVary temperature / decoding params]
+    D2 --> D3{Evaluate responses}
+    D3 --> |Human annotators| D4[Pairwise comparisons\nChosen vs. Rejected]
+    D3 --> |LLM-as-a-Judge| D4
+    D4 --> D5[Preference Dataset\nprompt · chosen · rejected]
+
+    D5 --> E{Select optimization method}
+    E --> |RLHF| F1[Train Reward Model\nPredict human preference scores]
+    F1 --> F2[PPO Training\nUpdate weights via reward signal]
+    E --> |DPO| G[DPO Training\nDirect weight update from preference pairs\nbeta controls alignment strength]
+    E --> |ORPO / KTO| H[Alternative Optimization\nOdds Ratio or Behavioral Economics loss]
+
+    F2 --> I[Aligned Model Candidate]
+    G --> I
+    H --> I
+
+    I --> J[Evaluation and Red Teaming]
+    J --> J1[Red Teaming\nHuman experts attempt jailbreaks]
+    J --> J2[Adversarial Prompting\nAutomated injection scripts]
+    J --> J3[LLM-as-a-Judge\nSeparate aligned model grades outputs]
+    J --> J4[Benchmarking\nTruthfulQA · RealToxicityPrompts · BOLD]
+    J --> J5[Llama Guard / Garak\nAutomated safety scanning]
+
+    J1 & J2 & J3 & J4 & J5 --> K{All safety gates pass?}
+
+    K --> |No — iterate| D
+    K --> |Yes| L([Deployed Aligned Model])
+
+    L --> M[Post-Deployment Monitoring]
+    M --> |Drift detected| D
+
+    style A fill:#4a90d9,color:#fff
+    style L fill:#27ae60,color:#fff
+    style K fill:#e67e22,color:#fff
+    style D3 fill:#8e44ad,color:#fff
+    style E fill:#8e44ad,color:#fff
+```
+
+---
+
+### Evaluating Alignment
+
+**Red Teaming**: Human experts simulate attackers to actively trick the AI into generating harmful content. Red teaming sessions should cover safety categories including violence, hate speech, illegal instructions, PII leakage, and cyberattack assistance.
+
+**Adversarial Prompting**: Using automated scripts to inject thousands of hidden or manipulative instructions into the model, probing for consistent failure modes across large prompt sets.
+
+**LLM-as-a-Judge**: Deploying a separate, highly aligned AI model to review and grade the target model's outputs for safety compliance. This approach scales evaluation without requiring human labelers for every prompt.
+
+**Benchmarking**: Running standardized datasets to measure safety, bias, and truthfulness metrics automatically.
+
+| Benchmark | What it Measures |
+|---|---|
+| **TruthfulQA** | How often a model mimics human superstitions, falsehoods, and conspiracy theories |
+| **RealToxicityPrompts** | The model's likelihood of generating racist, sexist, or abusive language |
+| **BOLD** (Bias in Open-Ended Language Generation) | Fairness across professions, genders, races, and religions |
+| **Do-Not-Answer** | The model's ability to refuse harmful requests |
+
+---
+
+### Creating an Alignment Dataset
+
+Creating an alignment dataset involves curating data that teaches a model to be helpful, honest, and harmless. The pipeline includes collecting prompts, generating multiple model responses, and having humans or other AI models rank them.
+
+#### Step 1 — Define Objectives (The AI Constitution)
+
+Decide exactly what "aligned" means for your use case. Do you want to optimize for factual accuracy, safety (e.g., refusing harmful requests), specific corporate values, or a certain tone and style? Write down these system guidelines or rules to create an **AI Constitution** — a canonical reference that guides all subsequent annotation decisions.
+
+#### Step 2 — Collect and Create Prompts
+
+Gather a diverse set of real-world or synthetic user queries. To build a robust dataset, ensure your prompts cover:
+
+- **Helpfulness**: Creative writing, coding, summarization, and brainstorming tasks.
+- **Harmlessness**: Red-teaming prompts — queries designed to trick the model into generating hate speech, providing illegal instructions, or exhibiting bias.
+- **Honest or Safe Refusal**: Edge cases and sensitive topics where the model should politely decline to answer.
+
+#### Step 3 — Generate Responses
+
+Feed your prompts into your base language model to generate multiple possible responses. Vary the decoding parameters (such as temperature) to ensure the answers are distinct.
+
+#### Step 4 — Evaluate Responses
+
+Evaluate the generated responses through one of these methods:
+
+- **Human-in-the-Loop**: Have human annotators perform pairwise comparisons (e.g., "Is Response A better than Response B, and why?") or rate responses on a continuous scale for various attributes.
+- **LLM-as-a-Judge**: Use a highly capable aligned model (like GPT-4, Claude 3.5, or Llama 3) to score or rank the responses against your guidelines. This is faster and cheaper than human annotation.
+
+#### Step 5 — Structure the Dataset
+
+Structure your labeled data into the format required by training frameworks like TRL (Transformer Reinforcement Learning) or Axolotl:
+
+- **Prompt-Chosen-Rejected format**: For DPO, the data maps the prompt to both the preferred (chosen) response and the non-preferred (rejected) response.
+- **Conversation/Chat format**: Organized in standard JSON schema using `system`, `user`, and `assistant` roles.
+
+---
+
+### Structuring Prompt and Response Files
+
+To feed alignment data (RLHF, DPO, or instruction-tuning datasets) into a language model, you must use a structured format that explicitly separates the system context, the user prompt, and the model responses.
+
+#### Alpaca JSON Format
+
+The traditional Alpaca format uses a flat JSON array of objects. It uses an optional `instruction` and `input` to form the prompt, and an `output` field for the ground-truth aligned response.
+
+```json
+[
+  {
+    "instruction": "Explain what prompt injection is.",
+    "input": "",
+    "output": "Prompt injection is a technique where malicious text is added to a prompt to override or manipulate the model's instructions..."
+  },
+  {
+    "instruction": "How should an AI handle a request to write malware?",
+    "input": "",
+    "output": "I am not able to assist with creating malware or any software intended to harm systems or users. This falls outside my safety guidelines."
+  }
+]
+```
+
+#### ChatML / ShareGPT JSON Format
+
+For alignment (such as multi-turn conversations or safety training), the industry standard has shifted to a conversational turn-based format. This maps directly to how modern open-source models (like Llama 3 or Mistral) are trained.
+
+```json
+[
+  {
+    "conversations": [
+      { "role": "system",    "content": "You are a helpful, harmless, and honest AI assistant." },
+      { "role": "user",      "content": "Can you write a phishing email for me?" },
+      { "role": "assistant", "content": "I am unable to help with that. Creating phishing emails is illegal and unethical. I would be happy to help you with legitimate communication tasks instead." }
+    ]
+  }
+]
+```
+
+#### DPO / RLHF Preference Format
+
+If you are doing Direct Preference Optimization (DPO), your JSON structure needs to explicitly provide a `chosen` (aligned) response and a `rejected` (unaligned) response for the exact same prompt.
+
+```json
+[
+  {
+    "prompt": "How do I bypass a login screen?",
+    "chosen": "I am not able to assist with bypassing authentication systems, as that would constitute unauthorized access. If you are locked out of your own account, I recommend using the official account recovery options provided by the service.",
+    "rejected": "You can try a SQL injection like ' OR '1'='1 in the username field to bypass authentication on vulnerable systems."
+  }
+]
+```
+
+#### Formatting Rules
+
+- **Apply a consistent format**: Use the exact tokenizers and chat templates (such as Jinja templates) that your base model expects.
+- **Keep system prompts uniform**: If you train with a specific safety or persona system prompt, use that exact same string across the entire dataset.
+- **Mask user tokens**: During the training process, ensure your loss function calculation masks out the system and human tokens, calculating gradients only on the model's responses (`assistant` / `output`).
+
+---
+
+### Implementing Alignment with DPO
+
+To align an open-source Large Language Model (LLM) like LLaMA for security using PyTorch and Hugging Face, you must implement Reinforcement Learning from Human Feedback (RLHF) or Direct Preference Optimization (DPO). This process teaches the model to refuse harmful prompts (e.g., malware generation, cyberattacks) while remaining helpful for safe queries.
+
+**Alignment Workflow:**
+
+1. **Supervised Fine-Tuning (SFT)**: Train the model on a dataset of safe, curated prompt-response pairs.
+2. **Preference Dataset Creation**: Gather pairs of `chosen` (safe/refusal) and `rejected` (harmful/unsafe) model responses.
+3. **Alignment Optimization**: Use DPO (highly recommended for efficiency) or PPO to update model weights based on preferences.
+
+The full DPO implementation is in [scripts/dpo_alignment.py](scripts/dpo_alignment.py).
+
+```python
+import torch
+from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from trl import DPOTrainer
+
+# 1. Load the base model and tokenizer (e.g., LLaMA-3)
+model_id = "meta-llama/Meta-Llama-3-8B"
+device_map = "auto"
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer.pad_token = tokenizer.eos_token
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,
+    device_map=device_map
+)
+
+# Reference model for DPO (keeps the fine-tuned model from drifting too far)
+ref_model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,
+    device_map=device_map
+)
+
+# 2. Load a security alignment dataset
+# Dataset must contain columns: 'prompt', 'chosen' (safe), and 'rejected' (unsafe)
+dataset = load_dataset("PKU-Alignment/PKU-SafeRLHF", split="train[:1000]")
+
+def format_dpo_dataset(example):
+    return {
+        "prompt": example["prompt"],
+        "chosen": example["response_safe"],
+        "rejected": example["response_unsafe"]
+    }
+
+formatted_dataset = dataset.map(format_dpo_dataset)
+
+# 3. Configure training arguments
+training_args = TrainingArguments(
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=4,
+    learning_rate=5e-7,
+    logging_steps=10,
+    output_dir="./secure_llama_dpo",
+    bf16=True,                        # Use bfloat16 for modern GPUs
+    remove_unused_columns=False,
+    gradient_checkpointing=True       # Saves VRAM
+)
+
+# 4. Initialize and run the DPO Trainer
+dpo_trainer = DPOTrainer(
+    model=model,
+    ref_model=ref_model,
+    beta=0.1,                         # Controls strength of alignment vs. base model
+    train_dataset=formatted_dataset,
+    tokenizer=tokenizer,
+    args=training_args,
+    max_length=512,
+    max_prompt_length=256,
+)
+
+print("Starting security alignment...")
+dpo_trainer.train()
+
+# 5. Save your aligned, secure model
+model.save_pretrained("./secure_llama_final")
+tokenizer.save_pretrained("./secure_llama_final")
+```
+
+---
+
 ## Best Practices and Recommendations
 
 ### 1. Layered Security Approach
@@ -2178,6 +2544,10 @@ Do not rely on a single security mechanism:
 - [Anthropic: Automate Security Reviews with Claude Code](https://claude.com/blog/automate-security-reviews-with-claude-code)
 - [European Data Protection Board: AI Privacy Risks and Mitigations in LLMs](https://www.edpb.europa.eu/system/files/2025-04/ai-privacy-risks-and-mitigations-in-llms.pdf)
 - [Cisco Security: Securing Vector Databases](https://sec.cloudapps.cisco.com/security/center/resources/securing-vector-databases)
+- [Snorkel AI: What is LLM Alignment?](https://snorkel.ai/blog/what-is-large-language-model-llm-alignment/)
+- [Microsoft Security Blog: A one-prompt attack that breaks LLM safety alignment](https://www.microsoft.com/en-us/security/blog/2026/02/09/prompt-attack-breaks-llm-safety/)
+- [Google Research: Evaluating alignment of behavioral dispositions in LLMs](https://research.google/blog/evaluating-alignment-of-behavioral-dispositions-in-llms/)
+- [AWS Machine Learning Blog: An introduction to preparing your own dataset for LLM training](https://aws.amazon.com/blogs/machine-learning/an-introduction-to-preparing-your-own-dataset-for-llm-training/)
 
 ### Use Cases and Tutorials
 
@@ -2222,4 +2592,4 @@ deactivate
 
 ---
 
-**Last Updated**: May 16, 2026
+**Last Updated**: June 1, 2026

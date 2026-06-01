@@ -9,3 +9,5 @@ from pathlib import Path
 
 # Insert the parent directory (security/) into sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+# Insert the scripts/ directory so tests can import modules moved there
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
