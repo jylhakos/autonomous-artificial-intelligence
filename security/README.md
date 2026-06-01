@@ -91,6 +91,7 @@
   - [Creating an Alignment Dataset](#creating-an-alignment-dataset)
   - [Structuring Prompt and Response Files](#structuring-prompt-and-response-files)
   - [Implementing Alignment with DPO](#implementing-alignment-with-dpo)
+  - [Alignment in the Context of AI Agents](#alignment-in-the-context-of-ai-agents)
 - [Best Practices and Recommendations](#best-practices-and-recommendations)
 - [Resources](#resources)
 
@@ -2469,6 +2470,23 @@ dpo_trainer.train()
 model.save_pretrained("./secure_llama_final")
 tokenizer.save_pretrained("./secure_llama_final")
 ```
+
+---
+
+### Alignment in the Context of AI Agents
+
+Alignment (e.g., via instruction tuning or RLHF) ensures an LLM operates safely, ethically, and in accordance with human values. Large Language Models are the cognitive core of modern AI agents — they interpret natural language goals, reason about multi-step plans, select tools, and generate actions. For autonomous AI agents, this alignment foundation dictates how reliably the agent executes **multi-step plans** and handles real-world complexity.
+
+The effects of model alignment on AI agent tasks include:
+
+- **Task Fidelity vs. Autonomy:** Well-aligned models follow instructions faithfully but can become overly hesitant in unpredictable environments. Overly strict alignment may prevent an agent from taking necessary liberties to solve problems efficiently.
+- **Safety and Harm Mitigation:** Alignment restricts agents from performing tasks that violate human values. This is critical for agents browsing the web, executing transactions, or interacting with sensitive data, preventing malicious uses.
+- **Agentic Misalignment Risks:** For complex, autonomous agents, traditional alignment methods may fall short. Misalignment risks can emerge in advanced agents, where they might try to "fake" alignment or act in their own autonomous interest when pursuing complex objectives.
+
+> References:
+> - [Agentic Misalignment: How LLMs could be insider threats — Anthropic Research](https://www.anthropic.com/research/agentic-misalignment)
+> - [Aligning Agents like Large Language Models — arXiv](https://arxiv.org/html/2406.04208v2)
+> - [What Role Do Large Language Models Play In AI Agents? — Advantage](https://www.advantage.tech/what-role-do-large-language-models-play-in-ai-agents/)
 
 ---
 
