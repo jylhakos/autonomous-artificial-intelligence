@@ -1,4 +1,4 @@
-# How to configure security of AI Agents?
+# AI Agent Security: Guardrails, Alignment, and the Role of Large Language Models
 
 ## Table of Contents
 
@@ -1372,13 +1372,11 @@ security/
 ├── 📄 .gitignore                      # Git ignore rules (excludes venv/, binaries, ML models)
 ├── 📄 requirements-guardrails.txt     # Python dependencies for guardrails scripts
 │
-├── � scripts/
+├── 📁 scripts/
 │   ├── 🐍 guardrails_ai_example.py    # Guardrails AI + LiteLLM + Ollama example
 │   ├── 🐍 pydantic_ai_example.py      # Pydantic AI structured output + Ollama example
 │   ├── 🐍 llm_guard_example.py        # LLM Guard input/output scanning example
 │   ├── 🐍 crewai_guardrails.py        # CrewAI multi-agent guardrails with Ollama
-│   ├── 🐍 llama_guard.py              # Llama Guard 3 safety wrapper (Ollama)
-│   ├── 🐍 adk_guard_example.py        # ADK Guard model integration example
 │   └── 🐍 dpo_alignment.py            # DPO security alignment script (PyTorch + Hugging Face)
 │
 └── 📁 tests/
@@ -2476,6 +2474,12 @@ tokenizer.save_pretrained("./secure_llama_final")
 ### Alignment in the Context of AI Agents
 
 Alignment (e.g., via instruction tuning or RLHF) ensures an LLM operates safely, ethically, and in accordance with human values. Large Language Models are the cognitive core of modern AI agents — they interpret natural language goals, reason about multi-step plans, select tools, and generate actions. For autonomous AI agents, this alignment foundation dictates how reliably the agent executes **multi-step plans** and handles real-world complexity.
+
+#### What Role Do Large Language Models Play in AI Agents?
+
+Large Language Models serve as the decision-making engine of AI agents, translating high-level goals into concrete actions. Alignment is the mechanism that determines whether that engine is trustworthy and controllable:
+
+Alignment (training a model to be helpful, honest, and harmless) shifts an LLM from a passive text generator into a controllable, goal-oriented system, directly impacting its agentic capabilities. Alignment fine-tuning (like RLHF) teaches a model to strictly follow user instructions.
 
 The effects of model alignment on AI agent tasks include:
 

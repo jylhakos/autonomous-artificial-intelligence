@@ -494,9 +494,12 @@ Reasoning is the cognitive core of autonomous agents. Standard LLMs retrieve sta
 - Layered security approach combining traditional and AI-specific methods
 - Identity and access management with least privilege principles
 - Guardrails for input/output inspection and content safety
+- Alignment of Large Language Models (LLMs) as a security control: RLHF and instruction fine-tuning shift LLMs from passive text generators into controllable, goal-oriented systems
 
 **Importance for Autonomous AI:**
 Autonomous AI agents execute code, manage files, and access multiple applications with minimal human oversight. This autonomy introduces significant security risks including prompt injection attacks, memory poisoning, and unauthorized access to sensitive systems. A robust security framework is essential to ensure agents operate within safe boundaries, protect against malicious manipulation, and maintain trust in production environments. Without proper security measures, autonomous agents can be exploited to bypass controls, leak sensitive data, or perform unintended actions.
+
+Large Language Models are the cognitive core of AI agents — they interpret goals, reason about plans, select tools, and generate actions. Alignment (training a model to be helpful, honest, and harmless) shifts an LLM from a passive text generator into a controllable, goal-oriented system, directly impacting its agentic capabilities. Alignment fine-tuning (like RLHF) teaches a model to strictly follow user instructions, making alignment itself a foundational security layer for any autonomous agent.
 
 **Key Features:**
 - Identity and Access Management (IAM) with service accounts and short-lived credentials
@@ -507,6 +510,24 @@ Autonomous AI agents execute code, manage files, and access multiple application
 - Protection against prompt injections, indirect attacks, and AI memory poisoning
 - Practical implementations with Ollama and Google Agent Development Kit
 - Use cases for securing Amazon Bedrock Agents and GKE deployments
+
+```
+security/
+├── 📄 README.md                       Documentation, security guide, and alignment deep dive
+├── 📄 requirements-guardrails.txt     Python dependencies for guardrails scripts
+├── 📂 scripts/
+│   ├── guardrails_ai_example.py       Guardrails AI + LiteLLM + Ollama example
+│   ├── pydantic_ai_example.py         Pydantic AI structured output + Ollama example
+│   ├── llm_guard_example.py           LLM Guard input/output scanning example
+│   ├── crewai_guardrails.py           CrewAI multi-agent guardrails with Ollama
+│   └── dpo_alignment.py               DPO security alignment script (PyTorch + Hugging Face)
+└── 📂 tests/
+    ├── conftest.py                    pytest configuration
+    ├── test_guardrails_ai.py          Tests for guardrails_ai_example.py
+    ├── test_pydantic_ai.py            Tests for pydantic_ai_example.py
+    ├── test_llm_guard.py              Tests for llm_guard_example.py
+    └── test_crewai_guardrails.py      Tests for crewai_guardrails.py
+```
 
 ---
 
