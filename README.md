@@ -14,6 +14,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
   - [fine-tuning/](#-fine-tuning)
   - [memory/](#-memory)
   - [models/](#-models)
+  - [multi-modal/](#-multi-modal)
   - [observability/](#-observability)
   - [optimization/](#-optimization)
   - [orchestration/](#-orchestration)
@@ -42,6 +43,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 fine-tuning/         # LLM fine-tuning with Unsloth, PEFT, LoRA, and QLoRA
 ├── 📂 memory/              # Context windows, short-term and long-term agent memory
 ├── 📂 models/              # Machine learning models, LLMs, and local inference server
+├── 📂 multi-modal/         # Multi-modal LLMs, vision-language models, and AI agent interactions
 ├── 📂 observability/       # Monitoring and analysis tools
 ├── 📂 optimization/        # ML and LLM optimization techniques and tools
 ├── 📂 orchestration/       # Workflow orchestration and coordination
@@ -315,6 +317,46 @@ models/
         ├── train_lstm.py                LSTM model training for load forecasting
         ├── forecast.py                  Next-day usage prediction
         └── plot_forecast.py             Forecast visualization against historical data
+```
+
+---
+
+### 📂 multi-modal/
+
+**Key Points:**
+- Multi-modal Large Language Models (LLMs) capable of processing text, images, audio, and video inputs simultaneously
+- State-of-the-art architectural approaches: Unified Embedding Decoder (early fusion) and Cross-Modality Attention (late fusion)
+- Local deployment with Ollama for lightweight open-source models (LLaVA, CLIP, Whisper)
+- Production-grade inference with vLLM engine for scalable, high-throughput multi-modal workloads
+- AI agents leveraging multi-modal capabilities for complex tasks (image analysis, document understanding, voice interactions)
+- FastAPI server for REST API integration of multi-modal models
+- Integration with Open WebUI for conversational multi-modal interfaces
+
+**Importance for Autonomous AI:**
+Autonomous agents must operate in a world rich with diverse sensory inputs — documents containing both text and diagrams, interfaces with visual layouts, conversations mixing speech and images, and tasks requiring synthesis across modalities. Multi-modal LLMs extend agent capabilities beyond text-only reasoning to visual understanding, audio processing, and cross-modal synthesis, enabling agents to interpret screenshots, analyze charts, transcribe and respond to voice commands, and generate content that combines text with visual elements. The architectural patterns covered here — unified embedding spaces, cross-attention fusion, and projection layers — determine how effectively a model can align representations across modalities and reason jointly over heterogeneous inputs. For production autonomous systems, the choice between local deployment (Ollama) for privacy and cost control versus cloud-based inference for scale directly impacts feasibility in domains with strict data residency requirements or high-volume workloads. Understanding how AI agents orchestrate multi-modal models — routing inputs to specialized encoders, fusing representations, and generating multi-modal outputs — is essential for building agents capable of human-like perception and interaction.
+
+**Key Components:**
+- `scripts/text_model.py` — Text generation using Ollama-hosted LLMs with configurable temperature and max tokens
+- `scripts/image_model.py` — Vision-language model (LLaVA) for image understanding and visual question answering
+- `scripts/voice_model.py` — Speech-to-text transcription using Whisper for voice input processing
+- `scripts/api_server.py` — FastAPI server exposing multi-modal endpoints for text, image, and voice processing
+- `scripts/ai_agent.py` — AI agent orchestrating multi-modal models for complex scenarios (document analysis, visual reasoning)
+- `requirements.txt` — Python dependencies for multi-modal workflows (Ollama client, FastAPI, vLLM)
+- `QUICKSTART.md` — Quick setup guide for Ollama installation, model pulling, and testing multi-modal capabilities
+- `README.md` — Comprehensive guide covering multi-modal architectures, fusion strategies, AI agent interactions, vLLM deployment, and production patterns
+
+```
+multi-modal/
+├── 📄 .gitignore                        Excludes virtual environments and temporary files
+├── 📄 requirements.txt                  Python dependencies for multi-modal workflows
+├── 📄 QUICKSTART.md                     Quick setup guide for Ollama and multi-modal models
+├── 📄 README.md                         Multi-modal architectures, AI agents, and deployment guide
+└── 📂 scripts/
+    ├── text_model.py                    Text generation with Ollama LLMs
+    ├── image_model.py                   Vision-language model (LLaVA) for image understanding
+    ├── voice_model.py                   Speech-to-text with Whisper
+    ├── api_server.py                    FastAPI server for multi-modal endpoints
+    └── ai_agent.py                      AI agent orchestrating multi-modal models
 ```
 
 ---
