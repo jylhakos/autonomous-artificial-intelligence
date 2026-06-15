@@ -14,6 +14,9 @@ This tutorial provides an overview of open-source vector databases, similarity s
   - [Step 3: Start Qdrant on Docker](#step-3-start-qdrant-on-docker)
   - [Step 4: Install and Start Microsoft Foundry Local](#step-4-install-and-start-microsoft-foundry-local)
   - [Step 5: Add Documents and Run the Example Script](#step-5-add-documents-and-run-the-example-script)
+- [What is Retrieval-Augmented Generation?](#what-is-retrieval-augmented-generation)
+  - [Why RAG Matters](#why-rag-matters)
+  - [The RAG Pipeline Explained](#the-rag-pipeline-explained)
 - [What is a Vector Database?](#what-is-a-vector-database)
 - [What are Vector Databases Used For?](#what-are-vector-databases-used-for)
 - [Open Source Vector Databases Overview](#open-source-vector-databases-overview)
@@ -34,12 +37,26 @@ This tutorial provides an overview of open-source vector databases, similarity s
   - [Choosing the Right Index Type](#choosing-the-right-index-type)
   - [Quantization Techniques](#quantization-techniques)
   - [Hybrid Search](#hybrid-search)
+  - [Chunking in Vector Search](#chunking-in-vector-search)
+- [What is Chunking?](#what-is-chunking)
+  - [Why is Chunking Important for RAG?](#why-is-chunking-important-for-rag)
+  - [Chunking Strategies](#chunking-strategies)
+  - [Fixed-Size Chunking](#fixed-size-chunking)
+  - [Sentence-Level Chunking](#sentence-level-chunking)
+  - [Semantic Chunking](#semantic-chunking)
+  - [Document-Based Chunking](#document-based-chunking)
+  - [Chunking with LlamaIndex and Weaviate](#chunking-with-llamaindex-and-weaviate)
+  - [Chunking Implementation Examples](#chunking-implementation-examples)
 - [How Large Language Models Use Vector Databases](#how-large-language-models-use-vector-databases)
   - [The RAG Pipeline](#the-rag-pipeline)
   - [Document Ingestion: From Text to Stored Vectors](#document-ingestion-from-text-to-stored-vectors)
   - [Vector Search in Qdrant for RAG](#vector-search-in-qdrant-for-rag)
   - [Vector Search in FAISS for RAG](#vector-search-in-faiss-for-rag)
   - [Vector Search in Weaviate for RAG](#vector-search-in-weaviate-for-rag)
+- [RAG Evaluation and Metrics](#rag-evaluation-and-metrics)
+  - [What is Evaluation?](#what-is-evaluation)
+  - [Key Metrics for RAG Systems](#key-metrics-for-rag-systems)
+  - [Optimizing RAG Performance](#optimizing-rag-performance)
 - [Vibe Coding with Vector Search and Vector Databases](#vibe-coding-with-vector-search-and-vector-databases)
   - [What is Vibe Coding?](#what-is-vibe-coding)
   - [Use Case: Document-Driven Development with a Vector Database](#use-case-document-driven-development-with-a-vector-database)
@@ -97,6 +114,44 @@ source venv/bin/activate
 ```
 
 After activation, your terminal prompt changes to show `(venv)`. All `pip install` commands now install packages into the isolated environment rather than the system Python. You must activate the virtual environment in every new terminal session before running the example scripts.
+
+---
+
+## What is Retrieval-Augmented Generation?
+
+**Retrieval-Augmented Generation (RAG)** is a technique that enhances Large Language Model (LLM) responses by grounding them in external knowledge retrieved from a vector database. Instead of relying solely on the model's training data, RAG retrieves relevant documents or chunks from a knowledge base and injects them as context into the LLM prompt before generating a response.
+
+### Why RAG Matters
+
+RAG addresses several key limitations of standalone LLMs:
+
+- **Reduces Hallucinations**: By providing factual context from trusted sources, RAG minimizes the risk of LLMs generating incorrect or fabricated information.
+- **Up-to-Date Information**: RAG enables access to current information beyond the model's training cutoff date.
+- **Domain Expertise**: Organizations can ground LLMs in their proprietary documents, manuals, and knowledge bases.
+- **Source Attribution**: Retrieved chunks can be traced back to their source documents, enabling citation and verification.
+- **Cost Efficiency**: RAG is more economical than fine-tuning large models for domain-specific tasks.
+
+### The RAG Pipeline Explained
+
+A typical RAG pipeline consists of two phases:
+
+**Offline Ingestion Phase**:
+1. **Document Loading**: Documents are loaded from various sources (PDFs, text files, web pages).
+2. **Chunking**: Documents are split into smaller, semantically meaningful chunks.
+3. **Embedding**: Each chunk is converted into a high-dimensional vector using an embedding model.
+4. **Storage**: Vectors and their metadata are stored in a vector database for efficient retrieval.
+
+**Online Retrieval Phase**:
+1. **Query Embedding**: User questions are embedded using the same embedding model.
+2. **Similarity Search**: The vector database retrieves the top-k most similar chunks.
+3. **Context Injection**: Retrieved chunks are injected into the LLM prompt as context.
+4. **Response Generation**: The LLM generates a grounded response based on the provided context.
+
+For more information on RAG, see:
+- [Microsoft Azure RAG Preparation Phase](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-preparation-phase)
+- [Weaviate RAG Introduction](https://weaviate.io/blog/introduction-to-rag)
+
+---
 
 To verify the correct interpreter is active:
 
@@ -757,6 +812,239 @@ Chroma supports sparse vector search via SPLADE (Sparse Lexical and Expansion Mo
 
 ---
 
+## What is Chunking?
+
+**Chunking** is the process of breaking down large documents into smaller, manageable pieces called **chunks**. This is a crucial first step when preparing data for use with Large Language Models (LLMs) and vector databases in RAG applications.
+
+Chunking is necessary because:
+- **Embedding models have context limits**: Most embedding models have a maximum input size (e.g., 512 or 1024 tokens).
+- **Semantic precision**: Smaller, focused chunks capture clear semantic meaning better than large, mixed-topic documents.
+- **LLM context window efficiency**: Passing only relevant chunks to an LLM is faster and more cost-effective than processing entire documents.
+- **Retrieval accuracy**: Well-chunked content produces more precise search results that directly address user queries.
+
+### Why is Chunking Important for RAG?
+
+Getting chunking right is **one of the most important decisions** in building your RAG pipeline. How you split your documents affects your system's ability to find relevant information and give accurate answers.
+
+#### 1. Optimizing for Retrieval Accuracy
+
+The first step is making sure your system can find the right information in your vector database. Vector search does this by comparing user queries with the embeddings of your chunks.
+
+- **Chunks that are too large** often mix multiple ideas together. This creates a noisy, "averaged" embedding that doesn't clearly represent any single topic, making it hard for vector retrieval to find relevant context.
+- **Chunks that are small and focused** capture one clear idea. This results in a precise embedding that makes it easier for your system to find the right information.
+
+For AI agents, this retrieval step effectively becomes a form of **long-term memory**, where well-formed chunks determine what the agent can recall later.
+
+#### 2. Preserving Context for Generation
+
+After your system finds the best chunks, they're passed to the LLM. This is where context quality determines the quality of the outputted response.
+
+- **Chunks that are too small** fail to provide sufficient context. Imagine reading a single sentence from the middle of a research paper—even humans would struggle without more context.
+- **Chunks that are too large** create attention dilution. LLM performance degrades with longer context inputs due to the "lost in the middle" effect, where models struggle with information buried in long contexts.
+
+#### The Chunking Sweet Spot
+
+You want to preserve the author's "train of thought" while creating chunks that are small enough for precise retrieval but complete enough to give the LLM full context. When you get this balance right:
+
+- ✅ **Improves Retrieval Quality**: Focused, semantically complete chunks enable precise context retrieval.
+- ✅ **Manages LLM Context Window**: Only relevant data gets passed to the LLM, avoiding confusion from excessive length.
+- ✅ **Reduces Hallucinations**: Providing small, highly relevant chunks grounds the model in factual data.
+- ✅ **Enhances Efficiency**: Processing smaller chunks is faster and more cost-effective.
+
+**References**:
+- [Weaviate: Chunking Strategies for RAG](https://weaviate.io/blog/chunking-strategies-for-rag)
+- [Microsoft Azure: RAG Chunking Phase](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-chunking-phase)
+
+### Chunking Strategies
+
+There are several approaches to chunking, each with different trade-offs:
+
+#### Fixed-Size Chunking
+
+Splits text by a set number of characters or tokens (e.g., 512 tokens per chunk). This is the simplest approach and works well for most use cases.
+
+**When to use**: Quick prototyping, unstructured text, or when document structure is inconsistent.
+
+**Best practices**:
+- Use **10-20% overlap** between chunks to preserve context at boundaries.
+- Measure in **tokens** rather than characters for consistency with embedding models.
+- Start with **512 tokens** and adjust based on your embedding model's capacity.
+
+**Example**:
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,      # Target max characters per chunk
+    chunk_overlap=50     # Overlap between chunks to retain context
+)
+
+chunks = text_splitter.split_documents(docs)
+```
+
+#### Sentence-Level Chunking
+
+Breaks text into individual sentences or groups of sentences, keeping complete logical thoughts together.
+
+**When to use**: Text with clear sentence boundaries, prose documents, articles, or essays.
+
+**Tools**: spaCy sentence tokenizer, NLTK sentence tokenizer, LangChain recursive text splitter.
+
+#### Semantic Chunking
+
+Uses AI to identify when the actual meaning or topic of the text shifts, creating chunks based on natural paragraph or theme breaks rather than arbitrary character counts.
+
+**When to use**: Dense, unstructured text like academic papers, legal documents, or complex narratives where semantic boundaries matter more than structural ones.
+
+**How it works**:
+1. Break text into sentences
+2. Generate embeddings for each sentence
+3. Calculate similarity between consecutive sentences
+4. Create chunk boundaries where similarity drops (topic changes)
+
+This approach ensures each chunk contains a self-contained idea or topic, significantly improving retrieval quality.
+
+**Reference**: [Weaviate Semantic Chunking Tutorial](https://weaviate.io/blog/chunking-strategies-for-rag#semantic-chunking)
+
+#### Document-Based Chunking
+
+Respects the native layout and structure of the document, using HTML tags, JSON keys, or Markdown headers to define chunk boundaries.
+
+**When to use**: Highly structured documents like Markdown files, HTML pages, code files, or JSON documents.
+
+**Examples**:
+- **Markdown**: Split by headings (`#`, `##`, `###`)
+- **HTML**: Split by tags (`<p>`, `<div>`, `<section>`)
+- **Code**: Split by functions or classes (`def`, `class` in Python)
+
+**Tools**: LangChain document-specific splitters (MarkdownTextSplitter, HTMLTextSplitter).
+
+### Chunking with LlamaIndex and Weaviate
+
+**LlamaIndex** provides specialized `NodeParsers` for chunking with integration to vector databases:
+
+```python
+from llama_index.core import VectorStoreIndex
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.vector_stores.weaviate import WeaviateVectorStore
+
+# Initialize splitter
+splitter = SentenceSplitter(
+    chunk_size=512,
+    chunk_overlap=50
+)
+
+# Parse documents into nodes (chunks)
+nodes = splitter.get_nodes_from_documents(documents)
+
+# Create vector store and index
+vector_store = WeaviateVectorStore(weaviate_client=client)
+index = VectorStoreIndex(nodes, vector_store=vector_store)
+```
+
+**References**:
+- [LlamaIndex Chunk Sizes](https://developers.llamaindex.ai/python/framework/optimizing/basic_strategies/basic_strategies/)
+- [LlamaIndex Weaviate Integration](https://developers.llamaindex.ai/python/framework/integrations/vector_stores/weaviateindex_auto_retriever/)
+- [Microsoft: Build RAG with Azure Files, LlamaIndex and Weaviate](https://learn.microsoft.com/en-us/azure/storage/files/artificial-intelligence/retrieval-augmented-generation/open-source-frameworks/tutorials/llamaindex-weaviate/tutorial-llamaindex-weaviate)
+
+### Chunking Implementation Examples
+
+#### LangChain Implementation (Python)
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader
+from langchain_openai import OpenAIEmbeddings
+
+# 1. Load your document
+loader = TextLoader("your_document.txt")
+docs = loader.load()
+
+# 2. Initialize chunker
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,       # Target max characters per chunk
+    chunk_overlap=50      # Overlap between chunks to retain context
+)
+
+# 3. Create chunks
+chunks = text_splitter.split_documents(docs)
+
+# 4. Initialize embedding model
+embeddings_model = OpenAIEmbeddings()
+```
+
+#### Ingesting Chunks into Pinecone
+
+```python
+from pinecone import Pinecone
+
+# Initialize Pinecone
+pc = Pinecone(api_key="your-api-key")
+index = pc.Index("your-index-name")
+
+# Prepare vectors
+vectors = []
+for i, chunk in enumerate(chunks):
+    embedding = embeddings_model.embed_query(chunk.page_content)
+    vectors.append({
+        "id": f"chunk_{i}",
+        "values": embedding,
+        "metadata": {
+            "text": chunk.page_content,
+            "source": "your_document.txt"
+        }
+    })
+
+# Upsert to Pinecone
+index.upsert(vectors=vectors)
+```
+
+**Reference**: [Pinecone Chunking Strategies](https://www.pinecone.io/learn/chunking-strategies/)
+
+#### Ingesting Chunks into Weaviate
+
+```python
+import weaviate
+
+# 1. Initialize Weaviate client
+client = weaviate.connect_to_local()
+questions = client.collections.get("Question")
+
+# 2. Iterate through chunks and insert into Weaviate
+with questions.batch.dynamic() as batch:
+    for i, chunk in enumerate(chunks):
+        batch.add_object(
+            properties={
+                "content": chunk.page_content,
+                "source": "your_document.txt",
+            }
+        )
+```
+
+Weaviate's Python client allows auto-vectorization via configured modules (like `text2vec-openai`), but text must be chunked before ingestion.
+
+**Reference**: [Weaviate Chunking Strategies](https://weaviate.io/blog/chunking-strategies-for-rag)
+
+### Choosing Your Chunking Strategy
+
+Select a chunking method based on your data type and retrieval needs:
+
+| **Strategy** | **When to Use** | **Tools** |
+|-------------|----------------|-----------|
+| **Fixed-size** | Basic documents, quick prototyping | LangChain RecursiveCharacterTextSplitter |
+| **Recursive** | Unstructured text with natural separators | LangChain RecursiveCharacterTextSplitter |
+| **Document-based** | Structured documents (HTML, Markdown, code) | LangChain MarkdownTextSplitter, HTMLTextSplitter |
+| **Semantic** | Complex reasoning, multi-topic texts | Custom implementation with embeddings |
+| **Sentence-level** | Prose with clear sentence boundaries | spaCy, NLTK, LangChain |
+
+**Key recommendations**:
+- Start with **fixed-size chunking with 10-20% overlap** (512 tokens, 50-100 token overlap).
+- Experiment with different chunk sizes and measure retrieval quality.
+- Use document structure when available (headers, paragraphs, sections).
+- Consider semantic chunking for complex, high-value documents.
+
+---
+
 ## How Large Language Models Use Vector Databases
 
 ### The RAG Pipeline
@@ -886,6 +1174,185 @@ response = collection.generate.hybrid(
 ```
 
 This pattern allows the LLM to generate answers grounded in both semantically relevant and keyword-matched content from your own knowledge base.
+
+---
+
+## RAG Evaluation and Metrics
+
+### What is Evaluation?
+
+**Evaluation** is the systematic process of measuring how well your RAG system performs. Without proper evaluation, you cannot determine if changes to your chunking strategy, embedding model, or retrieval parameters actually improve your system's quality.
+
+RAG evaluation typically measures two key aspects:
+1. **Retrieval Quality**: How well does the system find relevant chunks?
+2. **Generation Quality**: How accurate and helpful are the LLM's responses?
+
+### Key Metrics for RAG Systems
+
+#### Retrieval Metrics
+
+**Hit Rate (Recall@k)**
+- Measures: What percentage of queries successfully retrieved at least one relevant chunk in the top-k results?
+- Formula: `(Queries with ≥1 relevant chunk in top-k) / (Total queries)`
+- Goal: Maximize (higher is better)
+
+**Mean Reciprocal Rank (MRR)**
+- Measures: How high in the results is the first relevant chunk?
+- Formula: Average of `1 / (rank of first relevant chunk)` across all queries
+- Goal: Maximize (closer to 1.0 is better)
+
+**Precision@k**
+- Measures: What percentage of retrieved chunks are actually relevant?
+- Formula: `(Relevant chunks in top-k) / k`
+- Goal: Maximize (higher is better)
+
+**NDCG (Normalized Discounted Cumulative Gain)**
+- Measures: Quality of ranking, giving more weight to relevant results at higher positions
+- Goal: Maximize (1.0 is perfect ranking)
+
+#### Generation Metrics
+
+**Answer Relevance**
+- Measures: Does the generated answer actually address the question?
+- Evaluation: Usually requires LLM-based judgment or human review
+
+**Faithfulness (Groundedness)**
+- Measures: Is the answer supported by the retrieved context?
+- Evaluation: Checks if claims in the answer can be verified from retrieved chunks
+
+**Context Precision**
+- Measures: How many of the retrieved chunks were actually useful?
+- Formula: `(Useful chunks) / (Total retrieved chunks)`
+
+**Answer Correctness**
+- Measures: Is the answer factually correct?
+- Evaluation: Compare against ground truth or expert validation
+
+### Optimizing RAG Performance
+
+#### 1. Chunk Size Optimization
+
+```python
+# Test different chunk sizes
+chunk_sizes = [256, 512, 1024]
+overlaps = [50, 100, 150]
+
+for size in chunk_sizes:
+    for overlap in overlaps:
+        # Create chunks
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=size,
+            chunk_overlap=overlap
+        )
+        chunks = splitter.split_documents(docs)
+        
+        # Evaluate retrieval quality
+        # Measure: hit_rate, MRR, precision
+```
+
+**Best practices**:
+- Start with 512 tokens and 10-20% overlap
+- Test on representative queries from your domain
+- Measure hit rate and MRR for each configuration
+- Choose the configuration with best retrieval + generation quality
+
+#### 2. Retrieval Parameter Tuning
+
+**Top-k Selection**
+- Too few chunks: May miss relevant information
+- Too many chunks: Adds noise, increases latency and cost
+- Typical range: 3-10 chunks
+- Test and measure which value gives best answer quality
+
+**Hybrid Search Tuning**
+- Adjust `alpha` parameter to balance semantic vs keyword search
+- `alpha=1.0`: Pure semantic search
+- `alpha=0.5`: Balanced hybrid
+- `alpha=0.0`: Pure keyword search
+
+#### 3. Iterative Improvement Workflow
+
+1. **Establish Baseline**
+   - Create a test set of 20-50 representative queries with expected answers
+   - Measure initial performance metrics
+
+2. **Experiment with Variations**
+   - Try different chunk sizes and overlap amounts
+   - Test different embedding models
+   - Adjust retrieval parameters (top-k, alpha)
+
+3. **Measure Impact**
+   - Compare metrics for each variation
+   - Include both automated metrics and human review
+
+4. **Monitor in Production**
+   - Track user satisfaction
+   - Collect feedback on answer quality
+   - Identify queries where the system struggles
+
+5. **Continuous Refinement**
+   - Update test set with problematic queries
+   - Re-evaluate after changes to documents or system
+   - A/B test major changes before full deployment
+
+#### Tools for RAG Evaluation
+
+**LangChain Evaluation**
+```python
+from langchain.evaluation import load_evaluator
+
+# Relevance evaluator
+relevance_evaluator = load_evaluator("qa")
+result = relevance_evaluator.evaluate_strings(
+    prediction="The capital of France is Paris.",
+    input="What is the capital of France?",
+    reference="Paris"
+)
+```
+
+**RAGAS (RAG Assessment)**
+- Open-source framework for RAG evaluation
+- Provides metrics: context precision, context recall, faithfulness, answer relevance
+- Integrates with LangChain and LlamaIndex
+
+**Custom Evaluation Pipelines**
+```python
+def evaluate_rag_system(queries, expected_answers):
+    results = []
+    for query, expected in zip(queries, expected_answers):
+        # Retrieve chunks
+        retrieved_chunks = vector_store.similarity_search(query, k=5)
+        
+        # Generate answer
+        answer = llm.generate(query, chunks=retrieved_chunks)
+        
+        # Evaluate
+        hit = any(is_relevant(chunk, query) for chunk in retrieved_chunks)
+        correct = compare_answers(answer, expected)
+        
+        results.append({
+            'query': query,
+            'hit': hit,
+            'correct': correct
+        })
+    
+    return {
+        'hit_rate': sum(r['hit'] for r in results) / len(results),
+        'accuracy': sum(r['correct'] for r in results) / len(results)
+    }
+```
+
+### Evaluation Best Practices
+
+1. **Build a Representative Test Set**: Include diverse query types and difficulty levels from your actual use case
+2. **Balance Automated and Human Eval**: Use metrics for rapid iteration, but include human review for quality
+3. **Test Edge Cases**: Include queries that are ambiguous, multi-hop, or require inference
+4. **Measure End-to-End**: Evaluate both retrieval and generation, not just one component
+5. **Track Over Time**: Monitor metrics as you add documents or make system changes
+
+**References**:
+- [Microsoft Azure: RAG Solution Design and Evaluation](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-solution-design-and-evaluation-guide)
+- [LlamaIndex Evaluation Strategies](https://developers.llamaindex.ai/python/framework/optimizing/basic_strategies/basic_strategies/)
 
 ---
 
