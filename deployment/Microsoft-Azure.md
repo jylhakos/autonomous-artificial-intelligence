@@ -1174,7 +1174,7 @@ Language models have a maximum token limit for processing input. You cannot pass
 When an embedding model converts a block of text into a vector, the text's meaning is condensed into a high-dimensional representation.
 
 **The Challenge:**
-- **Chunks too large** (like an entire chapter): The specific meaning gets diluted. Multiple ideas mixed together create a noisy, "averaged" embedding that doesn't clearly represent any single topic
+- **Chunks too large** (like an entire chapter): The specific meaning gets diminished. Multiple ideas mixed together create a noisy, "averaged" embedding that doesn't clearly represent any single topic
 - **Chunks too small** (like a single sentence): You lose necessary context and relationships between ideas
 
 **Solution:** Optimal chunking balances the two, guaranteeing the search engine finds specific, highly relevant answers. Well-formed chunks enable:
