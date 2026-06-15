@@ -846,10 +846,10 @@ After your system finds the best chunks, they're passed to the LLM. This is wher
 
 You want to preserve the author's "train of thought" while creating chunks that are small enough for precise retrieval but complete enough to give the LLM full context. When you get this balance right:
 
-- ✅ **Improves Retrieval Quality**: Focused, semantically complete chunks enable precise context retrieval.
-- ✅ **Manages LLM Context Window**: Only relevant data gets passed to the LLM, avoiding confusion from excessive length.
-- ✅ **Reduces Hallucinations**: Providing small, highly relevant chunks grounds the model in factual data.
-- ✅ **Enhances Efficiency**: Processing smaller chunks is faster and more cost-effective.
+-  **Improves Retrieval Quality**: Focused, semantically complete chunks enable precise context retrieval.
+-  **Manages LLM Context Window**: Only relevant data gets passed to the LLM, avoiding confusion from excessive length.
+-  **Reduces Hallucinations**: Providing small, highly relevant chunks grounds the model in factual data.
+-  **Enhances Efficiency**: Processing smaller chunks is faster and more cost-effective.
 
 **References**:
 - [Weaviate: Chunking Strategies for RAG](https://weaviate.io/blog/chunking-strategies-for-rag)

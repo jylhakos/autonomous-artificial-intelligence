@@ -211,7 +211,7 @@ See [chunking_langchain.py](chunking_langchain.py) for ingestion implementation.
 
 - **Small chunks (128-256 tokens)**: High precision, may lack context
 - **Medium chunks (512-1024 tokens)**: Balanced approach, most common
-- **Large chunks (1024-2048 tokens)**: More context, may dilute relevance
+- **Large chunks (1024-2048 tokens)**: More context, may reduce relevance
 
 ### Choosing Your Chunking Strategy:
 
