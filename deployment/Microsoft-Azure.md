@@ -10,11 +10,12 @@
 6. [Use Case: Research Assistant Agent](#use-case-research-assistant-agent)
 7. [Step-by-Step Implementation](#step-by-step-implementation)
 8. [Advanced Features](#advanced-features)
-9. [Security and Governance](#security-and-governance)
-10. [Monitoring and Observability](#monitoring-and-observability)
-11. [Cost Optimization](#cost-optimization)
-12. [Troubleshooting](#troubleshooting)
-13. [References](#references)
+9. [Retrieval-Augmented Generation (RAG) Evaluators and Chunking](#retrieval-augmented-generation-rag-evaluators-and-chunking)
+10. [Security and Governance](#security-and-governance)
+11. [Monitoring and Observability](#monitoring-and-observability)
+12. [Cost Optimization](#cost-optimization)
+13. [Troubleshooting](#troubleshooting)
+14. [References](#references)
 
 ## Introduction
 
@@ -231,19 +232,19 @@ Create `.vscode/settings.json`:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    Client Applications                        │
+│                    Client Applications                       │
 │  (Microsoft Teams, Power Apps, Web Portal, Mobile App)       │
 └──────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                   Azure Front Door / API Management           │
+│                   Azure Front Door / API Management          │
 │        (Global load balancing, API gateway, WAF)             │
 └──────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              Azure Container Apps / App Service               │
+│              Azure Container Apps / App Service              │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │           Research Assistant Agent (FastAPI)           │  │
 │  │  ┌──────────────────────────────────────────────────┐  │  │
@@ -1131,6 +1132,710 @@ research_function = kernel.create_semantic_function(
 result = await research_function.invoke_async("What are the latest developments in quantum computing?")
 ```
 
+## Retrieval-Augmented Generation (RAG) Evaluators and Chunking
+
+### Overview
+
+Retrieval-Augmented Generation (RAG) is a powerful technique that combines the strengths of large language models with external knowledge retrieval systems. Azure AI Foundry provides tools and evaluators to assess and optimize RAG systems, ensuring they deliver accurate, relevant, and grounded responses.
+
+A RAG system retrieves relevant information from a knowledge base to provide context for generating responses. The quality of a RAG system depends on two critical phases:
+
+1. **Retrieval Quality**: How well the system finds relevant information
+2. **Generation Quality**: How well the system uses that information to create accurate responses
+
+### What is RAG Chunking?
+
+**Chunking** is the process of breaking down large documents into smaller, manageable pieces called chunks. This is a crucial preprocessing step when preparing data for use with Large Language Models (LLMs) and vector databases.
+
+In simple terms, chunking divides text into semantic units that are:
+- **Small enough** to fit within model context windows
+- **Large enough** to contain meaningful, contextually complete information
+- **Optimally sized** for accurate retrieval and generation
+
+Think of chunks as the atomic units of information that your RAG system works with. Each chunk should make sense on its own without requiring extensive surrounding context.
+
+### Why is Chunking Important for RAG?
+
+Chunking serves three critical functions in RAG systems, particularly for platforms like Weaviate and Pinecone:
+
+#### 1. Fits Within LLM Context Windows
+
+Language models have a maximum token limit for processing input. You cannot pass a 50-page document into a prompt all at once. 
+
+**Why this matters:**
+- LLMs like GPT-4 have context windows ranging from 8K to 128K tokens
+- Embedding models have even smaller limits (often 512-8192 tokens)
+- Exceeding these limits causes truncation, losing critical information
+
+**Solution:** Chunking breaks documents down into manageable sizes that fit securely within the model's memory, ensuring all information can be processed effectively.
+
+#### 2. Maximizes Search Precision
+
+When an embedding model converts a block of text into a vector, the text's meaning is condensed into a high-dimensional representation.
+
+**The Challenge:**
+- **Chunks too large** (like an entire chapter): The specific meaning gets diluted. Multiple ideas mixed together create a noisy, "averaged" embedding that doesn't clearly represent any single topic
+- **Chunks too small** (like a single sentence): You lose necessary context and relationships between ideas
+
+**Solution:** Optimal chunking balances the two, guaranteeing the search engine finds specific, highly relevant answers. Well-formed chunks enable:
+- More precise vector similarity matching
+- Better semantic search results
+- Improved retrieval of contextually appropriate information
+
+#### 3. Reduces AI Hallucinations
+
+When an AI receives too much irrelevant or oversized information, it struggles to locate the right facts, which leads to hallucinations (fabricated information).
+
+**How chunking helps:**
+- By feeding the LLM tightly scoped, relevant chunks, the model is grounded with the specific facts it needs
+- Smaller, focused chunks reduce the "lost in the middle" problem where models miss important information buried in long contexts
+- Precise chunks provide clear signal-to-noise ratio, minimizing confabulation
+
+**Result:** The model generates accurate responses based on factual, well-contextualized information rather than inventing details.
+
+### RAG Evaluators in Azure AI Foundry
+
+Azure provides two categories of evaluators for RAG systems:
+
+#### System Evaluation
+
+System evaluation examines the quality of the final response in your RAG workflow:
+
+**Groundedness Evaluator**
+- **Purpose**: Measures if the response is grounded in the provided context without fabrication
+- **Score**: 1-5 scale (default threshold: 3)
+- **Use case**: Ensures precision - responses don't contain content outside grounding context
+
+```python
+testing_criteria = [
+    {
+        "type": "azure_ai_evaluator",
+        "name": "groundedness",
+        "evaluator_name": "builtin.groundedness",
+        "initialization_parameters": {"deployment_name": model_deployment},
+        "data_mapping": {
+            "context": "{{item.context}}",
+            "response": "{{item.response}}",
+            "query": "{{item.query}}"  # Optional but improves accuracy
+        },
+    }
+]
+```
+
+**Groundedness Pro Evaluator (Preview)**
+- **Purpose**: Strict consistency check using Azure AI Content Safety service
+- **Score**: Boolean (True/False)
+- **Use case**: Enterprise applications requiring highest accuracy standards
+
+**Relevance Evaluator**
+- **Purpose**: Measures how accurately the response addresses the user's query
+- **Score**: 1-5 scale
+- **Use case**: Ensures responses are on-topic and directly answer the question
+
+```python
+{
+    "type": "azure_ai_evaluator",
+    "name": "relevance",
+    "evaluator_name": "builtin.relevance",
+    "initialization_parameters": {"deployment_name": model_deployment},
+    "data_mapping": {
+        "query": "{{item.query}}", 
+        "response": "{{item.response}}"
+    },
+}
+```
+
+**Response Completeness Evaluator (Preview)**
+- **Purpose**: Ensures responses don't miss critical information from ground truth
+- **Score**: 1-5 scale
+- **Use case**: Focuses on recall - responses cover all expected information
+
+#### Process Evaluation
+
+Process evaluation assesses the quality of document retrieval:
+
+**Retrieval Evaluator**
+- **Purpose**: Measures how relevant retrieved context chunks are to the query
+- **Score**: Pass/Fail based on threshold
+- **Use case**: Evaluates textual quality without ground truth labels
+
+```python
+{
+    "type": "azure_ai_evaluator",
+    "name": "retrieval",
+    "evaluator_name": "builtin.retrieval",
+    "initialization_parameters": {"deployment_name": model_deployment},
+    "data_mapping": {
+        "query": "{{item.query}}", 
+        "context": "{{item.context}}"
+    },
+}
+```
+
+**Document Retrieval Evaluator**
+- **Purpose**: The search quality metrics with ground truth
+- **Metrics**: Fidelity, NDCG, XDCG, Max Relevance, Holes
+- **Use case**: Precise measurement for debugging and parameter optimization
+
+### Chunking Strategies
+
+Different chunking strategies suit different document types and use cases:
+
+#### Fixed-Size Chunking
+
+The simplest approach - split text into predetermined chunk sizes with optional overlap.
+
+**Characteristics:**
+- **Complexity**: Low
+- **Cost**: Low
+- **Best for**: Quick prototyping, simple documents, baseline testing
+
+```python
+def fixed_size_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]:
+    """Split text into fixed-size chunks with overlap."""
+    words = text.split()
+    chunks = []
+    
+    for i in range(0, len(words), chunk_size - overlap):
+        chunk = ' '.join(words[i:i + chunk_size])
+        chunks.append(chunk)
+    
+    return chunks
+
+# Example usage
+document = "Your large document text here..."
+chunks = fixed_size_chunking(document, chunk_size=512, overlap=100)
+```
+
+**Pinecone Recommendation:**
+- Use sliding windows with overlap (10-20% of chunk size)
+- Choose chunk size aligned with embedding model's context window
+- Use BERT tokens instead of character counts for better semantic preservation
+
+#### Recursive Chunking
+
+Splits text using a prioritized list of separators, recursively applying them until chunks fit the desired size.
+
+**Characteristics:**
+- **Complexity**: Medium
+- **Cost**: Low
+- **Best for**: Structured documents with natural separators
+
+```python
+def recursive_chunking(text: str, max_chunk_size: int = 1000) -> List[str]:
+    """Recursively chunk text using prioritized separators."""
+    if len(text) <= max_chunk_size:
+        return [text.strip()] if text.strip() else []
+    
+    separators = ["\n\n", "\n", ". ", " "]
+    
+    for separator in separators:
+        if separator in text:
+            parts = text.split(separator)
+            chunks = []
+            current_chunk = ""
+            
+            for part in parts:
+                test_chunk = current_chunk + separator + part if current_chunk else part
+                
+                if len(test_chunk) <= max_chunk_size:
+                    current_chunk = test_chunk
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = part
+            
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            
+            # Recursively process large chunks
+            final_chunks = []
+            for chunk in chunks:
+                if len(chunk) > max_chunk_size:
+                    final_chunks.extend(recursive_chunking(chunk, max_chunk_size))
+                else:
+                    final_chunks.append(chunk)
+            
+            return [chunk for chunk in final_chunks if chunk]
+    
+    return [text[i:i + max_chunk_size] for i in range(0, len(text), max_chunk_size)]
+```
+
+#### Semantic Chunking
+
+Breaks text based on semantic similarity between sections, creating chunks grouped by meaning.
+
+**Characteristics:**
+- **Complexity**: High
+- **Cost**: High (requires embeddings)
+- **Best for**: Dense unstructured text, academic papers, legal documents
+
+**Weaviate's Approach:**
+1. Break document into sentences
+2. Generate embeddings for each sentence with surrounding context
+3. Compare semantic similarity between adjacent groups
+4. Create chunk boundaries where semantic shifts occur
+
+```python
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+def semantic_chunking(text: str, similarity_threshold: float = 0.5) -> List[str]:
+    """Chunk text based on semantic similarity."""
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    # Split into sentences
+    sentences = text.split('. ')
+    
+    # Generate embeddings
+    embeddings = model.encode(sentences)
+    
+    # Calculate similarities
+    chunks = []
+    current_chunk = [sentences[0]]
+    
+    for i in range(1, len(sentences)):
+        similarity = np.dot(embeddings[i], embeddings[i-1])
+        
+        if similarity > similarity_threshold:
+            current_chunk.append(sentences[i])
+        else:
+            chunks.append('. '.join(current_chunk) + '.')
+            current_chunk = [sentences[i]]
+    
+    if current_chunk:
+        chunks.append('. '.join(current_chunk) + '.')
+    
+    return chunks
+```
+
+#### Document Structure-Based Chunking
+
+Uses the intrinsic structure of documents (headers, sections, etc.) to create chunks.
+
+**Characteristics:**
+- **Complexity**: Medium
+- **Cost**: Low-Medium
+- **Best for**: Markdown, HTML, structured documents
+
+```python
+import re
+
+def markdown_chunking(text: str) -> List[str]:
+    """Chunk Markdown documents by headers."""
+    header_pattern = r'^#{1,6}\s+.+$'
+    lines = text.split('\n')
+    
+    chunks = []
+    current_chunk = []
+    
+    for line in lines:
+        if re.match(header_pattern, line, re.MULTILINE):
+            if current_chunk:
+                chunk_text = '\n'.join(current_chunk).strip()
+                if chunk_text:
+                    chunks.append(chunk_text)
+            current_chunk = [line]
+        else:
+            current_chunk.append(line)
+    
+    if current_chunk:
+        chunk_text = '\n'.join(current_chunk).strip()
+        if chunk_text:
+            chunks.append(chunk_text)
+    
+    return chunks
+```
+
+#### Late Chunking (Advanced)
+
+Creates token-level embeddings for entire documents first, then averages relevant tokens for each chunk.
+
+**Weaviate's Innovation:**
+- Preserves full document context
+- Chunks retain relationships to other parts of document
+- Ideal for technical documents with cross-references
+
+**Use case**: Research papers, legal texts where sections reference each other
+
+#### Contextual Chunking (Anthropic Method)
+
+Uses LLM to generate contextual descriptions for chunks, preserving high-level document context.
+
+```python
+async def contextual_chunking(document: str, chunks: List[str], llm_client) -> List[str]:
+    """Add context to chunks using LLM."""
+    contextualized_chunks = []
+    
+    # Generate document summary
+    summary = await llm_client.generate(
+        f"Summarize this document in 2-3 sentences:\n\n{document[:2000]}"
+    )
+    
+    for chunk in chunks:
+        # Generate contextual description
+        context = await llm_client.generate(
+            f"Document context: {summary}\n\n"
+            f"Provide a brief context (1 sentence) for this chunk:\n\n{chunk}"
+        )
+        
+        # Prepend context to chunk
+        contextualized_chunk = f"{context}\n\n{chunk}"
+        contextualized_chunks.append(contextualized_chunk)
+    
+    return contextualized_chunks
+```
+
+### Azure-Specific Chunking Implementation
+
+#### Using Azure Document Intelligence
+
+```python
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from azure.core.credentials import AzureKeyCredential
+
+def azure_document_chunking(document_url: str) -> List[Dict]:
+    """Extract and chunk documents using Azure Document Intelligence."""
+    endpoint = os.getenv("AZURE_FORM_RECOGNIZER_ENDPOINT")
+    key = os.getenv("AZURE_FORM_RECOGNIZER_KEY")
+    
+    client = DocumentAnalysisClient(endpoint, AzureKeyCredential(key))
+    
+    poller = client.begin_analyze_document_from_url(
+        "prebuilt-layout", document_url
+    )
+    result = poller.result()
+    
+    chunks = []
+    for page in result.pages:
+        for line in page.lines:
+            chunks.append({
+                "content": line.content,
+                "page": page.page_number,
+                "bounding_box": line.polygon
+            })
+    
+    return chunks
+```
+
+#### Integrating with Azure AI Search
+
+```python
+from azure.search.documents import SearchClient
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (
+    SearchIndex,
+    SearchField,
+    SearchFieldDataType,
+    VectorSearch,
+    VectorSearchProfile,
+    HnswAlgorithmConfiguration
+)
+
+def create_chunked_index():
+    """Create Azure AI Search index optimized for chunked documents."""
+    index_client = SearchIndexClient(
+        endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+        credential=AzureKeyCredential(os.getenv("AZURE_SEARCH_KEY"))
+    )
+    
+    fields = [
+        SearchField(name="id", type=SearchFieldDataType.String, key=True),
+        SearchField(name="content", type=SearchFieldDataType.String, searchable=True),
+        SearchField(name="embedding", type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                   searchable=True, vector_search_dimensions=1536,
+                   vector_search_profile_name="myHnswProfile"),
+        SearchField(name="document_id", type=SearchFieldDataType.String, filterable=True),
+        SearchField(name="chunk_number", type=SearchFieldDataType.Int32, filterable=True),
+        SearchField(name="document_title", type=SearchFieldDataType.String, searchable=True)
+    ]
+    
+    vector_search = VectorSearch(
+        profiles=[VectorSearchProfile(name="myHnswProfile", algorithm_configuration_name="myHnsw")],
+        algorithms=[HnswAlgorithmConfiguration(name="myHnsw")]
+    )
+    
+    index = SearchIndex(name="chunked-documents", fields=fields, vector_search=vector_search)
+    index_client.create_or_update_index(index)
+```
+
+### Best Practices for Chunking
+
+#### 1. Start with Fixed-Size Chunking
+
+Begin with a baseline approach using 512-1024 tokens with 10-20% overlap. Test and iterate from there.
+
+#### 2. Match Chunk Size to Use Case
+
+- **Semantic search**: 256-512 tokens
+- **Question answering**: 512-1024 tokens
+- **Document summarization**: 1024-2048 tokens
+
+#### 3. Consider Your Embedding Model
+
+Different models have different optimal chunk sizes:
+- `text-embedding-ada-002`: Up to 8191 tokens
+- `text-embedding-3-small`: Up to 8191 tokens
+- `text-embedding-3-large`: Up to 8191 tokens
+
+#### 4. Preserve Metadata
+
+Always include metadata with chunks:
+
+```python
+chunk_metadata = {
+    "document_id": "doc_123",
+    "chunk_number": 1,
+    "source_url": "https://example.com/document",
+    "created_at": "2026-06-15",
+    "total_chunks": 10
+}
+```
+
+#### 5. Use Structured IDs (Pinecone Pattern)
+
+```python
+# Format: document_id#chunk_number
+chunk_id = f"document_{doc_id}#chunk_{chunk_num}"
+```
+
+This enables:
+- Efficient chunk retrieval by document
+- Easy updates and deletions
+- Clear debugging and monitoring
+
+#### 6. Monitor and Iterate
+
+Track key metrics:
+- **Retrieval precision**: Are correct chunks being retrieved?
+- **Retrieval recall**: Are all relevant chunks being found?
+- **Response quality**: Are generated answers accurate and complete?
+- **Latency**: Is query time acceptable?
+
+```python
+from azure.monitor.opentelemetry import configure_azure_monitor
+
+configure_azure_monitor()
+
+# Track chunking metrics
+tracer = trace.get_tracer(__name__)
+
+with tracer.start_as_current_span("chunk_retrieval") as span:
+    span.set_attribute("chunk_count", len(chunks))
+    span.set_attribute("query", user_query)
+    # ... retrieval logic
+```
+
+### Complete RAG Pipeline Example
+
+```python
+from typing import List, Dict
+from openai import AzureOpenAI
+from azure.search.documents import SearchClient
+import os
+
+class AzureRAGPipeline:
+    """Complete RAG pipeline with optimized chunking."""
+    
+    def __init__(self):
+        self.openai_client = AzureOpenAI(
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            api_version="2024-02-15-preview"
+        )
+        
+        self.search_client = SearchClient(
+            endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
+            index_name="chunked-documents",
+            credential=AzureKeyCredential(os.getenv("AZURE_SEARCH_KEY"))
+        )
+    
+    def chunk_document(self, document: str, chunk_size: int = 512) -> List[str]:
+        """Chunk document using recursive strategy."""
+        return recursive_chunking(document, chunk_size)
+    
+    def generate_embedding(self, text: str) -> List[float]:
+        """Generate embeddings using Azure OpenAI."""
+        response = self.openai_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text
+        )
+        return response.data[0].embedding
+    
+    async def index_document(self, document: str, document_id: str, title: str):
+        """Chunk and index a document."""
+        chunks = self.chunk_document(document)
+        
+        documents = []
+        for i, chunk in enumerate(chunks):
+            embedding = self.generate_embedding(chunk)
+            
+            documents.append({
+                "id": f"{document_id}#chunk{i}",
+                "content": chunk,
+                "embedding": embedding,
+                "document_id": document_id,
+                "chunk_number": i,
+                "document_title": title
+            })
+        
+        self.search_client.upload_documents(documents)
+    
+    async def retrieve_and_generate(self, query: str, top_k: int = 3) -> Dict:
+        """Retrieve relevant chunks and generate response."""
+        # Generate query embedding
+        query_embedding = self.generate_embedding(query)
+        
+        # Search for relevant chunks
+        results = self.search_client.search(
+            search_text=None,
+            vector_queries=[{
+                "vector": query_embedding,
+                "k": top_k,
+                "fields": "embedding"
+            }],
+            select=["content", "document_title", "chunk_number"]
+        )
+        
+        # Collect context from retrieved chunks
+        context_parts = []
+        sources = []
+        
+        for result in results:
+            context_parts.append(result["content"])
+            sources.append({
+                "title": result["document_title"],
+                "chunk": result["chunk_number"]
+            })
+        
+        context = "\n\n".join(context_parts)
+        
+        # Generate response with context
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant. Answer based only on the provided context."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
+        ]
+        
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=messages,
+            temperature=0.7
+        )
+        
+        return {
+            "response": response.choices[0].message.content,
+            "sources": sources,
+            "context": context
+        }
+
+# Usage example
+rag_pipeline = AzureRAGPipeline()
+
+# Index a document
+await rag_pipeline.index_document(
+    document="Your long document text here...",
+    document_id="doc_001",
+    title="Introduction to RAG"
+)
+
+# Query the system
+result = await rag_pipeline.retrieve_and_generate(
+    query="What is RAG and why is it important?"
+)
+
+print(result["response"])
+```
+
+### Evaluating Your RAG System
+
+Combine chunking strategies with Azure evaluators:
+
+```python
+async def evaluate_rag_system(test_queries: List[Dict]):
+    """Evaluate RAG system with Azure evaluators."""
+    testing_criteria = [
+        {
+            "type": "azure_ai_evaluator",
+            "name": "groundedness",
+            "evaluator_name": "builtin.groundedness",
+            "initialization_parameters": {"deployment_name": "gpt-4-turbo"},
+            "data_mapping": {
+                "context": "{{item.context}}",
+                "response": "{{item.response}}",
+                "query": "{{item.query}}"
+            },
+        },
+        {
+            "type": "azure_ai_evaluator",
+            "name": "relevance",
+            "evaluator_name": "builtin.relevance",
+            "initialization_parameters": {"deployment_name": "gpt-4-turbo"},
+            "data_mapping": {
+                "query": "{{item.query}}", 
+                "response": "{{item.response}}"
+            },
+        },
+        {
+            "type": "azure_ai_evaluator",
+            "name": "retrieval",
+            "evaluator_name": "builtin.retrieval",
+            "initialization_parameters": {"deployment_name": "gpt-4-turbo"},
+            "data_mapping": {
+                "query": "{{item.query}}", 
+                "context": "{{item.context}}"
+            },
+        }
+    ]
+    
+    results = []
+    for query_data in test_queries:
+        rag_result = await rag_pipeline.retrieve_and_generate(query_data["query"])
+        
+        evaluation = {
+            "query": query_data["query"],
+            "response": rag_result["response"],
+            "context": rag_result["context"],
+            "groundedness_score": None,
+            "relevance_score": None,
+            "retrieval_score": None
+        }
+        
+        # Run evaluators (simplified)
+        # In production, use Azure AI Foundry evaluation service
+        
+        results.append(evaluation)
+    
+    return results
+```
+
+### Key Takeaways
+
+1. **Chunking is Essential**: Proper chunking ensures LLMs receive the right amount of context for accurate responses
+
+2. **Three Critical Functions**:
+   - Fits within context windows
+   - Maximizes search precision
+   - Reduces hallucinations
+
+3. **Multiple Strategies Available**: Choose based on document type, use case, and quality requirements
+
+4. **Platform-Specific Optimizations**:
+   - **Azure**: Document Intelligence, AI Search integration
+   - **Pinecone**: Structured IDs, metadata filtering
+   - **Weaviate**: Late chunking, semantic chunking
+
+5. **Evaluation is Key**: Use Azure's built-in evaluators to measure and improve RAG performance
+
+6. **Iterate and Optimize**: Start simple (fixed-size), measure results, then enhance based on specific needs
+
+### Additional Resources
+
+- [Azure RAG Evaluators Documentation](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rag-evaluators)
+- [Azure RAG Chunking Phase Guide](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-chunking-phase)
+- [Weaviate Chunking Strategies](https://weaviate.io/blog/chunking-strategies-for-rag)
+- [Pinecone Chunking Best Practices](https://www.pinecone.io/learn/chunking-strategies/)
+- [Pinecone Data Modeling Guide](https://docs.pinecone.io/guides/index-data/data-modeling)
+
 ## Security and Governance
 
 ### Entra ID Authentication
@@ -1403,24 +2108,38 @@ logging.getLogger('azure').setLevel(logging.DEBUG)
 
 4. Microsoft. (2026). "Azure Container Apps documentation." https://learn.microsoft.com/azure/container-apps/
 
+5. LangChain. (2026). "Microsoft Foundry Tools (formerly Azure AI Services) tools integration" https://docs.langchain.com/oss/python/integrations/tools/azure_ai_services
+
 ### Tutorials and Learning Paths
 
-5. Microsoft Learn. (2026). "Build and deploy Azure AI agents." https://learn.microsoft.com/training/paths/build-azure-ai-agents/
+6. Microsoft Learn. (2026). "Build and deploy Azure AI agents." https://learn.microsoft.com/training/paths/build-azure-ai-agents/
 
-6. Microsoft. (2026). "Azure Agent Factory: Revolutionizing AI Agent Development." https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/azure-agent-factory
+7. Microsoft. (2026). "Azure Agent Factory: Revolutionizing AI Agent Development." https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/azure-agent-factory
+
+8. Microsoft Learn. (2026). "Get started with LangChain and LangGraph with Foundry" https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/langchain
+
+9. Microsoft Learn. (2026). "Use Foundry Agent Service with LangGraph" https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/langchain-agents
+
+10. Microsoft Learn. (2026). "Retrieval augmented generation (RAG) and indexes" https://learn.microsoft.com/en-us/azure/foundry/concepts/retrieval-augmented-generation
+
+11. Microsoft Learn. (2026). "Develop applications with LlamaIndex and Microsoft Foundry" https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/develop/llama-index
+
+12. Microsoft Learn. (2026). "Retrieval-Augmented Generation (RAG) evaluators" https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rag-evaluators
+
+13. Microsoft Learn. (2026). "RAG chunking phase" https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-chunking-phase
 
 ### Sample Code
 
-7. Microsoft. (2026). "Azure AI Agent Samples." https://github.com/Azure-Samples/azure-ai-agent-samples
+14. Microsoft. (2026). "Azure AI Agent Samples." https://github.com/Azure-Samples/azure-ai-agent-samples
 
-8. Microsoft. (2026). "Semantic Kernel Examples." https://github.com/microsoft/semantic-kernel
+15. Microsoft. (2026). "Semantic Kernel Examples." https://github.com/microsoft/semantic-kernel
 
 ### Best Practices
 
-9. Microsoft. (2026). "Enterprise-Scale AI Agent Architecture." https://learn.microsoft.com/azure/architecture/ai/agent-architecture
+16. Microsoft. (2026). "Enterprise-Scale AI Agent Architecture." https://learn.microsoft.com/azure/architecture/ai/agent-architecture
 
-10. Microsoft. (2026). "Security Best Practices for Azure AI." https://learn.microsoft.com/security/ai-agent-security
+17. Microsoft. (2026). "Security Best Practices for Azure AI." https://learn.microsoft.com/security/ai-agent-security
 
 ---
 
-*Last Updated: April 2026*
+*Last Updated: June 2026*
