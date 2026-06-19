@@ -50,7 +50,7 @@ Generation: The structured context is added to the prompt, forcing the LLM to ou
 
 ### How GraphRAG improves retrieval?
 
-GraphRAG solves "Multi-Hop" problems: If a query requires connecting clues across document A, B, and C (e.g., "Find all employees who used Python in a project managed by John"), GraphRAG seamlessly steps across edges to chain the facts together.
+GraphRAG solves "Multi-Hop" problems: If a query requires connecting relevant details across document A, B, and C (e.g., "Find all employees who used Python in a project managed by John"), GraphRAG seamlessly steps across edges to chain the facts together.
 
 **RAG vs. GraphRAG**
 
