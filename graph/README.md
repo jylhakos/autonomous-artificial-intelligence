@@ -52,19 +52,14 @@ Generation: The structured context is added to the prompt, forcing the LLM to ou
 
 GraphRAG solves "Multi-Hop" problems: If a query requires connecting clues across document A, B, and C (e.g., "Find all employees who used Python in a project managed by John"), GraphRAG seamlessly steps across edges to chain the facts together.
 
-Table:
+**RAG vs. GraphRAG**
 
-RAG vs. Graph RAG
-
-Feature			Baseline (Vector) RAG		GraphRAG
-
-Data format		Flat chunks of text		Interconnected nodes and edges
-
-Search mechanism	Math-based vector similarity	Graph traversal and relationship tracking
-
-Query strengths		Specific "fact-lookup" queries "Multi-hop" reasoning and holistic summaries
-
-Explainability		Low (Black-box vector math)	High (Traceable relationship paths)
+| Feature | Baseline (Vector) RAG | GraphRAG |
+|-------------|---------------|---------------|
+| Data format | Flat chunks of text | Interconnected nodes and edges |
+| Search approach | Math-based vector similarity | Graph traversal and relationship tracking |
+| Query strengths | Specific "fact-lookup" queries | "Multi-hop" reasoning and contextual summaries |
+| Explainability | Low (black-box vector math) | High (traceable relationship paths) |
 
 **GraphRAG benefits over RAG**
 
@@ -99,7 +94,7 @@ The system can show:
 
 ### When GraphRAG is useful?
 
-GraphRAG is most valuable when information contains many interconnected entities and relationships.
+GraphRAG is most valuable when information contains many **interconnected** entities and relationships.
 
 | Use Case | Why GraphRAG Helps |
 |-------------|---------------|
