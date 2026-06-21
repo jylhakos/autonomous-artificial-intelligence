@@ -262,7 +262,7 @@ GraphRAG systems hard-code pipelines for data retrieval. This is great for simpl
 | Implementation | Requires ontology and data structuring | Requires agent orchestration and tool integration |
 | Query complexity  | Relational, multi-hop queries | Open-ended problem solving |
 | Vulnerability | "Garbage In, Garbage Out" | High latency, infinite loops without guardrails |
-| Use Cases | Chatbots and semantic discovery | Supply chain analysis and complex research |
+| Use Cases | Static data structuring, relationship queries, and analytical tasks | Multi-step reasoning, dynamic troubleshooting, and tool-driven workflows |
 
 ### Building an Agentic GraphRAG
 
