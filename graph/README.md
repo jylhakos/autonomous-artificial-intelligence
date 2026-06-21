@@ -257,7 +257,7 @@ GraphRAG systems hard-code pipelines for data retrieval. This is great for simpl
 ### GraphRAG vs Agentic GraphRAG
 
 | Feature | GraphRAG | Agentic GraphRAG |
-|-------------|---------------|
+|-------------|---------------|---------------|
 | Retrieval mechanism | Graph traversal (Nodes and Edges) | Autonomous multi-step orchestration |
 | Implementation | Requires ontology and data structuring | Requires agent orchestration and tool integration |
 | Query complexity  | Relational, multi-hop queries | Open-ended problem solving |
