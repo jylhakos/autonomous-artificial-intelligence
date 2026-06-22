@@ -326,12 +326,195 @@ If a tool fails (e.g., due to a misconfigured query or missing data), the agent 
 
 The processed data is returned to the user as a meaningful answer.
 
+## Building Samples
+
+A step-by-step guide to setting up a local RAG, Agentic AI, and GraphRAG environment and pipeline using Ollama, Python, LangGraph and Neo4j.
+
+### RAG
+
+To build a local Retrieval-Augmented Generation (RAG) system, you can use Ollama to run Llama 3.2, ChromaDB as your local vector database, and LangChain to orchestrate the pipeline.
+
+RAG agent relies on two different models: a reasoning or generation model (does the deciding, grading, rewriting and answering) and an embedding model (turns your documents and queries into vectors).
+
+**Install Ollama and models**
+
+# Download and install Ollama for your Linux operating system.
+
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Start the Ollama server
+
+ollama serve
+
+
+# Reasoning model (the agent)
+
+ollama pull llama3.2
+
+# Embedding model (the retriever)
+
+ollama pull nomic-embed-text
+
+Create a directory, set up a virtual environment, and install the required LangChain and ChromaDB libraries.
+
+python3 -m venv venv
+
+source venv/bin/activate
+
+**Install the framework and a vector store**
+
+pip install langgraph langchain langchain-ollama langchain-chroma chromadb
+
+**Create a document**
+
+Create a sample text file named document.txt in your project folder to act as your local document source.
+
+**Python Script for RAG (rag_app.py)**
+
+This script loads the document, breaks it into digestible chunks, converts it into mathematical vectors using the embedding model, stores it locally in ChromaDB, and performs a retrieval query using Llama 3.2.
+
+Large documents are broken down into smaller, readable blocks of text.
+
+An artificial intelligence embedding model transforms these text chunks into long arrays of numbers. 
+
+These arrays are called vector embeddings.
+
+The vector database organizes these numbers using specialized Approximate Nearest Neighbor (ANN) index structures.
+
+The framework will automatically search ChromaDB for the relevant sentences in document.txt, inject them into the local prompt context, and output a precise, verified response from Llama 3.2.
+
+Once the database finds the text fragments mathematically closest to the query vector, it sends them back to the application layer.
+
+The system builds a final structured prompt containing the retrieved facts alongside the user's original question. This combined prompt is then dispatched to the LLM.
+
+Execute the script from your terminal.
+
+python rag_app.py
+
+**Chat**
+
+To add a web user interface using Streamlit, you can transform your existing RAG script into an interactive web app with just a few visual blocks. Streamlit will manage the UI layout and session state so the database doesn't reinitialize on every button click.
+
+Install the Streamlit library in your existing Python virtual environment.
+
+pip install streamlit
+
+Create the Streamlit RAG Script (app.py).
+
+Create a new file named app.py in your project folder. This code wraps your LangChain pipeline inside Streamlit functions and adds a chat-like interface.
+
+Launch the app by executing this command in your terminal.
+
+streamlit run app.py
+
+Your default web browser will automatically open to http://localhost:8501.
+
+The application fetches context from your local database, feeds it to Llama 3.2, and reveals both the chat's answer and the exact document source snippets inside an interactive drop-down menu.
+
+### GraphRAG
+
+To create a local GraphRAG (Graph-based Retrieval-Augmented Generation) pipeline, you will use Ollama to host the Llama 3.2 LLM and an embedding model, LangChain to orchestrate the retrieval, and a graph database like Neo4j or Microsoft's GraphRAG SDK to structure the knowledge graph.
+
+To get started, create a project space and python virtual environment to install graphrag.
+
+**Activate virtual environment**
+
+source .venv/bin/activate
+
+**Install the required dependencies**
+
+pip install --upgrade pip
+
+pip install langchain langchain-community langchain-ollama chromadb sentence-transformers ollama
+
+**Run Neo4j with APOC Plugins via Docker**
+
+Neo4j needs the APOC (Awesome Procedures on Cypher) plugin enabled so LangChain can map and structure the knowledge graph correctly.
+
+docker run \
+    -d \
+    --name neo4j-graphrag \
+    -p 7474:7474 -p 7687:7687 \
+    -e NEO4J_AUTH=neo4j/password123 \
+    -e NEO4J_PLUGINS='["apoc"]' \
+    -e NEO4J_dbms_security_procedures_unrestricted=apoc.* \
+    neo4j:5.20.0
+
+Open http://localhost:7474 in your browser to inspect your graph. Log in with username neo4j and password password123.
+
+Ensure you have the official Neo4j driver and the experimental LangChain graph components installed inside your virtual environment
+
+pip install neo4j langchain-experimental
+
+
+**Install GraphRAG**
+
+Note: If you use Microsoft's GraphRAG package, you will also install it via pip install graphrag
+
+python -m pip install graphrag
+
+**Initialize GraphRAG**
+
+Extract Entities and Build the Knowledge Graph
+
+GraphRAG and LangChain require specific packages to communicate with your local Ollama models.
+
+When prompted, specify the default chat and embedding models you would like to use in your config.
+
+You need to parse your documents into entities (nodes) and their relationships (edges).
+
+You can do this automatically using LangChain's built-in LLMGraphTransformer and a local graph store like Neo4j, which can be easily spun up on your virtual Linux machine using Docker.
+
+**Set up workspace variables**
+
+Create the Retrieval Chain and Chat
+
+**Crate Chat Script**
+
+**Execute the Script**
+
+python3 graph_rag_chat.py
+
+**Query**
+
+Once your knowledge graph and vector representations are established, you can use LangChain to bind them with your Chat and Llama3.2. The model can perform both vector search and graph traversal to answer user queries.
+
+Now let's ask some questions using this dataset.
+
+
+### Agentic AI with RAG
+
+To build a [retrieval agent](https://docs.langchain.com/oss/python/langchain/retrieval) using LangGraph involves running a model on Ollama, storing documents in a local vector database, and using an agentic framework like LangGraph to decide whether to search documents or rewrite queries.
+
+Creating a local RAG agent involves setting up Ollama as your LLM and embedding engine, ChromaDB as your vector store, and LangGraph to manage the routing logic.
+
+pip install langchain langchain-ollama langchain-chroma langgraph
+
+
+**The agentic RAG loop: retrieve, reason, act**
+
+### Agentic AI with GraphRAG
+
+To build a [retrieval agent using LangGraph and Neo4j (GraphRAG)](https://neo4j.com/blog/developer/neo4j-graphrag-workflow-langchain-langgraph/), you construct an agentic system that routes queries between structured Cypher query generation and unstructured vector similarity search, combining the results inside a stateful workflow.
+
+GraphRAG application involves generating Cypher query language with the LLM.
+
 ## References
 
 What is GraphRAG? https://neo4j.com/blog/genai/what-is-graphrag/
 
 Vector Search Explained https://weaviate.io/blog/vector-search-explained
 
+Getting Started https://microsoft.github.io/graphrag/get_started/
+
+The easiest way to build with open models https://ollama.com/
+
+ChatOllama https://reference.langchain.com/python/langchain-ollama/chat_models/ChatOllama
+
+Agentic AI use case https://docs.cloud.google.com/architecture/agentic-ai-multimodal-graph-rag-resource-orchestration
+
+Build a custom RAG agent with LangGraph https://docs.langchain.com/oss/python/langgraph/agentic-rag
+
 **License**: MIT
 
-**Last Updated**: June 21, 2026
+**Last Updated**: June 22, 2026
