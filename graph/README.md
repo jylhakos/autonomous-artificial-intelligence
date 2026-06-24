@@ -415,6 +415,22 @@ The application fetches context from your local database, feeds it to Llama 3.2,
 
 To create a local GraphRAG (Graph-based Retrieval-Augmented Generation) pipeline, you will use Ollama to host the Llama 3.2 LLM and an embedding model, LangChain to orchestrate the retrieval, and a graph database like Neo4j or Microsoft's GraphRAG SDK to structure the knowledge graph.
 
+To build a [retrieval agent using LangGraph and Neo4j (GraphRAG)](https://neo4j.com/blog/developer/neo4j-graphrag-workflow-langchain-langgraph/), you construct an agentic system that routes queries between structured Cypher query generation and unstructured vector similarity search, combining the results inside a stateful workflow.
+
+Steps:
+
+Query analysis and routing:
+
+The user’s request is first analyzed and classified, allowing the system to route it to the appropriate workflow node. Depending on the query, the system may proceed to the next step (research plan generation), prompt the user for clarification, or respond immediately if the request is out of scope.
+
+Research plan generation:
+
+The system constructs a detailed, step-by-step research plan tailored to the complexity of the user’s query. This plan outlines the specific actions required to fulfill the request.
+
+Research graph execution: For each step in the research plan, a dedicated subgraph is invoked. The system generates Cypher queries via LLMs, targeting the Neo4j knowledge graph. Relevant nodes and relationships are retrieved using a hybrid approach that combines semantic search and structured graph queries, ensuring both breadth and precision in the results.
+
+Answer generation: Leveraging the retrieved graph data, the system synthesizes a comprehensive response using an LLM, integrating information from multiple sources as needed.
+
 To get started, create a project space and python virtual environment to install graphrag.
 
 **Activate virtual environment**
@@ -481,21 +497,140 @@ Once your knowledge graph and vector representations are established, you can us
 
 Now let's ask some questions using this dataset.
 
-
 ### Agentic AI with RAG
 
 To build a [retrieval agent](https://docs.langchain.com/oss/python/langchain/retrieval) using LangGraph involves running a model on Ollama, storing documents in a local vector database, and using an agentic framework like LangGraph to decide whether to search documents or rewrite queries.
 
-Creating a local RAG agent involves setting up Ollama as your LLM and embedding engine, ChromaDB as your vector store, and LangGraph to manage the routing logic.
+Creating a local [RAG agent](https://docs.langchain.com/oss/python/langgraph/agentic-rag) involves setting up Ollama as your LLM and embedding engine, ChromaDB as your vector store, and LangGraph to manage the routing logic.
 
 pip install langchain langchain-ollama langchain-chroma langgraph
 
-
 **The agentic RAG loop: retrieve, reason, act**
+
+See the source code in ./scripts/agentic/rag folder.
 
 ### Agentic AI with GraphRAG
 
-To build a [retrieval agent using LangGraph and Neo4j (GraphRAG)](https://neo4j.com/blog/developer/neo4j-graphrag-workflow-langchain-langgraph/), you construct an agentic system that routes queries between structured Cypher query generation and unstructured vector similarity search, combining the results inside a stateful workflow.
+Implementing a Graph Query Agent involves creating a state machine in LangGraph where the local LLM acts as the reasoning engine to write and execute Cypher queries against a Neo4j database.
+
+LangGraph lets you define custom workflows as [graphs](https://neo4j.com/labs/genai-ecosystem/genai-frameworks/langgraph/)
+
+Smaller local LLMs hosted on Ollama can struggle with native tool-calling features, the most reliable method is to provide the agent with a single, highly constrained Cypher execution tool.
+
+The latest Neo4j Cypher procedures now support Ollama models via configuring the baseURL (and using Ollama’s OpenAI-compatible endpoint).
+
+**Prerequisites:**
+
+Activate Virtual Environment
+
+source .venv/bin/activate
+
+Ollama: Ensure you have Ollama installed and a capable model (e.g., llama3.1:8b) pulled via ollama 
+
+pull llama3.1:8b.
+
+Neo4j: Have a Neo4j instance running locally or via Neo4j Aura.
+
+Libraries: Install the necessary Python packages:
+
+pip install langgraph langchain-ollama langchain-community neo4j-driver
+
+Make sure your local Ollama instance has the model pulled:
+
+ollama pull llama3.2
+
+**Implementation:**
+
+To integrate both Cypher Graph Queries and Vector RAG Search into a single cohesive LangGraph agent, we will build a hybrid agent using local Ollama (Llama 3.2) and Neo4j.
+
+This allows the agent to dynamically choose whether it needs to do a semantic text search (Vector) or a structured relationship search (Cypher) depending on the user's question.
+
+1. Chunk, Embed, and Store document.txt in Neo4j
+
+This script in scripts folder reads your text file, creates vector embeddings using Ollama, and stores them inside Neo4j's native vector index.
+
+2. Define State and Connect to Databases
+
+First, define the agent state (using MessagesState) and set up your Neo4j connection using the Neo4j Python Driver.
+
+3.  Define Tools (Vector & Cypher)
+
+We create two separate tools decorated with @tool. Llama 3.2 will look at their names and descriptions to decide which one to invoke.
+
+Tool calling via langchain-ollama:
+
+Because llm was initialized using ChatOllama(model="llama3.2") from the langchain-ollama package, LangChain automatically passes the JSON schema of your @tool functions to Ollama.
+
+When you run agent_executor.invoke(), Llama 3.2 uses its native tool-calling capabilities to generate a structured request specifying exactly which tool to run and with what query arguments. LangGraph's internal prebuilt edges catch that instruction and execute the code for you.
+
+4. Build the LangGraph Retriever Agent
+
+We will define a retriever tool from Neo4j and wrap it inside a LangGraph agent. Llama 3.2 supports tool calling natively via the langchain-ollama provider.
+
+**Build the hybrid LangGraph Agent**
+
+We combine both tools into a unified ReAct agent execution graph. We pass a state_modifier system prompt to help the smaller 3B Llama model route effectively.
+
+5. Create the Graph Query Tool
+
+Create a function that translates a text query into an exact Cypher string. Bind this to your LLM using LangChain's @tool decorator.
+
+Defining a Retriever Tool from Neo4j
+
+In Step 4 of the integrated code, the following lines explicitly convert your Neo4j vector database index into a tool:
+
+```
+
+# Turns the Neo4j index into a LangChain retriever object
+retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+
+# Wraps that retriever object inside a function decorated as a tool
+@tool
+def search_unstructured_text(query: str) -> str:
+    """Useful for answering semantic questions..."""
+    docs = retriever.invoke(query)
+    return "\n\n".join([doc.page_content for doc in docs])
+
+
+```
+
+Wrapping it inside a LangGraph Agent
+
+In Step 4, the create_react_agent function takes that tool, packages it with your LLM, and compiles it into a structured LangGraph state machine:
+
+```
+
+tools = [search_unstructured_text, query_graph_relationships]
+
+# This compiles the full LangGraph node-and-edge engine
+agent_executor = create_react_agent(llm, tools, state_modifier=system_instructions)
+
+
+```
+
+6. Build the LangGraph Nodes and Edges
+
+Using the ReAct framework, we define a node for the agent to reason, a node to execute tools, and conditional edges to loop until an answer is found.
+
+7. Run the Agent
+
+Invoke the agent with a specific question.
+
+8. Test and Query
+
+Now we can fire separate question variations at the exact same compiled graph executor to see it dynamically adjust its tooling strategy.
+
+See the source code in ./scripts/agentic/graphrag/vector_search.py file.
+
+See the source code in ./scripts/agentic/graphrag/structured_cypher_query.py file.
+
+**Tips for Local LLMs:**
+
+JSON Mode or Prompting: If your local model hallucinates or misses tool-calling syntax, instruct it to explicitly output responses in JSON format within your system prompt.
+
+Schema Injection: For better Cypher generation accuracy, dynamically inject the Neo4j schema (node labels and relationship types) into your system prompt so the local LLM knows exactly what data structure to query.
+
+See the source code in ./scripts/agentic/graphrag folder.
 
 GraphRAG application involves generating Cypher query language with the LLM.
 
@@ -517,4 +652,4 @@ Build a custom RAG agent with LangGraph https://docs.langchain.com/oss/python/la
 
 **License**: MIT
 
-**Last Updated**: June 22, 2026
+**Last Updated**: June 24, 2026

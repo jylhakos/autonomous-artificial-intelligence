@@ -50,8 +50,8 @@ print("Ingestion complete! Check your Neo4j browser to view nodes and edges.")
 # 4. Create GraphRAG Query Chain
 # GraphQAChain automatically converts human questions into Cypher queries using the LLM
 qa_chain = GraphQAChain.from_llm(
-    llm=llm, 
-    graph=graph, 
+    llm=llm,
+    graph=graph,
     verbose=True
 )
 
