@@ -1,6 +1,6 @@
 # Graph Retrieval-Augmented Generation (GraphRAG)
 
-This document presents concepts, architectural components, practical use cases and implementation technologies associated with Graph Retrieval-Augmented Generation (GraphRAG). By leveraging knowledge graphs alongside large language models, GraphRAG extends retrieval-augmented generation approaches with structured representations of entities and relationships, facilitating improved contextual retrieval and complex reasoning over interconnected information.
+This document presents concepts, architectural components, practical use cases and implementation technologies associated with Graph retrieval-augmented generation (GraphRAG). By leveraging knowledge graphs alongside large language models, GraphRAG extends retrieval-augmented generation approaches with structured representations of entities and relationships, facilitating improved contextual retrieval and complex reasoning over interconnected information.
 
 ## Table of Contents
 
@@ -222,7 +222,7 @@ For many enterprise AI systems, a common architecture:
 
 ## Agentic AI and GraphRAG
 
-Agentic AI utilizes Graph Retrieval-Augmented Generation to move beyond simple question-answering by using the structural connections and entities in a knowledge graph to dynamically plan, trigger, and execute complex workflows.
+Agentic AI utilizes Graph retrieval-augmented generation to move beyond simple question-answering by using the structural connections and entities in a knowledge graph to dynamically plan, trigger, and execute complex workflows.
 
 ### Why make GraphRAG agentic?
 
@@ -332,7 +332,7 @@ A step-by-step guide to setting up a local RAG, Agentic AI, and GraphRAG environ
 
 ### RAG
 
-To build a local Retrieval-Augmented Generation (RAG) system, you can use Ollama to run Llama 3.2, ChromaDB as your local vector database, and LangChain to orchestrate the pipeline.
+To build a local retrieval-augmented generation (RAG) system, you can use Ollama to run Llama 3.2, ChromaDB as your local vector database, and LangChain to orchestrate the pipeline.
 
 RAG agent relies on two different models: a reasoning or generation model (does the deciding, grading, rewriting and answering) and an embedding model (turns your documents and queries into vectors).
 
@@ -345,7 +345,6 @@ curl -fsSL https://ollama.com/install.sh | sh
 # Start the Ollama server
 
 ollama serve
-
 
 # Reasoning model (the agent)
 
@@ -413,7 +412,7 @@ The application fetches context from your local database, feeds it to Llama 3.2,
 
 ### GraphRAG
 
-To create a local GraphRAG (Graph-based Retrieval-Augmented Generation) pipeline, you will use Ollama to host the Llama 3.2 LLM and an embedding model, LangChain to orchestrate the retrieval, and a graph database like Neo4j or Microsoft's GraphRAG SDK to structure the knowledge graph.
+To create a local GraphRAG (Graph-based retrieval-augmented generation) pipeline, you will use Ollama to host the Llama 3.2 LLM and an embedding model, LangChain to orchestrate the retrieval, and a graph database like Neo4j or Microsoft's GraphRAG SDK to structure the knowledge graph.
 
 To build a [retrieval agent using LangGraph and Neo4j (GraphRAG)](https://neo4j.com/blog/developer/neo4j-graphrag-workflow-langchain-langgraph/), you construct an agentic system that routes queries between structured Cypher query generation and unstructured vector similarity search, combining the results inside a stateful workflow.
 
@@ -499,11 +498,42 @@ Now let's ask some questions using this dataset.
 
 ### Agentic AI with RAG
 
+Agents can dynamically choose tools, incorporate complex reasoning, and adapt their analysis approach based on the situation at hand. ReAct Agents are an agentic architecture that use “reasoning and acting” via tool calling supported LLMs. Agentic AI with RAG extends the concept of RAG paradigm by integrating retrieval mechanisms with the language understanding and reasoning capabilities of large language models.
+
 To build a [retrieval agent](https://docs.langchain.com/oss/python/langchain/retrieval) using LangGraph involves running a model on Ollama, storing documents in a local vector database, and using an agentic framework like LangGraph to decide whether to search documents or rewrite queries.
 
 Creating a local [RAG agent](https://docs.langchain.com/oss/python/langgraph/agentic-rag) involves setting up Ollama as your LLM and embedding engine, ChromaDB as your vector store, and LangGraph to manage the routing logic.
 
+Implementing a local Agentic RAG system requires setting up your local environment, loading your documents into ChromaDB, and building a State Graph workflow in LangGraph.
+
+You can also use [Langflow's](https://www.langflow.org/templates/use-langflow-to-build-local-rag-pipeline-with-ollama-and-chromadb) drag-and-drop UI to build this without coding.
+
+**Ollama:**
+
+Ensure Ollama is running and download the Llama3.2 and Embedding models.
+
+ollama pull llama3.2
+ollama pull nomic-embed-text
+
+**ChromaDB:**
+
+Run ChromaDB locally in a Docker container with persistent storage:
+
+docker run -d -p 8000:8000 -v chroma-data:/chroma/data -e IS_PERSISTENT=TRUE chromadb/chroma
+
+**Document Ingestion**
+
+Before the agent can query, your text documents must be embedded and stored.
+
+Install the dependencies:
+
 pip install langchain langchain-ollama langchain-chroma langgraph
+
+Use this Python script in ./scripts/agentic/rag folder to ingest your documents.
+
+**Agent**
+
+LangGraph allows the agent to decide when to search the local database, when to answer, or how to rewrite the query.
 
 **The agentic RAG loop: retrieve, reason, act**
 
@@ -650,6 +680,8 @@ Agentic AI use case https://docs.cloud.google.com/architecture/agentic-ai-multim
 
 Build a custom RAG agent with LangGraph https://docs.langchain.com/oss/python/langgraph/agentic-rag
 
+Build a RAG application with LangChain and Local LLMs powered by Ollama https://devblogs.microsoft.com/cosmosdb/build-a-rag-application-with-langchain-and-local-llms-powered-by-ollama/
+
 **License**: MIT
 
-**Last Updated**: June 24, 2026
+**Last Updated**: June 25, 2026

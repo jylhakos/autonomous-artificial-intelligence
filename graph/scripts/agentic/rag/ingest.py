@@ -1,0 +1,24 @@
+import os
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_ollama import OllamaEmbeddings
+from langchain_chroma import Chroma
+
+# 1. Setup Models & Database Connection
+embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434")
+chroma_client = Chroma(
+    collection_name="my_documents",
+    embedding_function=embeddings,
+    persist_directory="./chroma_db", # Or point to Docker IP: http://localhost:8000
+)
+
+# 2. Load and Chunk Documents
+# Replace 'your_document.txt' with your actual file path
+loader = TextLoader("your_document.txt")
+docs = loader.load()
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+chunks = text_splitter.split_documents(docs)
+
+# 3. Add to ChromaDB
+chroma_client.add_documents(chunks)
+print("Documents successfully embedded and stored!")
