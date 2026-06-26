@@ -18,6 +18,15 @@ This document presents concepts, architectural components, practical use cases a
   - [Why make GraphRAG agentic?](#why-make-graphrag-agentic)
   - [GraphRAG vs Agentic GraphRAG](#graphrag-vs-agentic-graphrag)
   - [Building an Agentic GraphRAG](#building-an-agentic-graphrag)
+- [Building Samples](#building-samples)
+  - [Prerequisites](#prerequisites)
+  - [Setup Virtual Environment](#setup-virtual-environment)
+  - [Dataset Generation](#dataset-generation)
+  - [RAG (Retrieval-Augmented Generation)](#rag-retrieval-augmented-generation)
+  - [GraphRAG](#graphrag)
+  - [Agentic AI with RAG](#agentic-ai-with-rag)
+  - [Agentic AI with GraphRAG](#agentic-ai-with-graphrag)
+- [Project Structure](#project-structure)
 - [References](#references)
 
 
@@ -328,87 +337,131 @@ The processed data is returned to the user as a meaningful answer.
 
 ## Building Samples
 
-A step-by-step guide to setting up a local RAG, Agentic AI, and GraphRAG environment and pipeline using Ollama, Python, LangGraph and Neo4j.
+A step-by-step guide to setting up a local RAG, Agentic AI, and GraphRAG environment and pipeline using Ollama, Python, LangGraph and Neo4j with the Iris dataset.
 
-### RAG
+### Prerequisites
+
+Before starting, ensure you have the following installed:
+- Python 3.8 or higher
+- Ollama (for running local LLMs)
+- Docker (for Neo4j)
+- Git
+
+### Setup Virtual Environment
+
+Create and activate a Python virtual environment to isolate dependencies:
+
+```bash
+cd /path/to/graph
+python3 -m venv venv
+source venv/bin/activate  # On Linux/Mac
+# venv\Scripts\activate  # On Windows
+```
+
+### Dataset Generation
+
+The Iris dataset is used throughout these examples to demonstrate RAG and GraphRAG capabilities.
+
+#### Generate Synthetic Dataset
+
+Use the generation script to create a text document with semantic descriptions of the Iris dataset:
+
+**Install Dependencies:**
+
+```bash
+pip install pandas scikit-learn langchain-text-splitters
+```
+
+**Run the Generation Script:**
+
+```bash
+python scripts/dataset/generate_dataset_for_vector_database.py
+```
+
+This will create `document.txt` in the root directory containing 150 semantic descriptions of Iris specimens with morphological measurements (sepal length, sepal width, petal length, petal width) and species classifications (setosa, versicolor, virginica).
+
+The script transforms raw tabular data into natural language suitable for vector embeddings, converting numerical measurements into descriptive sentences like: "This biological specimen belongs to the genus Iris, specifically classified under the species 'setosa'. Morphological measurements indicate a sepal length of 5.1 cm..."
+
+### RAG (Retrieval-Augmented Generation)
 
 To build a local retrieval-augmented generation (RAG) system, you can use Ollama to run Llama 3.2, ChromaDB as your local vector database, and LangChain to orchestrate the pipeline.
 
 RAG agent relies on two different models: a reasoning or generation model (does the deciding, grading, rewriting and answering) and an embedding model (turns your documents and queries into vectors).
 
-**Install Ollama and models**
+**Install Ollama and Models**
 
-# Download and install Ollama for your Linux operating system.
+Download and install Ollama for your operating system:
 
+```bash
 curl -fsSL https://ollama.com/install.sh | sh
+```
 
-# Start the Ollama server
+Start the Ollama server:
 
+```bash
 ollama serve
+```
 
+Pull the required models:
+
+```bash
 # Reasoning model (the agent)
-
 ollama pull llama3.2
 
 # Embedding model (the retriever)
-
 ollama pull nomic-embed-text
+```
 
-Create a directory, set up a virtual environment, and install the required LangChain and ChromaDB libraries.
+**Install Python Dependencies**
 
-python3 -m venv venv
+```bash
+pip install langchain langchain-ollama langchain-community langchain-chroma chromadb
+```
 
-source venv/bin/activate
+**RAG Script (rag_app.py)**
 
-**Install the framework and a vector store**
+Location: `scripts/rag/rag_app.py`
 
-pip install langgraph langchain langchain-ollama langchain-chroma chromadb
+This script demonstrates a basic RAG pipeline:
+1. Loads the Iris dataset document (document.txt)
+2. Splits it into chunks
+3. Creates embeddings using nomic-embed-text
+4. Stores vectors in ChromaDB
+5. Retrieves relevant context for queries
+6. Generates answers using Llama 3.2
 
-**Create a document**
+**Run the RAG Script:**
 
-Create a sample text file named document.txt in your project folder to act as your local document source.
+```bash
+python scripts/rag/rag_app.py
+```
 
-**Python Script for RAG (rag_app.py)**
+The script will query: "What are the morphological characteristics of Iris setosa?" and return an answer based on retrieved context from the Iris dataset.
 
-This script loads the document, breaks it into digestible chunks, converts it into mathematical vectors using the embedding model, stores it locally in ChromaDB, and performs a retrieval query using Llama 3.2.
+**Streamlit Chat Interface (app.py)**
 
-Large documents are broken down into smaller, readable blocks of text.
+Location: `scripts/rag/app.py`
 
-An artificial intelligence embedding model transforms these text chunks into long arrays of numbers. 
+For an interactive web interface, use the Streamlit app which provides a chat-like experience.
 
-These arrays are called vector embeddings.
+**Install Streamlit:**
 
-The vector database organizes these numbers using specialized Approximate Nearest Neighbor (ANN) index structures.
-
-The framework will automatically search ChromaDB for the relevant sentences in document.txt, inject them into the local prompt context, and output a precise, verified response from Llama 3.2.
-
-Once the database finds the text fragments mathematically closest to the query vector, it sends them back to the application layer.
-
-The system builds a final structured prompt containing the retrieved facts alongside the user's original question. This combined prompt is then dispatched to the LLM.
-
-Execute the script from your terminal.
-
-python rag_app.py
-
-**Chat**
-
-To add a web user interface using Streamlit, you can transform your existing RAG script into an interactive web app with just a few visual blocks. Streamlit will manage the UI layout and session state so the database doesn't reinitialize on every button click.
-
-Install the Streamlit library in your existing Python virtual environment.
-
+```bash
 pip install streamlit
+```
 
-Create the Streamlit RAG Script (app.py).
+**Launch the Streamlit App:**
 
-Create a new file named app.py in your project folder. This code wraps your LangChain pipeline inside Streamlit functions and adds a chat-like interface.
+```bash
+streamlit run scripts/rag/app.py
+```
 
-Launch the app by executing this command in your terminal.
+Your browser will open to http://localhost:8501 where you can interact with the Iris dataset through a conversational interface.
 
-streamlit run app.py
-
-Your default web browser will automatically open to http://localhost:8501.
-
-The application fetches context from your local database, feeds it to Llama 3.2, and reveals both the chat's answer and the exact document source snippets inside an interactive drop-down menu.
+**Example Questions:**
+- "What are the characteristics of Iris setosa?"
+- "What is the typical petal length for Iris virginica?"
+- "How do the three Iris species differ in their morphological measurements?"
 
 ### GraphRAG
 
@@ -428,7 +481,7 @@ The system constructs a detailed, step-by-step research plan tailored to the com
 
 Research graph execution: For each step in the research plan, a dedicated subgraph is invoked. The system generates Cypher queries via LLMs, targeting the Neo4j knowledge graph. Relevant nodes and relationships are retrieved using a hybrid approach that combines semantic search and structured graph queries, ensuring both breadth and precision in the results.
 
-Answer generation: Leveraging the retrieved graph data, the system synthesizes a comprehensive response using an LLM, integrating information from multiple sources as needed.
+Answer generation: Leveraging the retrieved graph data, the system synthesizes a response using an LLM, integrating information from multiple sources as needed.
 
 To get started, create a project space and python virtual environment to install graphrag.
 
@@ -660,9 +713,123 @@ JSON Mode or Prompting: If your local model hallucinates or misses tool-calling 
 
 Schema Injection: For better Cypher generation accuracy, dynamically inject the Neo4j schema (node labels and relationship types) into your system prompt so the local LLM knows exactly what data structure to query.
 
-See the source code in ./scripts/agentic/graphrag folder.
+See the source code in scripts/agentic/graphrag folder.
+
+### Agentic AI with GraphRAG
+
+Agentic AI with GraphRAG creates intelligent systems that can dynamically choose between vector search and graph traversal based on the query type. This hybrid approach combines the best of both worlds: semantic similarity search for unstructured text and structured relationship queries for graph data.
+
+**Prerequisites**
+
+Ensure you have:
+- Ollama running with llama3.2 and nomic-embed-text models
+- Neo4j running with APOC plugins (see GraphRAG section)
+- Python dependencies installed
+
+**Install Dependencies**
+
+```bash
+pip install langgraph langchain-ollama langchain-community neo4j-driver
+```
+
+**Step 1: Chunk, Embed, and Store in Neo4j (chunk_embed_and-populate.py)**
+
+Location: `scripts/agentic/graphrag/chunk_embed_and-populate.py`
+
+This script reads the Iris dataset document, creates vector embeddings using Ollama, and stores them inside Neo4j's native vector index.
+
+**Run the script:**
+
+```bash
+python scripts/agentic/graphrag/chunk_embed_and-populate.py
+```
+
+**Step 2: Define Tools (tools.py)**
+
+Location: `scripts/agentic/graphrag/tools.py`
+
+This module defines two tools:
+1. **search_unstructured_text**: For semantic queries about Iris morphological characteristics
+2. **query_graph_relationships**: For structured queries about species relationships and node counts
+
+The tools are decorated with `@tool` so Llama 3.2 can intelligently choose which one to invoke.
+
+**Step 3: Build the Hybrid Agent (agents.py)**
+
+Location: `scripts/agentic/graphrag/agents.py`
+
+This script combines both tools into a unified ReAct agent that can:
+- Analyze the query type
+- Choose the appropriate tool (vector or graph)
+- Execute the query
+- Return structured results
+
+**Step 4: Test Vector Search (vector_search.py)**
+
+Location: `scripts/agentic/graphrag/vector_search.py`
+
+Test semantic queries:
+
+```bash
+python scripts/agentic/graphrag/vector_search.py
+```
+
+Example query: "What are the main morphological characteristics of Iris virginica?"
+
+**Step 5: Test Graph Queries (structured_cypher_query.py)**
+
+Location: `scripts/agentic/graphrag/structured_cypher_query.py`
+
+Test structural graph queries:
+
+```bash
+python scripts/agentic/graphrag/structured_cypher_query.py
+```
+
+Example query: "How many DocumentChunk nodes exist in the database and what species are represented?"
+
+**How It Works**
+
+1. **Query Classification**: The agent analyzes whether the question requires semantic search or graph traversal
+2. **Tool Selection**: Based on query type, the agent chooses the appropriate tool
+3. **Execution**: The selected tool processes the query against Neo4j
+4. **Response**: Results are synthesized into an answer
+
+**Example Use Cases**
+
+- Semantic queries: "Describe the characteristics of Iris setosa"
+- Graph queries: "Show all relationships between species and measurements"
+- Hybrid queries: "Compare petal lengths across all three Iris species"
 
 GraphRAG application involves generating Cypher query language with the LLM.
+
+## Project Structure
+
+```
+graph/
+├── README.md
+├── document.txt (generated by dataset script)
+├── scripts/
+│   ├── dataset/
+│   │   ├── generate_dataset_for_vector_database.py  # Generate Iris dataset
+│   │   └── generate_summary_report.py
+│   ├── rag/
+│   │   ├── rag_app.py              # Basic RAG implementation
+│   │   └── app.py                  # Streamlit chat interface for RAG
+│   ├── graphrag/
+│   │   └── graph_rag_chat.py       # GraphRAG with Neo4j
+│   └── agentic/
+│       ├── rag/
+│       │   ├── ingest.py           # Ingest documents into ChromaDB
+│       │   └── agent_with_rag.py   # Agentic RAG implementation
+│       └── graphrag/
+│           ├── chunk_embed_and-populate.py  # Populate Neo4j vector index
+│           ├── tools.py            # Define vector and graph tools
+│           ├── agents.py           # Build hybrid ReAct agent
+│           ├── vector_search.py    # Test vector search queries
+│           └── structured_cypher_query.py   # Test Cypher queries
+└── venv/  # Python virtual environment
+```
 
 ## References
 
@@ -684,4 +851,4 @@ Build a RAG application with LangChain and Local LLMs powered by Ollama https://
 
 **License**: MIT
 
-**Last Updated**: June 25, 2026
+**Last Updated**: June 26, 2026

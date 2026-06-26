@@ -21,9 +21,10 @@ graph = Neo4jGraph(
 # Initialize local LLM via Ollama
 llm = OllamaLLM(model="llama3.2", temperature=0)
 
-# 2. Load and Split document.txt
+# 2. Load and Split document.txt (Iris dataset)
 if not os.path.exists("document.txt"):
     print("Error: Please place your 'document.txt' file in this directory.")
+    print("Generate it first using scripts/dataset/generate_dataset_for_vector_database.py")
     exit(1)
 
 print("Loading document.txt...")
@@ -35,9 +36,13 @@ text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=24)
 docs = text_splitter.split_documents(documents)
 
 # 3. Extract Knowledge Graph Entities & Relations
-print("Extracting entities and relationships using Llama 3.2...")
-# You can strictly define allowed nodes/edges to make the graph cleaner
-llm_transformer = LLMGraphTransformer(llm=llm)
+print("Extracting entities and relationships from Iris dataset using Llama 3.2...")
+# Define allowed nodes/edges for Iris dataset structure
+llm_transformer = LLMGraphTransformer(
+    llm=llm,
+    allowed_nodes=["Species", "Measurement", "Specimen"],
+    allowed_relationships=["HAS_MEASUREMENT", "BELONGS_TO_SPECIES", "SIMILAR_TO"]
+)
 
 print("Converting text documents into graph data structure...")
 graph_docs = llm_transformer.convert_to_graph_documents(docs)

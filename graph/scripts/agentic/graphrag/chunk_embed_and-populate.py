@@ -7,12 +7,12 @@ from langchain_community.graphs import Neo4jGraph
 # Neo4j Credentials
 NEO4J_URL = "bolt://localhost:7687"
 NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "your_password"
+NEO4J_PASSWORD = "password123"
 
 # 1. Initialize local embeddings
-embeddings = OllamaEmbeddings(model="llama3.2")
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
-# 2. Extract and split text from your document
+# 2. Extract and split text from Iris dataset document
 loader = TextLoader("document.txt")
 documents = loader.load()
 text_splitter = TokenTextSplitter(chunk_size=200, chunk_overlap=20)

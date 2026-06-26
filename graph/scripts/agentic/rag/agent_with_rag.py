@@ -1,26 +1,34 @@
 from typing import List, Dict, Any, Optional
 from typing_extensions import TypedDict
 from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_core.tools import tool
+from langchain_community.vectorstores import Chroma
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 
-# 1. Define Agent State
+# 1. Initialize ChromaDB connection
+embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434")
+chroma_client = Chroma(
+    collection_name="iris_documents",
+    embedding_function=embeddings,
+    persist_directory="./chroma_db",
+)
+
+# 2. Define Agent State
 class GraphState(TypedDict):
     messages: List[BaseMessage]
     documents: Optional[List[str]]
     query: Optional[str]
 
-# 2. Define Retriever Tool
-@tool("retrieve_documents")
-def retrieve_documents(query: str) -> List[str]:
-    """Retrieve documents from local ChromaDB."""
-    # Assuming connection defined identically to the ingestion step
+# 3. Define Retriever Tool
+@tool("retrieve_iris_documents")
+def retrieve_iris_documents(query: str) -> List[str]:
+    """Retrieve Iris dataset documents from local ChromaDB."""
     results = chroma_client.similarity_search(query, k=3)
     return [doc.page_content for doc in results]
 
-tools = [retrieve_documents]
+tools = [retrieve_iris_documents]
 
 # 3. Define Nodes
 llm = ChatOllama(model="llama3.2", base_url="http://localhost:11434")
@@ -51,7 +59,7 @@ workflow.add_edge("tools", "agent")
 app = workflow.compile()
 
 # 5. Run the Agent
-user_input = "Can you summarize the main points about [Topic] from my document?"
+user_input = "What are the main characteristics of Iris setosa based on the morphological measurements?"
 events = app.stream({"messages": [HumanMessage(content=user_input)]})
 for event in events:
     print(event)

@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnablePassthrough
 DOC_PATH = "document.txt"
 DB_DIR = "./chroma_db"
 
-print("🔄 Processing document...")
+print("🔄 Processing Iris dataset document...")
 
 # 2. Load and Chunk Document
 loader = TextLoader(DOC_PATH)
@@ -19,6 +19,8 @@ documents = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 chunks = text_splitter.split_documents(documents)
+
+print(f"✅ Document loaded and split into {len(chunks)} chunks")
 
 # 3. Initialize Local Ollama Embeddings
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
@@ -55,7 +57,7 @@ rag_chain = (
 )
 
 # 7. Execute Local Query
-query = "What is the secret password and what color badges are required?"
+query = "What are the morphological characteristics of Iris setosa?"
 print(f"\n🔍 Querying local system: '{query}'")
 
 response = rag_chain.invoke(query)

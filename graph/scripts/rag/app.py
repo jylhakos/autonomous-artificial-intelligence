@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnablePassthrough
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Local RAG Chatbot", page_icon="🤖", layout="wide")
-st.title("🤖 Chat with RAG")
+st.title("🤖 Chat with Iris Dataset using RAG")
 st.caption("Powered by Ollama (Llama 3.2), ChromaDB, and LangChain")
 
 DB_DIR = "./chroma_db"
@@ -21,11 +21,8 @@ DOC_PATH = "document.txt"
 def initialize_rag_system():
     """Loads document, chunks it, embeds it, and returns the retriever."""
     if not os.path.exists(DOC_PATH):
-        # Create a dummy file if it doesn't exist yet
-        with open(DOC_PATH, "w") as f:
-            f.write("The secret password for the underground facility is 'OLLAMA_RAG_2026'.\n")
-            f.write("The facility is located three floors below the main library building.\n")
-            f.write("Authorized personnel must wear blue badges at all times.\n")
+        st.error(f"Error: {DOC_PATH} not found. Please generate it first using generate_dataset_for_vector_database.py")
+        st.stop()
 
     # Load and Chunk
     loader = TextLoader(DOC_PATH)
@@ -85,7 +82,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Accept user input
-if user_query := st.chat_input("Ask a question about your local documents..."):
+if user_query := st.chat_input("Ask a question about the Iris dataset..."):
     
     # 1. Display user message in chat message container
     with st.chat_message("user"):
