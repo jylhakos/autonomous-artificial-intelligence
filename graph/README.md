@@ -514,8 +514,9 @@ Ensure you have the official Neo4j driver and the experimental LangChain graph c
 
 pip install neo4j langchain-experimental
 
-
 **Install GraphRAG**
+
+Setting up a local AI environment to analyze the Iris dataset involves connecting local Ollama (Llama 3.2) to Open WebUI, and using a Python integration layer to query your Neo4j database. Open WebUI handles the chat inference, while Python translates natural language to Cypher for Neo4j.
 
 Note: If you use Microsoft's GraphRAG package, you will also install it via pip install graphrag
 
@@ -537,17 +538,523 @@ You can do this automatically using LangChain's built-in LLMGraphTransformer and
 
 Create the Retrieval Chain and Chat
 
-**Crate Chat Script**
+**Create Chat Script**
+
+The `graph_rag_chat.py` script implements a complete GraphRAG pipeline that connects your local Ollama LLM (Llama 3.2) with Neo4j graph database to enable intelligent querying of the Iris dataset through natural language.
+
+**What the Script Does:**
+
+Location: `scripts/graphrag/graph_rag_chat.py`
+
+The script performs five key operations:
+
+1. **Database Connection Setup**: Establishes connection to Neo4j graph database (bolt://localhost:7687) and initializes Ollama's Llama 3.2 model as the local LLM.
+
+2. **Document Loading & Chunking**: Loads the `document.txt` file (Iris dataset descriptions) and splits it into manageable 512-token chunks with 24-token overlap for efficient processing by the local LLM.
+
+3. **Knowledge Graph Extraction**: Uses `LLMGraphTransformer` to analyze text chunks and extract structured entities (Species, Measurement, Specimen) and relationships (HAS_MEASUREMENT, BELONGS_TO_SPECIES, SIMILAR_TO) using Llama 3.2's language understanding capabilities.
+
+4. **Graph Ingestion**: Stores the extracted entities and relationships into Neo4j, creating a queryable knowledge graph structure where each iris specimen is represented as interconnected nodes with typed relationships.
+
+5. **Interactive GraphRAG Chat**: Creates a `GraphQAChain` that automatically translates natural language questions into Cypher queries, retrieves relevant graph data from Neo4j, and generates human-readable answers using Llama 3.2.
+
+**Information Flow Diagram:**
+
+```mermaid
+graph TB
+    subgraph "User Layer"
+        A[User Client<br/>Open WebUI<br/>localhost:3000]
+    end
+    
+    subgraph "Application Layer"
+        B[graph_rag_chat.py<br/>Python Script]
+        C[LangChain<br/>GraphQAChain]
+        D[LLMGraphTransformer<br/>Entity Extractor]
+    end
+    
+    subgraph "AI Layer"
+        E[Ollama Server<br/>localhost:11434]
+        F[Llama 3.2<br/>LLM Model]
+        G[nomic-embed-text<br/>Embedding Model]
+    end
+    
+    subgraph "Data Layer"
+        H[(Neo4j Database<br/>bolt://localhost:7687)]
+        I[document.txt<br/>Iris Dataset]
+    end
+    
+    A -->|Natural Language Query| B
+    B -->|Load Document| I
+    I -->|Text Chunks| D
+    D -->|Entity Extraction Request| E
+    E -->|Inference| F
+    F -->|Entities & Relations| D
+    D -->|Graph Documents| H
+    
+    B -->|User Question| C
+    C -->|Generate Cypher Query| E
+    E -->|LLM Reasoning| F
+    F -->|Cypher Query| C
+    C -->|Execute Query| H
+    H -->|Graph Results| C
+    C -->|Context + Query| E
+    E -->|Generate Answer| F
+    F -->|Natural Language Response| C
+    C -->|Answer| B
+    B -->|Display Response| A
+    
+    style A fill:#e1f5ff
+    style E fill:#ffe1e1
+    style H fill:#e1ffe1
+    style B fill:#fff4e1
+```
+
+**How It Works - Step by Step:**
+
+1. **Load Iris Dataset**: The script reads `document.txt`, which contains semantic descriptions of 150 Iris specimens (generated using `scripts/dataset/generate_dataset_for_vector_database.py`).
+
+2. **Extract Knowledge Graph**: Llama 3.2 analyzes each text chunk to identify:
+   - **Entities**: Species (setosa, versicolor, virginica), Measurements (sepal/petal dimensions), Specimens
+   - **Relationships**: Which measurements belong to which specimens, which specimens belong to which species, similarity relationships between specimens
+
+3. **Store in Neo4j**: The extracted graph structure is persisted in Neo4j, creating a queryable network of interconnected botanical data.
+
+4. **Interactive Querying**: When you ask a question like "What are the characteristics of Iris setosa?", the chain:
+   - Converts your question to a Cypher query
+   - Executes the query against Neo4j
+   - Retrieves connected nodes and relationships
+   - Uses Llama 3.2 to synthesize a natural language answer
+
+**Before Running the Script:**
+
+**Activate Virtual Environment** (Critical Step):
+```bash
+cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/graph
+source venv/bin/activate  # On Linux/Mac
+# venv\Scripts\activate  # On Windows
+```
+
+**Load Iris Dataset into Neo4j** (Optional but Recommended):
+
+Before running the chat script, you can pre-populate Neo4j with structured Iris data using the dedicated loader script:
+
+```bash
+# Install required dependencies
+pip install neo4j scikit-learn pandas
+
+# Run the loader script
+python scripts/dataset/load_iris.py
+```
+
+The `load_iris.py` script creates a graph structure where:
+- Each measurement is a node with sepal/petal dimensions
+- Each species is a distinct node (setosa, versicolor, virginica)
+- Measurements connect to their species via IS_SPECIES relationships
+
+This structured data complements the semantic descriptions in `document.txt`, enabling both graph traversal and semantic search.
 
 **Execute the Script**
 
-python3 graph_rag_chat.py
+```bash
+python scripts/graphrag/graph_rag_chat.py
+```
+
+**Example Interaction:**
+
+```
+--- GraphRAG Chat initialized. Type 'exit' to quit ---
+
+You: What are the characteristics of Iris setosa?
+Thinking...
+
+AI: Iris setosa is characterized by smaller petals compared to other Iris species,
+typically with petal lengths around 1.5 cm and petal widths around 0.2 cm.
+The sepals are generally 5.0 cm in length and 3.5 cm in width. This species
+is easily distinguishable from versicolor and virginica due to its compact
+petal dimensions.
+
+You: How many species are in the dataset?
+Thinking...
+
+AI: The dataset contains three distinct Iris species: setosa, versicolor,
+and virginica.
+```
+
+**Connecting Open WebUI with Local Ollama and Neo4j**
+
+To create a complete local AI environment for querying the Iris dataset through a web interface, you'll connect Open WebUI (user interface) → Ollama (LLM inference) → Python GraphRAG script → Neo4j (graph database).
+
+**Architecture Overview:**
+
+```mermaid
+graph LR
+    subgraph "Frontend"
+        A[Open WebUI<br/>Web Interface<br/>Port 3000]
+    end
+    
+    subgraph "LLM Layer"
+        B[Ollama Server<br/>localhost:11434]
+        C[Llama 3.2 Model]
+    end
+    
+    subgraph "Integration Layer"
+        D[Python Script<br/>graph_rag_chat.py]
+        E[LangChain<br/>GraphQAChain]
+    end
+    
+    subgraph "Database Layer"
+        F[(Neo4j Database<br/>Port 7687/7474)]
+    end
+    
+    A -->|HTTP API Calls| B
+    B -->|Model Inference| C
+    A -->|Custom Functions| D
+    D -->|Cypher Queries| E
+    E -->|Graph Queries| F
+    F -->|Results| E
+    E -->|Context| C
+    C -->|Answers| A
+    
+    style A fill:#4CAF50,color:#fff
+    style B fill:#2196F3,color:#fff
+    style F fill:#FF9800,color:#fff
+    style D fill:#9C27B0,color:#fff
+```
+
+**Step 1: Install and Configure Open WebUI**
+
+**Activate Virtual Environment First:**
+```bash
+source venv/bin/activate
+```
+
+**Install Open WebUI using Docker:**
+
+```bash
+docker run -d -p 3000:8080 \
+  --add-host=host.docker.internal:host-gateway \
+  -v open-webui:/app/backend/data \
+  --name open-webui \
+  --restart always \
+  ghcr.io/open-webui/open-webui:main
+```
+
+**Verify Installation:**
+- Open browser to http://localhost:3000
+- Create an admin account on first launch
+
+**Step 2: Connect Ollama to Open WebUI**
+
+**Configure Ollama Connection:**
+1. Navigate to http://localhost:3000
+2. Go to **Admin Panel** → **Settings** → **Connections**
+3. Under **Ollama API**, add: `http://host.docker.internal:11434`
+4. Click **Save** and verify connection shows as "Connected"
+
+**Verify Ollama Models are Available:**
+```bash
+ollama list
+```
+
+You should see:
+- `llama3.2` (reasoning model)
+- `nomic-embed-text` (embedding model)
+
+If missing, pull them:
+```bash
+ollama pull llama3.2
+ollama pull nomic-embed-text
+```
+
+**Step 3: Set Up Neo4j Graph Database**
+
+**Start Neo4j with APOC (required for GraphRAG):**
+```bash
+docker run -d \
+  --name neo4j-graphrag \
+  -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/password123 \
+  -e NEO4J_PLUGINS='["apoc"]' \
+  -e NEO4J_dbms_security_procedures_unrestricted=apoc.* \
+  neo4j:5.20.0
+```
+
+**Verify Neo4j is Running:**
+- Open http://localhost:7474 in browser
+- Login with username: `neo4j`, password: `password123`
+- Run test query: `MATCH (n) RETURN count(n)`
+
+**Step 4: Load Iris Dataset into Neo4j**
+
+**Activate Virtual Environment:**
+```bash
+source venv/bin/activate
+```
+
+**Install Required Dependencies:**
+```bash
+pip install neo4j scikit-learn pandas
+```
+
+**Run the Iris Dataset Loader:**
+
+Location: `scripts/dataset/load_iris.py`
+
+```bash
+python scripts/dataset/load_iris.py
+```
+
+**What this script does:**
+- Loads the sklearn Iris dataset (150 specimens, 4 measurements, 3 species)
+- Creates **Measurement** nodes with sepal/petal dimensions
+- Creates **Species** nodes (setosa, versicolor, virginica)
+- Establishes **IS_SPECIES** relationships connecting measurements to species
+
+**Verify Data in Neo4j:**
+
+Open http://localhost:7474 and run:
+```cypher
+MATCH (s:Species)<-[:IS_SPECIES]-(m:Measurement)
+RETURN s.name, count(m) as measurement_count
+```
+
+You should see:
+- setosa: 50 measurements
+- versicolor: 50 measurements
+- virginica: 50 measurements
+
+**Step 5: Integrate Python GraphRAG with Open WebUI**
+
+**Create Open WebUI Custom Function for GraphRAG:**
+
+1. In Open WebUI, go to **Workspace** → **Functions** → **+ Create Function**
+2. Name: `Neo4j Iris GraphRAG`
+3. Add the following Python code:
+
+```python
+"""
+title: Neo4j Iris GraphRAG Query
+description: Query Iris dataset in Neo4j using natural language
+author: Your Name
+version: 1.0
+"""
+
+from typing import Callable
+import subprocess
+import json
+
+class Tools:
+    def __init__(self):
+        pass
+    
+    def query_iris_graph(self, query: str, __user__: dict = {}) -> str:
+        """
+        Query the Iris dataset in Neo4j using GraphRAG.
+        
+        :param query: Natural language question about Iris dataset
+        :return: Answer with graph context
+        """
+        try:
+            # Call the graph_rag_chat.py script programmatically
+            result = subprocess.run(
+                ["python3", "scripts/graphrag/graph_rag_chat.py", "--query", query],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            return result.stdout
+        except Exception as e:
+            return f"Error querying graph: {str(e)}"
+```
+
+4. Click **Save** and enable the function
+
+**Alternative: Direct CLI Usage**
+
+Run the GraphRAG chat script directly:
+```bash
+source venv/bin/activate
+python scripts/graphrag/graph_rag_chat.py
+```
+
+Then interact via command line, or use Open WebUI's chat interface with Ollama integration.
+
+**Step 6: Query Iris Dataset via Open WebUI**
+
+Open http://localhost:3000 and try these queries:
+
+1. **Species Characteristics:**
+   - "What are the morphological characteristics of Iris setosa?"
+   - "How do the three Iris species differ in petal dimensions?"
+
+2. **Graph Traversal Queries:**
+   - "Which species has the largest average sepal length?"
+   - "Show me measurements where petal length exceeds 5 cm"
+
+3. **Relationship Queries:**
+   - "How many specimens belong to Iris virginica?"
+   - "Find specimens similar to setosa based on petal width"
+
+**Behind the Scenes:**
+- Open WebUI sends your question to Ollama (Llama 3.2)
+- Python GraphRAG script converts question to Cypher query
+- Neo4j executes graph traversal
+- Results are contextualized by Llama 3.2
+- Natural language answer returned to Open WebUI
+
+**Troubleshooting:**
+
+| Issue | Solution |
+|-------|----------|
+| Open WebUI can't connect to Ollama | Ensure Ollama is running: `systemctl status ollama` or `ollama serve` |
+| Neo4j connection refused | Check Docker container: `docker ps` and verify ports 7474/7687 |
+| Empty graph results | Run `load_iris.py` to populate Neo4j with Iris data |
+| Python script errors | Activate virtual environment: `source venv/bin/activate` |
+| Model not found | Pull models: `ollama pull llama3.2 && ollama pull nomic-embed-text` |
 
 **Query**
 
 Once your knowledge graph and vector representations are established, you can use LangChain to bind them with your Chat and Llama3.2. The model can perform both vector search and graph traversal to answer user queries.
 
-Now let's ask some questions using this dataset.
+Now let's ask some questions using this [dataset](https://neo4j.com/docs/graph-data-science-client/current/common-datasets/).
+
+Connect Llama 3.2 to Neo4j via Open WebUI Functions.
+
+Open WebUI has a built-in RAG and Functions feature. You can feed your Neo4j schema and pre-written Cypher queries into the WebUI so it can act as a knowledge graph assistant.
+
+Go to Admin Panel > Settings > Connections > WebUI in Open WebUI.
+
+In the chat prompt, you can use the @ prefix to create a system instruction or function that tells Llama 3.2: "If the user asks about relationships in the Iris dataset, provide a Cypher query for Neo4j." You can paste the resulting Cypher queries into Neo4j Bloom or Neo4j Browser to visually inspect the clusters.
+
+**Complete GraphRAG Workflow for Iris Dataset**
+
+Here's the end-to-end workflow showing how all components work together:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Open WebUI
+    participant O as Ollama/Llama 3.2
+    participant P as Python Script<br/>(graph_rag_chat.py)
+    participant L as LangChain<br/>GraphQAChain
+    participant N as Neo4j Database
+    
+    Note over U,N: Setup Phase (One-time)
+    U->>P: Run load_iris.py
+    P->>N: Load 150 Iris specimens<br/>(Measurements + Species)
+    N-->>P: Graph created ✓
+    
+    U->>P: Run graph_rag_chat.py
+    P->>P: Load document.txt
+    P->>O: Extract entities from text
+    O-->>P: Return Species, Measurements
+    P->>N: Store knowledge graph
+    N-->>P: Graph ingested ✓
+    
+    Note over U,N: Query Phase (Interactive)
+    U->>W: "What are characteristics<br/>of Iris setosa?"
+    W->>O: Forward question
+    O->>L: Invoke GraphQAChain
+    L->>O: Generate Cypher query
+    Note over L: MATCH (s:Species {name: 'setosa'})<br/><-[:IS_SPECIES]-(m:Measurement)<br/>RETURN m
+    L->>N: Execute Cypher
+    N-->>L: Return graph results:<br/>50 measurements with<br/>sepal/petal dimensions
+    L->>O: Context + Question
+    O-->>L: Generated answer
+    L-->>W: Natural language response
+    W-->>U: "Iris setosa has smaller petals,<br/>typically 1.5cm length..."
+    
+    Note over U,N: Alternative: Direct CLI
+    U->>P: python graph_rag_chat.py
+    P->>U: Interactive chat prompt
+    U->>P: "How many species?"
+    P->>L: Process question
+    L->>N: Execute Cypher
+    N-->>L: Count = 3
+    L->>O: Generate answer
+    O-->>P: "The dataset contains<br/>three species..."
+    P-->>U: Display response
+```
+
+**Key Integration Points:**
+
+1. **Data Layer (Neo4j)**
+   - Stores both structured measurements (via `load_iris.py`)
+   - Stores extracted knowledge graph (via `graph_rag_chat.py`)
+   - Provides Cypher query interface
+
+2. **Intelligence Layer (Ollama + Llama 3.2)**
+   - Entity extraction from text
+   - Natural language to Cypher translation
+   - Answer generation with graph context
+
+3. **Integration Layer (LangChain)**
+   - `LLMGraphTransformer`: Extracts entities/relationships
+   - `GraphQAChain`: Orchestrates query translation and execution
+   - `Neo4jGraph`: Manages database connection
+
+4. **Interface Layer (Open WebUI)**
+   - Web-based chat interface
+   - Connects to Ollama API
+   - Supports custom functions for GraphRAG integration
+
+**Complete Setup Checklist:**
+
+```bash
+# 1. Always activate virtual environment first
+source venv/bin/activate
+
+# 2. Start infrastructure
+docker start neo4j-graphrag
+docker start open-webui
+ollama serve  # or systemctl start ollama
+
+# 3. Verify models are available
+ollama list  # Should show llama3.2 and nomic-embed-text
+
+# 4. Load structured Iris data into Neo4j
+python scripts/dataset/load_iris.py
+
+# 5. Generate semantic document (if not exists)
+python scripts/dataset/generate_dataset_for_vector_database.py
+
+# 6. Run GraphRAG chat (interactive CLI)
+python scripts/graphrag/graph_rag_chat.py
+
+# 7. Access Open WebUI (web interface)
+# Open browser: http://localhost:3000
+```
+
+**Reminders:**
+
+⚠️ **Always Activate Virtual Environment**: Before running any Python scripts or installing dependencies:
+```bash
+cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/graph
+source venv/bin/activate
+```
+
+⚠️ **Check Service Status**:
+```bash
+# Neo4j
+docker ps | grep neo4j
+
+# Open WebUI
+docker ps | grep open-webui
+
+# Ollama
+curl http://localhost:11434/api/tags
+```
+
+⚠️ **Verify Data Loaded**:
+```cypher
+// In Neo4j Browser (http://localhost:7474)
+MATCH (n) RETURN labels(n) as NodeType, count(n) as Count
+```
+
+Expected output:
+- Species: 3 nodes
+- Measurement: 150 nodes (if loaded via load_iris.py)
+- Additional graph entities (if processed via graph_rag_chat.py)
 
 ### Agentic AI with RAG
 
