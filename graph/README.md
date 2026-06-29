@@ -18,6 +18,10 @@ This document presents concepts, architectural components, practical use cases a
   - [Why make GraphRAG agentic?](#why-make-graphrag-agentic)
   - [GraphRAG vs Agentic GraphRAG](#graphrag-vs-agentic-graphrag)
   - [Building an Agentic GraphRAG](#building-an-agentic-graphrag)
+  - [Agentic AI Decision Making](#agentic-ai-decision-making)
+- [Multi-Hop Reasoning for Iris Dataset](#multi-hop-reasoning-for-iris-dataset)
+  - [Multi-Hop vs Single-Hop: Comparison for Iris Dataset](#multi-hop-vs-single-hop)
+  - [Quick Start for Multi-Hop Reasoning](#quick-start-for-multi-hop-reasoning)
 - [Building Samples](#building-samples)
   - [Prerequisites](#prerequisites)
   - [Setup Virtual Environment](#setup-virtual-environment)
@@ -64,7 +68,7 @@ Generation: The structured context is added to the prompt, forcing the LLM to ou
 
 ### How GraphRAG improves retrieval?
 
-GraphRAG solves "Multi-Hop" problems: If a query requires connecting relevant details across document A, B, and C (e.g., "Find all employees who used Python in a project managed by John"), GraphRAG seamlessly steps across edges to chain the facts together.
+GraphRAG solves "Multi-Hop" problems: If a query requires connecting relevant details across document A, B, and C (e.g., "Find all Iris specimens with large petal measurements that belong to the setosa species"), GraphRAG seamlessly steps across edges to chain the facts together.
 
 RAG indexes unstructured documents using dense embeddings. Graph-based retrieval instead constructs an entity network, a structured semantic layer that's especially useful in domains where the relationships among concepts carry the answer.
 
@@ -83,11 +87,11 @@ RAG indexes unstructured documents using dense embeddings. Graph-based retrieval
 
 Questions such as:
 
-"Which customers are affected by suppliers connected to Factory A?"
+"Which specimens are connected to CharacteristicTypes that define traits of the setosa species?"
 
 require several relationship hops.
 
-Graph traversal naturally supports this.
+Graph traversal naturally supports this. (See [VISUAL_DIAGRAM.md](VISUAL_DIAGRAM.md) for detailed relationship visualization)
 
 2. Better context precision
 
@@ -228,12 +232,49 @@ For many enterprise AI systems, a common architecture:
                   Response
 
 ```
+### Selecting the appropriate architecture
+
+Building an Agentic GraphRAG system involves orchestrating a pipeline of specialized agents, each responsible for a specific task, such as query analysis, retrieval, reasoning, planning, and response generation.
+
+The choice of architecture depends on the complexity of the user's query.
+
+Assess your **Query** complexity:
+
+**Information Retrieval**
+
+Are your users asking straightforward questions like, “What are the characteristics of Iris setosa?”
+
+-> Start with RAG (enhanced with basic reranking or hybrid search).
+
+Use a traditional RAG system, optionally enhanced with reranking or hybrid search to improve retrieval accuracy.
+
+**Relationship-Aware Queries**
+
+Are users asking, “How many Iris species are in the dataset?”
+
+-> You need the structural mapping of Graph RAG.
+
+Use GraphRAG, which leverages a knowledge graph to retrieve information based on explicit relationships between entities and supports multi-hop reasoning.
+
+**Complex Multi-Step Analysis**
+
+Are users asking, “What are the main morphological characteristics of Iris virginica?“
+
+-> You must implement Agentic RAG.
+
+Use Agentic RAG, where multiple AI agents collaborate to plan, retrieve, evaluate, reason over multiple information sources, and generate a response.
+
+**Evaluate Latency and Cost constraints:**
+
+If you are building a real-time customer-facing chatbot, the high latency and token costs of RAG can quickly become excessive.
+
+In these scenarios, highly optimized RAG or Graph RAG architectures are preferable.
 
 ## Agentic AI and GraphRAG
 
 Agentic AI utilizes Graph retrieval-augmented generation to move beyond simple question-answering by using the structural connections and entities in a knowledge graph to dynamically plan, trigger, and execute complex workflows.
 
-### Why make GraphRAG agentic?
+### Why make GraphRAG Agentic?
 
 While GraphRAG is great, it has one flaw: rigidity.
 
@@ -255,53 +296,21 @@ For example, instead of always relying on vector search, an agent might use a gr
 
 When a user submits a complex query, an orchestrator agent breaks the query down into smaller tasks. It then decides which tools to use – querying a vector database, calling an external API, checking a CRM, or executing a Python script.
 
-Flexibility: Agents aren’t tied to one approach—they select the best tool or algorithm for the task.
+- Flexibility: Agents aren’t tied to one approach—they select the best tool or algorithm for the task.
 
-Autonomy: Once set up, the system operates independently, requiring minimal human intervention.
+- Autonomy: Once set up, the system operates independently, requiring minimal human intervention.
 
-Error handling: Feedback loops allow agents to dynamically retry, diagnose issues, and recover from failures.
+- Error handling: Feedback loops allow agents to dynamically retry, diagnose issues, and recover from failures.
 
 GraphRAG systems hard-code pipelines for data retrieval. This is great for simple use cases but limiting for complex, evolving scenarios.
 
-### GraphRAG vs Agentic GraphRAG
+### Agentic AI Decision Making
 
-| Feature | GraphRAG | Agentic GraphRAG |
-|-------------|---------------|---------------|
-| Retrieval mechanism | Graph traversal (Nodes and Edges) | Autonomous multi-step orchestration |
-| Implementation | Requires ontology and data structuring | Requires agent orchestration and tool integration |
-| Query complexity  | Relational, multi-hop queries | Open-ended problem solving |
-| Vulnerability | Garbage In, Garbage Out | High latency, infinite loops without guardrails |
-| Use Cases | Static data structuring, relationship queries, and analytical tasks | Multi-step reasoning, dynamic troubleshooting, and tool-driven workflows |
+1. Multi-Hop reasoning for Complex Decisions:
 
-### Building an Agentic GraphRAG
+Standard vector search can only match text chunks based on semantic similarity; it cannot string together a sequence of connected facts. GraphRAG allows the agent to traverse relationships (e.g., Specimen → MeasurementGroup → CharacteristicType → Species → Genus). (See [VISUAL_DIAGRAM.md](VISUAL_DIAGRAM.md) for detailed relationship patterns)
 
-Building an Agentic GraphRAG system involves creating a pipeline of agents, each responsible for a specific step in the process.
-
-Assess your Query complexity:
-
-Are your users asking straightforward questions like, “What is the company travel policy?”
-
--> Start with RAG (enhanced with basic reranking or hybrid search).
-
-Are users asking, “Which enterprise clients are impacted by the outage of Server X?”
-
--> You need the structural mapping of Graph RAG.
-
-Are users asking, “Analyze Q3 market trends, cross-reference our top 5 competitor filings, and draft a strategic response plan?”
-
--> You must implement Agentic RAG.
-
-Evaluate Latency and Cost constraints:
-
-If you are building a real-time customer-facing chatbot, the high latency and token costs of Agentic RAG can quickly become excessive.
-
-In these scenarios, highly optimized RAG or Graph RAG architectures are preferable.
-
-1. Multi-Hop reasoning for Complex decisions:
-
-Standard vector search can only match text chunks based on semantic similarity; it cannot string together a sequence of connected facts. GraphRAG allows the agent to traverse relationships (e.g., Employee -> Project -> Client -> Vendor).
-
-The Action: The agent can logically deduce dependencies before taking an action. For instance, before approving an invoice, the agent traces the graph to verify the corresponding vendor, cross-reference the active contract, and check for pending deliverables.
+The Action: The agent can logically deduce dependencies before taking an action. For instance, when classifying an Iris specimen, the agent traces the graph to verify measurements, cross-reference characteristic types, and confirm species classification based on trait patterns.
 
 2. Precise Tool selection & Parameter passing:
 
@@ -313,9 +322,9 @@ The integration of GraphRAG transforms an agent's capability into an agentic wor
 
 The first agent analyzes the user query and determines its type. For example:
 
-Retrieval questions involve direct lookups, such as “What is a dollar?”
+Retrieval questions involve direct lookups, such as “What are the morphological characteristics of Iris setosa?”
 
-Structured questions explore relationships, like “Is dollar related to stock market trends?”
+Structured questions explore relationships, like “Are petal measurements related to species classification patterns?”
 
 Global queries analyze trends such as “What are the top 10 most important nodes?”
 
@@ -334,6 +343,16 @@ If a tool fails (e.g., due to a misconfigured query or missing data), the agent 
 5. Response
 
 The processed data is returned to the user as a meaningful answer.
+
+### GraphRAG vs Agentic GraphRAG
+
+| Feature | GraphRAG | Agentic GraphRAG |
+|-------------|---------------|---------------|
+| Retrieval mechanism | Graph traversal (Nodes and Edges) | Autonomous multi-step orchestration |
+| Implementation | Requires ontology and data structuring | Requires agent orchestration and tool integration |
+| Query complexity  | Relational, multi-hop queries | Open-ended problem solving |
+| Vulnerability | Garbage In, Garbage Out | High latency, infinite loops without guardrails |
+| Use Cases | Static data structuring, relationship queries, and analytical tasks | Multi-step reasoning, dynamic troubleshooting, and tool-driven workflows |
 
 ## Building Samples
 
@@ -436,7 +455,7 @@ This script demonstrates a basic RAG pipeline:
 python scripts/rag/rag_app.py
 ```
 
-The script will query: "What are the morphological characteristics of Iris setosa?" and return an answer based on retrieved context from the Iris dataset.
+The script will query: “What are the morphological characteristics of Iris setosa?“ and return an answer based on retrieved context from the Iris dataset.
 
 **Streamlit Chat Interface (app.py)**
 
@@ -459,9 +478,9 @@ streamlit run scripts/rag/app.py
 Your browser will open to http://localhost:8501 where you can interact with the Iris dataset through a conversational interface.
 
 **Example Questions:**
-- "What are the characteristics of Iris setosa?"
-- "What is the typical petal length for Iris virginica?"
-- "How do the three Iris species differ in their morphological measurements?"
+- “What are the characteristics of Iris setosa?“
+- “What is the typical petal length for Iris virginica?“
+- “How do the three Iris species differ in their morphological measurements?“
 
 ### GraphRAG
 
@@ -627,7 +646,7 @@ graph TB
 
 **Before Running the Script:**
 
-**Activate Virtual Environment** (Critical Step):
+**Activate Virtual Environment**:
 ```bash
 cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/graph
 source venv/bin/activate  # On Linux/Mac
@@ -673,7 +692,7 @@ The sepals are generally 5.0 cm in length and 3.5 cm in width. This species
 is easily distinguishable from versicolor and virginica due to its compact
 petal dimensions.
 
-You: How many species are in the dataset?
+You: How many Iris species are in the dataset?
 Thinking...
 
 AI: The dataset contains three distinct Iris species: setosa, versicolor,
@@ -1115,7 +1134,7 @@ Activate Virtual Environment
 
 source .venv/bin/activate
 
-Ollama: Ensure you have Ollama installed and a capable model (e.g., llama3.1:8b) pulled via ollama 
+Ollama: Ensure you have Ollama installed and a capable model (e.g., llama3.1:8b) pulled via ollama
 
 pull llama3.1:8b.
 
@@ -1310,16 +1329,961 @@ Example query: "How many DocumentChunk nodes exist in the database and what spec
 
 GraphRAG application involves generating Cypher query language with the LLM.
 
+## Multi-Hop Reasoning for Iris Dataset
+
+In traditional RAG, finding [multi-hop answers](https://neo4j.com/blog/genai/knowledge-graph-llm-multi-hop-reasoning/) is difficult because the system relies on semantic similarity, which often retrieves isolated text chunks rather than connected facts.
+
+**Iris Dataset Equivalent:** `Specimen → MeasurementGroup → CharacteristicType → Species → Genus`
+
+This multi-hop structure allows your GraphRAG agent to:
+- Traverse from individual specimens to taxonomic classification
+- Make complex decisions based on interconnected data
+- Discover patterns across multiple relationship levels
+- Provide rich contextual reasoning
+
+For a detailed visual representation of the multi-hop relationship pattern, see [VISUAL_DIAGRAM.md](VISUAL_DIAGRAM.md).
+
+---
+
+### Files Created for Multi-Hop Reasoning
+
+#### 1. Core Implementation Files
+
+| File | Purpose |
+|------|---------|
+| `scripts/dataset/load_iris_multihop.py` | Creates the multi-hop graph structure in Neo4j |
+| `scripts/agentic/graphrag/tools_multihop.py` | Provides tools for multi-hop graph queries |
+| `scripts/agentic/graphrag/agents_multihop.py` | Agent that uses multi-hop reasoning |
+
+---
+
+### Single-Hop vs Multi-Hop
+
+Single-hop and multi-hop reasoning describe how a Large Language Model (LLM) connected to a Knowledge Graph retrieves information to answer questions or solve problems.
+
+#### Single-Hop
+
+The model directly retrieves the answer using a single connection. It finds a node, follows a single edge to a related node, and arrives at the answer.
+
+#### Multi-Hop
+
+The model connects multiple disconnected pieces of information across the graph. It requires “hopping“ across multiple nodes and edges sequentially to deduce the answer.
+
+#### Before (Single-Hop)
+```
+Measurement → IS_SPECIES → Species
+```
+**Limitation:** Can only answer "What species is this?"
+
+#### After (Multi-Hop)
+```
+Specimen → HAS_MEASUREMENT → MeasurementGroup
+         ↓
+         CATEGORIZED_AS → CharacteristicType
+                         ↓
+                         DEFINES_TRAIT_OF → Species
+                                           ↓
+                                           BELONGS_TO_GENUS → Genus
+```
+**Capability:** Can answer complex questions like:
+- "What are ALL the characteristics and taxonomy of Specimen_0?"
+- "Compare sepal patterns across species"
+- "Find specimens with similar measurements but different species"
+- "Show hierarchical distribution from genus to measurements"
+
+---
+
+## Quick Start for Multi-Hop Reasoning
+
+### Step 1: Activate Environment
+
+```bash
+cd /home/laptop/EXERCISES/AUTONOMOUS/autonomous-artificial-intelligence/graph
+source venv/bin/activate
+```
+
+### Step 2: Ensure Neo4j is Running
+
+```bash
+docker start neo4j-graphrag
+```
+
+Verify at: http://localhost:7474
+
+### Step 3: Load Multi-Hop Graph
+
+```bash
+python scripts/dataset/load_iris_multihop.py
+```
+
+**Expected output:**
+```
+Creating Genus node...
+Creating Species nodes...
+Creating CharacteristicType nodes...
+Creating MeasurementGroup nodes...
+Creating Specimen nodes with measurements...
+
+======================================================================
+Multi-hop Iris Graph created successfully!
+======================================================================
+
+Graph Statistics:
+  Specimen: 150 nodes
+  MeasurementGroup: 36 nodes
+  CharacteristicType: 6 nodes
+  Species: 3 nodes
+  Genus: 1 node
+
+Relationship Statistics:
+  HAS_MEASUREMENT: 600 relationships
+  CATEGORIZED_AS: 36 relationships
+  DEFINES_TRAIT_OF: 6 relationships
+  BELONGS_TO_GENUS: 3 relationships
+```
+
+### Step 4: Test in Neo4j Browser
+
+Visit http://localhost:7474 and run:
+
+```cypher
+// Visualize a multi-hop path
+MATCH path = (sp:Specimen {id: 'Specimen_0'})
+             -[:HAS_MEASUREMENT*1..4]->()
+RETURN path
+LIMIT 25
+```
+
+### Step 5: Run the Multi-Hop Agent
+
+```bash
+cd scripts/agentic/graphrag
+python agents_multihop.py
+```
+
+**Try these questions:**
+- `What are all characteristics of Specimen_0?`
+- `Compare sepal characteristics across all species`
+- `Find specimens with similar petal patterns but different species`
+- `Which setosa specimens have large petal characteristics?`
+- `Show me the distribution of measurements`
+
+---
+
+### Example Multi-Hop Query Results
+
+#### Question: "What are all characteristics of Specimen_0?"
+
+**Agent traverses 5 hops:**
+```
+Specimen_0 → Measurements → Characteristic Types → Species → Genus
+```
+
+**Result:**
+```
+=== Full Analysis of Specimen_0 ===
+Species: setosa (Genus: Iris)
+
+Raw Measurements:
+  Sepal Length: 5.1 cm (Large - SepalCharacteristics)
+  Sepal Width: 3.5 cm (Large - SepalCharacteristics)
+  Petal Length: 1.4 cm (Small - PetalCharacteristics)
+  Petal Width: 0.2 cm (Small - PetalCharacteristics)
+
+Taxonomic Context:
+  → Part of SepalCharacteristics trait group
+  → Part of PetalCharacteristics trait group
+  → Classified as species: setosa
+  → Belongs to genus: Iris (family: Iridaceae)
+```
+
+**Why this matters:** The agent doesn't just return measurements—it provides:
+- Size categorizations (Small/Medium/Large)
+- Characteristic groupings (Sepal vs Petal traits)
+- Species classification
+- Full taxonomic hierarchy
+
+---
+
+#### Iris Dataset Domain
+```
+Specimen (individual flower)
+  ↓ HAS_MEASUREMENT
+MeasurementGroup (categorized measurements)
+  ↓ CATEGORIZED_AS
+CharacteristicType (morphological traits)
+  ↓ DEFINES_TRAIT_OF
+Species (taxonomic classification)
+  ↓ BELONGS_TO_GENUS
+Genus (higher taxonomy)
+```
+
+**Questions answerable:**
+- "What genus does this specimen ultimately belong to?"
+- "How many specimens have large petal characteristics for each species?"
+- "Find specimens with similar measurements across different species"
+
+**Same pattern, different domain**
+
+---
+
+### Example Queries for Each Hop Level
+
+#### 1-Hop Query (Simple)
+```cypher
+MATCH (sp:Specimen {id: 'Specimen_0'})-[:HAS_MEASUREMENT]->(mg)
+RETURN sp, mg
+```
+**Returns:** Specimen and its direct measurements
+
+#### 2-Hop Query (Categorization)
+```cypher
+MATCH (sp:Specimen {id: 'Specimen_0'})
+      -[:HAS_MEASUREMENT]->(mg)
+      -[:CATEGORIZED_AS]->(ct)
+RETURN sp, mg, ct
+```
+**Returns:** Specimen, measurements, and characteristic types
+
+#### 3-Hop Query (Species Context)
+```cypher
+MATCH (sp:Specimen {id: 'Specimen_0'})
+      -[:HAS_MEASUREMENT]->(mg)
+      -[:CATEGORIZED_AS]->(ct)
+      -[:DEFINES_TRAIT_OF]->(s)
+RETURN sp, mg, ct, s
+```
+**Returns:** Specimen through to species classification
+
+#### 4-Hop Query (Full Taxonomy)
+```cypher
+MATCH path = (sp:Specimen {id: 'Specimen_0'})
+             -[:HAS_MEASUREMENT]->(mg)
+             -[:CATEGORIZED_AS]->(ct)
+             -[:DEFINES_TRAIT_OF]->(s)
+             -[:BELONGS_TO_GENUS]->(g)
+RETURN sp, mg, ct, s, g, length(path)
+```
+**Returns:** Complete specimen analysis with full taxonomic context
+
+---
+
+### Practical Use Cases for Multi-Hop Reasoning
+
+#### 1. Classification Assistant
+**Question:** "Based on measurements (sepal: 6.5×3.0, petal: 5.5×2.0), what species?"
+
+**Multi-hop reasoning:**
+1. Categorize measurements → Large petal, Large sepal
+2. Traverse to CharacteristicType → PetalCharacteristics
+3. Find species patterns → 88% of virginica have large petals
+4. Confirm with hierarchy → Genus Iris, typical patterns
+5. **Answer:** "Most likely virginica (high confidence)"
+
+#### 2. Anomaly Detection
+**Question:** "Find specimens that don't match typical patterns for their species"
+
+**Multi-hop reasoning:**
+1. Aggregate typical patterns per species
+2. Compare individual specimens to species norms
+3. Traverse characteristic types to identify outliers
+4. **Answer:** "Specimen_X has small petals but is classified as virginica (unusual)"
+
+#### 3. Comparative Analysis
+**Question:** "What distinguishes setosa from the other species?"
+
+**Multi-hop reasoning:**
+1. Traverse all specimens of each species
+2. Aggregate measurement patterns
+3. Compare across characteristic types
+4. **Answer:** "Setosa has consistently small petals (100%) while versicolor/virginica have medium/large (>90%)"
+
+---
+
+### Testing Your Multi-Hop Implementation
+
+- Run `load_iris_multihop.py`
+
+- Use `agents_multihop.py` interactively
+
+#### Test 1: Verify Graph Structure
+```bash
+python -c "
+from neo4j import GraphDatabase
+driver = GraphDatabase.driver('bolt://localhost:7687', auth=('neo4j', 'your_password'))
+with driver.session() as session:
+    result = session.run('MATCH (n) RETURN labels(n)[0] as type, count(n) as count')
+    for record in result:
+        print(f'{record[\"type\"]}: {record[\"count\"]} nodes')
+"
+```
+
+**Expected output:**
+```
+Specimen: 150 nodes
+MeasurementGroup: 36 nodes
+CharacteristicType: 6 nodes
+Species: 3 nodes
+Genus: 1 node
+```
+
+#### Test 2: Run a Multi-Hop Query
+```bash
+python -c "
+from tools_multihop import query_multihop_relationships
+result = query_multihop_relationships.invoke({'question': 'What are all characteristics of Specimen_0?'})
+print(result)
+"
+```
+
+#### Test 3: Interactive Agent Session
+```bash
+cd scripts/agentic/graphrag
+python agents_multihop.py
+```
+
+---
+
+## Multi-Hop vs Single-Hop: Comparison for Iris Dataset
+
+---
+
+### **Single-Hop (Original Implementation)**
+```
+Measurement → IS_SPECIES → Species
+```
+
+**Limitations:**
+- Can only answer: "What species does this measurement belong to?"
+- No hierarchical context
+- No comparative analysis capability
+- No pattern discovery across categories
+
+### **Multi-Hop (Enhanced Implementation)**
+```
+Specimen → HAS_MEASUREMENT → MeasurementGroup → CATEGORIZED_AS → CharacteristicType → DEFINES_TRAIT_OF → Species → BELONGS_TO_GENUS → Genus
+```
+
+**Capabilities:**
+- Full taxonomic context (specimen to genus)
+- Hierarchical aggregation
+- Cross-species pattern comparison
+- Categorized measurement analysis
+- Complex filtering across multiple levels
+
+---
+
+### Graph Schema Comparison
+
+#### Single-Hop Schema (Original)
+
+```
+┌─────────────┐         ┌─────────┐
+│ Measurement │────────>│ Species │
+└─────────────┘         └─────────┘
+   IS_SPECIES
+```
+
+**Entities:**
+- Measurement (150 nodes)
+- Species (3 nodes)
+
+**Relationships:**
+- IS_SPECIES (150 edges)
+
+#### Multi-Hop Schema
+
+Iris:      Specimen → MeasurementGroup → CharacteristicType → Species → Genus
+           └────────────────────────────────────────────────────────────────┘
+                           5 relationship levels
+
+
+```
+┌──────────┐  HAS_MEASUREMENT   ┌──────────────────┐  CATEGORIZED_AS  ┌────────────────────┐
+│ Specimen │───────────────────>│ MeasurementGroup │────────────────> │ CharacteristicType │
+└──────────┘                    └──────────────────┘                  └────────────────────┘
+                                                                                 │
+                                                                                 │ DEFINES_TRAIT_OF
+                                                                                 │
+    ┌───────┐  BELONGS_TO_GENUS  ┌─────────┐                                     │
+    │ Genus │<───────────────────│ Species │<────────────────────────────────────┘
+    └───────┘                    └─────────┘
+```
+
+**Entities:**
+- Specimen (150 nodes) - individual flower samples
+- MeasurementGroup (~36 nodes) - categorized measurements (type × size × species)
+- CharacteristicType (6 nodes) - SepalCharacteristics × 3 species, PetalCharacteristics × 3 species
+- Species (3 nodes) - setosa, versicolor, virginica
+- Genus (1 node) - Iris
+
+**Relationships:**
+- HAS_MEASUREMENT (600 edges: 150 specimens × 4 measurements)
+- CATEGORIZED_AS (~36 edges)
+- DEFINES_TRAIT_OF (6 edges)
+- BELONGS_TO_GENUS (3 edges)
+
+### Node Hierarchy
+```
+Level 5: Genus (1 node)
+           │
+           ├─ Iris (family: Iridaceae)
+           │
+Level 4: Species (3 nodes)
+           │
+           ├─ setosa
+           ├─ versicolor
+           └─ virginica
+           │
+Level 3: CharacteristicType (6 nodes)
+           │
+           ├─ SepalCharacteristics × 3 species
+           └─ PetalCharacteristics × 3 species
+           │
+Level 2: MeasurementGroup (36 nodes)
+           │
+           ├─ 4 measurement types
+           ├─ 3 size categories (Small/Medium/Large)
+           └─ 3 species
+           │
+Level 1: Specimen (150 nodes)
+           │
+           └─ Individual flower samples with measurements
+```
+
+### Relationship Types
+```
+1. HAS_MEASUREMENT: Specimen → MeasurementGroup (600 edges)
+2. CATEGORIZED_AS: MeasurementGroup → CharacteristicType (36 edges)
+3. DEFINES_TRAIT_OF: CharacteristicType → Species (6 edges)
+4. BELONGS_TO_GENUS: Species → Genus (3 edges)
+
+Total: 645 relationships enabling multi-hop traversal
+```
+---
+
+### Query Complexity Comparison
+
+#### Question: "Tell me about Specimen_0"
+
+##### Single-Hop Query
+```cypher
+MATCH (m:Measurement)-[:IS_SPECIES]->(s:Species)
+WHERE m.specimen_id = 'Specimen_0'
+RETURN m.sepal_length, m.sepal_width, m.petal_length, m.petal_width, s.name
+```
+
+**Result:**
+```
+sepal_length: 5.1, sepal_width: 3.5, petal_length: 1.4, petal_width: 0.2, species: setosa
+```
+
+**Context provided:** Just measurements and species name
+
+##### Multi-Hop Query
+```cypher
+MATCH path = (sp:Specimen {id: 'Specimen_0'})
+             -[:HAS_MEASUREMENT]->(mg:MeasurementGroup)
+             -[:CATEGORIZED_AS]->(ct:CharacteristicType)
+             -[:DEFINES_TRAIT_OF]->(s:Species)
+             -[:BELONGS_TO_GENUS]->(g:Genus)
+RETURN sp, mg, ct, s, g, length(path) as hops
+```
+
+**Result:**
+```
+=== Full Analysis of Specimen_0 ===
+Species: setosa (Genus: Iris)
+
+Raw Measurements:
+  Sepal Length: 5.1 cm
+  Sepal Width: 3.5 cm
+  Petal Length: 1.4 cm
+  Petal Width: 0.2 cm
+
+Categorized Measurements:
+  sepal length (cm): Large (SepalCharacteristics)
+  sepal width (cm): Large (SepalCharacteristics)
+  petal length (cm): Small (PetalCharacteristics)
+  petal width (cm): Small (PetalCharacteristics)
+
+Path Length: 4 hops
+```
+
+**Context provided:**
+- Raw measurements
+- Size categorizations (Small/Medium/Large)
+- Characteristic groupings (Sepal vs Petal)
+- Species classification
+- Taxonomic hierarchy (Genus)
+- Relationship path length
+
+---
+
+### Complex Reasoning Examples
+
+#### Example 1: Cross-Species Comparison
+
+**Question:** "Compare petal characteristics across all species"
+
+##### Single-Hop Approach (Not Possible)
+```
+❌ Cannot be answered with single-hop graph
+   Requires aggregation across multiple specimens and grouping by characteristics
+```
+
+##### Multi-Hop Approach (Possible)
+```cypher
+MATCH (sp:Specimen)-[:HAS_MEASUREMENT]->(mg:MeasurementGroup)
+      -[:CATEGORIZED_AS]->(ct:CharacteristicType {name: 'PetalCharacteristics'})
+      -[:DEFINES_TRAIT_OF]->(s:Species)
+RETURN s.name as species,
+       mg.size as size,
+       count(sp) as count,
+       avg(sp.petal_length) as avg_length
+ORDER BY s.name, mg.size
+```
+
+**Result:**
+```
+=== Species Comparison ===
+
+setosa:
+  PetalCharacteristics - Small: 50 specimens (avg length: 1.46 cm)
+
+versicolor:
+  PetalCharacteristics - Medium: 48 specimens (avg length: 4.26 cm)
+  PetalCharacteristics - Large: 2 specimens (avg length: 5.1 cm)
+
+virginica:
+  PetalCharacteristics - Medium: 6 specimens (avg length: 5.2 cm)
+  PetalCharacteristics - Large: 44 specimens (avg length: 5.55 cm)
+```
+
+**Insight:** Multi-hop reveals that setosa has consistently small petals, while virginica has predominantly large petals.
+
+---
+
+#### Example 2: Pattern Discovery
+
+**Botanical Pattern:**
+```
+Individual Sample → Measurement Category → Trait Group → Classification → Taxonomy
+(Specimen)          (MeasurementGroup)     (CharacteristicType) (Species)  (Genus)
+```
+
+**Question:** "Find specimens with similar measurements but different species"
+
+##### Single-Hop Approach (Not Possible)
+```
+❌ Cannot find cross-species similarities with single-hop graph
+   Requires bidirectional traversal and pattern matching
+```
+
+##### Multi-Hop Approach (Possible)
+```cypher
+MATCH (sp1:Specimen)-[:HAS_MEASUREMENT]->(mg1:MeasurementGroup)
+      -[:CATEGORIZED_AS]->(ct:CharacteristicType)
+      <-[:CATEGORIZED_AS]-(mg2:MeasurementGroup)
+      <-[:HAS_MEASUREMENT]-(sp2:Specimen)
+WHERE sp1.id < sp2.id
+  AND mg1.size = mg2.size
+  AND mg1.type = mg2.type
+  AND sp1.species <> sp2.species
+RETURN sp1.id, sp1.species, sp2.id, sp2.species,
+       mg1.type, mg1.size, ct.name
+LIMIT 10
+```
+
+**Result:**
+```
+=== Specimens with Similar Patterns Across Species ===
+
+Specimen_50 (versicolor) ↔ Specimen_100 (virginica)
+  Shared: sepal width (cm) - Medium (SepalCharacteristics)
+
+Specimen_51 (versicolor) ↔ Specimen_102 (virginica)
+  Shared: petal length (cm) - Large (PetalCharacteristics)
+
+Specimen_52 (versicolor) ↔ Specimen_105 (virginica)
+  Shared: sepal length (cm) - Large (SepalCharacteristics)
+```
+
+**Insight:** Multi-hop enables discovering specimens that share measurement patterns despite being different species.
+
+---
+
+#### Example 3: Hierarchical Aggregation
+
+**Question:** "Show distribution from genus level down to measurements"
+
+##### Single-Hop Approach (Not Possible)
+```
+❌ No hierarchical structure to traverse
+   Cannot aggregate from genus → species → characteristics → measurements
+```
+
+##### Multi-Hop Approach (Possible)
+```cypher
+MATCH (sp:Specimen)-[:HAS_MEASUREMENT]->(mg:MeasurementGroup)
+      -[:CATEGORIZED_AS]->(ct:CharacteristicType)
+      -[:DEFINES_TRAIT_OF]->(s:Species)
+      -[:BELONGS_TO_GENUS]->(g:Genus)
+RETURN g.name as genus,
+       s.name as species,
+       ct.name as characteristic,
+       mg.size as size,
+       count(sp) as count
+ORDER BY g.name, s.name, ct.name, mg.size
+```
+
+**Result:**
+```
+=== Hierarchical Distribution: Genus → Species → Characteristics ===
+
+Genus: Iris
+  Species: setosa
+    SepalCharacteristics:
+      Small: 12 specimens
+      Medium: 23 specimens
+      Large: 15 specimens
+    PetalCharacteristics:
+      Small: 50 specimens
+
+  Species: versicolor
+    SepalCharacteristics:
+      Medium: 32 specimens
+      Large: 18 specimens
+    PetalCharacteristics:
+      Medium: 48 specimens
+      Large: 2 specimens
+
+  Species: virginica
+    SepalCharacteristics:
+      Medium: 18 specimens
+      Large: 32 specimens
+    PetalCharacteristics:
+      Medium: 6 specimens
+      Large: 44 specimens
+```
+
+**Insight:** Multi-hop reveals clear distribution patterns across the taxonomic hierarchy.
+
+---
+
+## Agentic AI Decision Making
+
+### Scenario: "Classification Assistant"
+
+**User Question:** "Based on these measurements (sepal: 6.5cm × 3.0cm, petal: 5.5cm × 2.0cm), what species is this likely to be?"
+
+#### Single-Hop Agent (Limited)
+```
+Agent reasoning:
+1. Search for similar measurements ✓
+2. Find matching species ✓
+
+Response: "This appears to be virginica based on measurement similarity."
+```
+
+**Limitation:** Cannot explain WHY or provide context about characteristic patterns.
+
+#### Multi-Hop Agent
+```
+Agent reasoning:
+1. Categorize measurements:
+   - Sepal length: 6.5cm → Large
+   - Sepal width: 3.0cm → Medium
+   - Petal length: 5.5cm → Large
+   - Petal width: 2.0cm → Medium
+
+2. Multi-hop query to find species with matching patterns:
+   MATCH (sp:Specimen)-[:HAS_MEASUREMENT]->(mg:MeasurementGroup)
+         -[:CATEGORIZED_AS]->(ct:CharacteristicType)
+         -[:DEFINES_TRAIT_OF]->(s:Species)
+   WHERE (mg.type CONTAINS 'petal length' AND mg.size = 'Large')
+     OR (mg.type CONTAINS 'sepal length' AND mg.size = 'Large')
+   RETURN s.name, count(*) as matches
+
+3. Analyze hierarchical patterns:
+   - Large petal length is characteristic of virginica (44/50 specimens)
+   - Combined with large sepal length strengthens the match
+   - Traverse to genus level confirms Iris family traits
+
+Response: "This specimen most likely belongs to Iris virginica.
+
+Reasoning:
+- Large petal length (5.5cm) is strongly characteristic of virginica
+- 88% of virginica specimens have large petal characteristics
+- Large sepal length (6.5cm) is also typical for virginica
+- This pattern matches the PetalCharacteristics → Species relationship
+- Belongs to Genus Iris, family Iridaceae
+
+Confidence: High (based on 44/50 virginica specimens with large petals)"
+```
+
+**Advantage:** Multi-hop agent provides:
+- Categorized reasoning
+- Statistical support
+- Hierarchical context
+- Confidence level based on population patterns
+
+---
+
+## Implementation Comparison
+
+### Setup Complexity
+
+#### Single-Hop Setup
+```python
+# Simple graph creation
+query = """
+UNWIND $records AS record
+MERGE (s:Species {name: record.species})
+CREATE (m:Measurement {
+    sepalLength: record.`sepal length (cm)`,
+    sepalWidth: record.`sepal width (cm)`,
+    petalLength: record.`petal length (cm)`,
+    petalWidth: record.`petal width (cm)`
+})
+CREATE (m)-[:IS_SPECIES]->(s)
+"""
+```
+
+**Lines of code:** ~20
+**Setup time:** 1 minute
+**Graph complexity:** Low
+
+#### Multi-Hop Setup
+```python
+# Complex graph creation with categorization and hierarchy
+# 1. Create Genus
+# 2. Create Species → Genus relationships
+# 3. Create CharacteristicType → Species relationships
+# 4. Create MeasurementGroup → CharacteristicType relationships
+# 5. Create Specimen → MeasurementGroup relationships
+```
+
+**Lines of code:** ~150
+**Setup time:** 5-10 minutes
+**Graph complexity:** High
+
+**Trade-off:** Higher setup complexity yields exponentially more reasoning capability.
+
+---
+
+### Real-World Use Cases
+
+#### Single-Hop Use Cases
+✓ Simple classification
+✓ Basic lookups
+✓ Single-entity queries
+✗ Complex reasoning
+✗ Pattern discovery
+✗ Hierarchical analysis
+
+#### Multi-Hop Use Cases
+✓ Advanced classification with explanation
+✓ Cross-category pattern discovery
+✓ Hierarchical aggregation and rollup
+✓ Anomaly detection
+✓ Comparative analysis
+✓ Decision support with context
+✓ Explainable AI reasoning
+
+---
+
+### Performance
+
+#### Query Performance
+
+##### Single-Hop
+- **Simple query:** 1-5ms
+- **Maximum traversal:** 1 hop
+- **Result set:** Small, predictable
+
+##### Multi-Hop
+- **Simple query:** 2-10ms
+- **Complex query:** 10-50ms
+- **Maximum traversal:** 4-5 hops
+- **Result set:** Can be large, requires LIMIT clauses
+
+**Optimization strategies for multi-hop:**
+- Index on frequently traversed properties (species, size, type)
+- Use LIMIT to control result size
+- Cache common traversal paths
+- Pre-compute aggregations for frequently used patterns
+
+---
+
+### When to Use Each Approach
+
+#### Use Single-Hop When:
+- Simple lookup requirements
+- Direct relationships only
+- Performance (milliseconds matter)
+- Graph structure is minimal
+- No need for contextual reasoning
+
+#### Use Multi-Hop When:
+- Complex decision making required
+- Need hierarchical context
+- Pattern discovery across categories
+- Comparative analysis needed
+- Explainable reasoning is important
+- Rich contextual information enhances LLM responses
+
+---
+
+### Migration Path
+
+#### From Single-Hop to Multi-Hop
+
+**Step 1:** Identify entities that could be decomposed
+```
+Measurement → [MeasurementGroup, CharacteristicType]
+```
+
+**Step 2:** Add hierarchical levels
+```
+Species → Genus
+```
+
+**Step 3:** Create intermediate categorizations
+```
+Raw values → Size categories (Small/Medium/Large)
+```
+
+**Step 4:** Establish new relationships
+```
+Specimen → MeasurementGroup → CharacteristicType → Species → Genus
+```
+
+**Step 5:** Update queries and tools
+```python
+# Old tool
+def query_simple():
+    return "MATCH (m)-[:IS_SPECIES]->(s) RETURN m, s"
+
+# New tool
+def query_multihop():
+    return "MATCH path = (sp)-[*1..4]->() RETURN path"
+```
+
+**Step 6:** Enhance agent reasoning
+```python
+# Old agent: "Use query_simple for all questions"
+# New agent: "Use query_multihop for complex questions requiring context"
+```
+
+---
+
+### Conclusion
+
+1. **Relationship Richness**
+   - Single-hop: `Measurement → Species` (1 relationship type)
+   - Multi-hop: 4 relationship types enabling complex reasoning
+
+2. **Context is Power**
+   - Single-hop provides facts
+   - Multi-hop provides facts + context + patterns + hierarchy
+
+3. **LLM Enhancement**
+   - RAG retrieves text chunks
+   - GraphRAG retrieves connected entities
+   - Multi-hop GraphRAG retrieves **contextual networks**
+
+4. **Botanical Translation**
+   - `Specimen → Measurement → Characteristic → Species → Genus` (botanical)
+
+#### The Multi-Hop Advantage
+
+Multi-hop reasoning transforms your GraphRAG from a **lookup system** into an **intelligent reasoning engine** that can:
+- Traverse complex relationships
+- Aggregate across hierarchies
+- Discover hidden patterns
+- Provide explainable context
+- Support complex decision making
+
+**For the Iris dataset specifically:**
+Instead of just knowing "this flower is setosa with 5.1cm sepal length", the agent understands:
+- This measurement is categorized as "Large" for sepals
+- It's part of SepalCharacteristics trait group
+- It's typical for species setosa (which tends to have large sepals but small petals)
+- Setosa belongs to genus Iris in the Iridaceae family
+- This pattern differentiates it from versicolor and virginica
+
+---
+
+### Key Differences: Single-Hop vs Multi-Hop
+
+| Aspect | Single-Hop | Multi-Hop |
+|--------|-----------|-----------|
+| **Relationships** | 1 type | 4 types |
+| **Traversal depth** | 1 hop | 4-5 hops |
+| **Context richness** | Minimal | Complete |
+| **Decision making** | Simple lookup | Complex reasoning |
+| **Pattern discovery** | ❌ Not possible | ✅ Enabled |
+| **Hierarchical analysis** | ❌ Not possible | ✅ Enabled |
+| **Comparative queries** | ❌ Limited | ✅ Advanced |
+
+---
+
+**Remember:** Multi-hop reasoning is not just about more relationships—it's about enabling your AI agent to think more deeply, reason more thoroughly, and provide richer, more contextual answers.
+
+## Troubleshooting
+
+### Issue: "Connection refused to Neo4j"
+**Solution:**
+```bash
+docker start neo4j-graphrag
+# Wait 10 seconds for startup
+docker logs neo4j-graphrag
+```
+
+### Issue: "Empty results from queries"
+**Solution:**
+```bash
+# Verify graph was loaded
+python scripts/dataset/load_iris_multihop.py
+```
+
+### Issue: "ModuleNotFoundError"
+**Solution:**
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Issue: "Agent not using multi-hop tool"
+**Check:** Make sure you're running `agents_multihop.py`, not the original `agents.py`
+
+---
+
+**Multi-hop reasoning transforms your GraphRAG from a simple lookup system into an intelligent reasoning engine.**
+
+Instead of just answering "What is this?", it can answer:
+- "What is this, why is it classified this way, how does it compare to others, and what patterns does it follow?"
+
+---
+
+**Questions?**
+- Check Neo4j Browser: http://localhost:7474
+- Test with `agents_multihop.py` interactive session
+
 ## Project Structure
 
 ```
 graph/
 ├── README.md
-├── document.txt (generated by dataset script)
+├── VISUAL_DIAGRAM.md           # Multi-Hop Reasoning visualization diagrams
+├── document.txt                # Generated by dataset script
 ├── scripts/
 │   ├── dataset/
-│   │   ├── generate_dataset_for_vector_database.py  # Generate Iris dataset
-│   │   └── generate_summary_report.py
+│   │   ├── generate_dataset_for_vector_database.py  # Generate Iris dataset text
+│   │   ├── generate_summary_report.py               # Generate summary reports
+│   │   ├── load_iris.py                             # Load Iris into Neo4j (single-hop)
+│   │   └── load_iris_multihop.py                    # Load Iris into Neo4j (multi-hop)
 │   ├── rag/
 │   │   ├── rag_app.py              # Basic RAG implementation
 │   │   └── app.py                  # Streamlit chat interface for RAG
@@ -1331,12 +2295,20 @@ graph/
 │       │   └── agent_with_rag.py   # Agentic RAG implementation
 │       └── graphrag/
 │           ├── chunk_embed_and-populate.py  # Populate Neo4j vector index
-│           ├── tools.py            # Define vector and graph tools
-│           ├── agents.py           # Build hybrid ReAct agent
-│           ├── vector_search.py    # Test vector search queries
+│           ├── tools.py                     # Define vector and graph tools
+│           ├── tools_multihop.py            # Multi-hop reasoning tools
+│           ├── agents.py                    # Build hybrid ReAct agent
+│           ├── agents_multihop.py           # Multi-hop reasoning agent
+│           ├── vector_search.py             # Test vector search queries
 │           └── structured_cypher_query.py   # Test Cypher queries
 └── venv/  # Python virtual environment
 ```
+
+
+### Documentation
+
+- [README.md](README.md) - Complete project documentation with setup guides and examples
+- [VISUAL_DIAGRAM.md](VISUAL_DIAGRAM.md) - Multi-Hop Reasoning visualization with detailed relationship patterns and node structures
 
 ## References
 
@@ -1358,4 +2330,4 @@ Build a RAG application with LangChain and Local LLMs powered by Ollama https://
 
 **License**: MIT
 
-**Last Updated**: June 27, 2026
+**Last Updated**: June 29, 2026
