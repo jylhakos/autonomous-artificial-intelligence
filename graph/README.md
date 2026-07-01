@@ -56,7 +56,7 @@ Knowledge Graph (KG) Construction (using an LLM to extract entities/relationship
 
 - Extraction:
 
-The system scans your raw document data. An LLM acts as an extraction mechanism to identity key entities (e.g., "Project Alpha", "Sarah") and their relationships (e.g., "Sarah manages Project Alpha").
+The system scans your raw document data. An LLM acts as an extraction mechanism to identity key entities (e.g., "Specimen_042", "Petal Length") and their relationships (e.g., "Petal Length characterizes Specimen_042").
 
 - Clustering & Summarization:
 
@@ -70,11 +70,11 @@ Large Language Models (LLMs) cannot process a giant knowledge graph all at once.
 
 - Local Search:
 
-For entity-specific queries (e.g., "What did Sarah work on?"), the system pinpoints the "Sarah" node and pulls all adjacent data connected via its edges.
+For entity-specific queries (e.g., "What measurements characterize Specimen_042?"), the system pinpoints the "Specimen_042" node and pulls all adjacent data connected via its edges.
 
 - Global Search:
 
-For global, macro questions (e.g., "What were our biggest logistical risks in Q3?"), the retriever bypasses isolated text chunks and searches across the pre-compiled community summaries to form an aggregate answer.
+For global, macro questions (e.g., "What are the key morphological features distinguishing Iris setosa?"), the retriever bypasses isolated text chunks and searches across the pre-compiled community summaries to form an aggregate answer.
 
 Generation: The structured context is added to the prompt, forcing the LLM to output a grounded, accurate response.
 
