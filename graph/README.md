@@ -78,6 +78,27 @@ For global, macro questions (e.g., "What are the key morphological features dist
 
 Generation: The structured context is added to the prompt, forcing the LLM to output a grounded, accurate response.
 
+**morphological features**
+
+In the context of the Iris dataset, morphological refers to the *physical form and structure of the flowers*.
+
+For the Iris dataset, the morphological characteristics are the four measured features:
+
+- Sepal length
+- Sepal width
+- Petal length
+- Petal width
+
+These measurements describe the physical appearance of each flower and are used to distinguish among the three Iris species.
+
+Therefore, the sentence:
+
+*Morphological characteristics of Iris *virginica*
+
+means:
+
+*The physical characteristics (shape and size measurements) of Iris virginica.*
+
 ### How GraphRAG improves retrieval?
 
 GraphRAG solves "Multi-Hop" problems: If a query requires connecting relevant details across document A, B, and C (e.g., "Find all Iris specimens with large petal measurements that belong to the setosa species"), GraphRAG seamlessly steps across edges to chain the facts together.
