@@ -531,11 +531,13 @@ Open http://localhost:7474 in your browser to inspect your graph. Log in with us
 
 Ensure you have the official Neo4j driver and the experimental LangChain graph components installed inside your virtual environment
 
+```
+
 pip install neo4j langchain-experimental
 
-**Install GraphRAG**
+```
 
-Setting up a local AI environment to analyze the Iris dataset involves connecting local Ollama (Llama 3.2) to Open WebUI, and using a Python integration layer to query your Neo4j database. Open WebUI handles the chat inference, while Python translates natural language to Cypher for Neo4j.
+**Install GraphRAG**
 
 Note: If you use Microsoft's GraphRAG package, you will also install it via pip install graphrag
 
@@ -699,9 +701,111 @@ AI: The dataset contains three distinct Iris species: setosa, versicolor,
 and virginica.
 ```
 
-**Connecting Open WebUI with Local Ollama and Neo4j**
+**Connecting Open WebUI with local Ollama and Neo4j**
+
+Setting up Open WebUI with Ollama and Neo4j involves running your LLM locally, connecting Neo4j via an [OpenAPI or MCP Tool Server](https://docs.openwebui.com/features/extensibility/plugin/tools/openapi-servers/open-webui/), and providing a data schema prompt so the LLM can process the Iris dataset relationships.
+
+
+**Install local Ollama and Open WebUI**
+
+Setting up a local AI environment to analyze the Iris dataset involves connecting local Ollama (Llama 3.2) to Open WebUI, and using a Python integration layer to query your Neo4j database. Open WebUI handles the chat inference, while Python translates natural language to Cypher for Neo4j.
+
+**Set Up local Ollama and Llama 3.2**
+
+Install and Run Ollama: Download and install Ollama for your OS.
+
+Start the Server: Open your terminal and run ollama serve.
+
+Download Llama 3.2: In a separate terminal window, pull the model by executing ollama pull llama3.2.
+
+
+**Set Up Open WebUI**
+
+Launch via Docker: If you have Docker Desktop installed, launch Open WebUI and link it to your local Ollama port by running:
+
+```
+
+docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
+
+```
+
+Access the Open WebUI: Open your browser and navigate to http://localhost:3000 to create a local admin account.
+
+**Connect Neo4j as a Tool for Open WebUI**
+
+To allow the LLM to write and execute Cypher queries on the Iris dataset, you need to expose your Neo4j database to Open WebUI using an API tool server:
+
+Clone the Tool Server:
+
+In your terminal, clone the official reference Open WebUI tool server or use the Neo4j MCP server if available:
+
+```
+
+git clone https://github.com/open-webui/openapi-servers
+
+cd openapi-servers/servers/database
+
+
+```
+
+Install & Run:
+
+Install dependencies (pip install -r requirements.txt) and start the server (e.g., uvicorn main:app --host 0.0.0.0 --reload).
+
+Add Tool in WebUI: Go to Settings > Tools in Open WebUI and add your local tool server URL (e.g., http://localhost:8000).
+
+**Map Iris Relationships and Prompt the AI**
+
+Define the Schema: Provide your Llama 3.2 model with context about the Iris dataset (Sepal Length, Petal Width, Species)
+
+**Create System Prompt:**
+
+In Open WebUI, click your profile, go to Models, and set the System Prompt to something like:
+
+```
+
+"Translate natural language questions about the Iris dataset into Neo4j Cypher queries. The graph contains nodes for IrisFlower, Species, and their respective properties."
+
+```
+
+**Query your graph data with natural language:**
+
+Ask Llama 3.2 questions like, "Show me the relationships of Iris flowers that share a Petal Width of 0.2cm."
 
 To create a complete local AI environment for querying the Iris dataset through a web interface, you'll connect Open WebUI (user interface) → Ollama (LLM inference) → Python GraphRAG script → Neo4j (graph database).
+
+```mermaid
+graph TB
+    A[Open WebUI]
+    B[Ollama]
+    C[Neo4j MCP Server]
+    D{LLM}
+    E[Tools]
+    F[read-neo4j-cypher]
+    G[write-neo4j-cypher]
+    H[get-neo4j-schema]
+    
+    A -->|connects to| B
+    A -->|interacts with| D
+    B -->|hosts| C
+    B -->|hosts| D
+    D -->|uses| E
+    C -->|hosts| E
+    E -->|one| F
+    E -->|two| G
+    E -->|three| H
+    
+    style A fill:#e1e1ff
+    style B fill:#e1e1ff
+    style C fill:#e1e1ff
+    style D fill:#e1e1ff
+    style E fill:#e1e1ff
+    style F fill:#e1e1ff
+    style G fill:#e1e1ff
+    style H fill:#e1e1ff
+```
+
+Figure: The query system consists of Docker containerized components
 
 **Architecture Overview:**
 
@@ -2330,4 +2434,4 @@ Build a RAG application with LangChain and Local LLMs powered by Ollama https://
 
 **License**: MIT
 
-**Last Updated**: June 29, 2026
+**Last Updated**: July 1, 2026
