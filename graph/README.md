@@ -52,17 +52,29 @@ Building GraphRAG pipeline involves two major phases:
 
 Knowledge Graph (KG) Construction (using an LLM to extract entities/relationships from text and storing them) and Graph Retrieval & Generation (querying the database using vector math combined with graph steps).
 
-1. Indexing (Graph Creation):
+**1. Indexing (Graph Creation)**
 
-Extraction: The system scans your raw document data. An LLM acts as an extraction mechanism to identity key entities (e.g., "Project Alpha", "Sarah") and their relationships (e.g., "Sarah manages Project Alpha").
+- Extraction:
 
-Clustering & Summarization: Frameworks like Microsoft's GraphRAG partition these interconnected nodes into "communities" using algorithms like Leiden. The LLM then pre-writes summaries for these broader groups.
+The system scans your raw document data. An LLM acts as an extraction mechanism to identity key entities (e.g., "Project Alpha", "Sarah") and their relationships (e.g., "Sarah manages Project Alpha").
 
-2. Querying (Retrieval & Generation):
+- Clustering & Summarization:
 
-Local Search: For entity-specific queries (e.g., "What did Sarah work on?"), the system pinpoints the "Sarah" node and pulls all adjacent data connected via its edges.
+Frameworks like Microsoft's GraphRAG partition these interconnected nodes into "communities" using algorithms like Leiden. The LLM then pre-writes summaries for these broader groups.
 
-Global Search: For holistic, macro questions (e.g., "What were our biggest logistical risks in Q3?"), the retriever bypasses isolated text chunks and searches across the pre-compiled community summaries to form an aggregate answer.
+Leiden is a fast and highly efficient mathematical algorithm used to group large, complex networks (knowledge graphs) into neat clusters called "communities".
+
+Large Language Models (LLMs) cannot process a giant knowledge graph all at once. By partitioning the graph into communities using Leiden, Microsoft's GraphRAG can summarize each community individually, allowing the AI to understand the global structure of your data as a whole rather than just pulling disconnected text snippets.
+
+**2. Querying (Retrieval & Generation)**
+
+- Local Search:
+
+For entity-specific queries (e.g., "What did Sarah work on?"), the system pinpoints the "Sarah" node and pulls all adjacent data connected via its edges.
+
+- Global Search:
+
+For global, macro questions (e.g., "What were our biggest logistical risks in Q3?"), the retriever bypasses isolated text chunks and searches across the pre-compiled community summaries to form an aggregate answer.
 
 Generation: The structured context is added to the prompt, forcing the LLM to output a grounded, accurate response.
 
@@ -543,7 +555,11 @@ To get started, create a project space and python virtual environment to install
 
 **Activate virtual environment**
 
+```
+
 source .venv/bin/activate
+
+```
 
 **Install the required dependencies**
 
