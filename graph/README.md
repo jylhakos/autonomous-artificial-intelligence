@@ -78,7 +78,7 @@ For global, macro questions (e.g., "What are the key morphological features dist
 
 Generation: The structured context is added to the prompt, forcing the LLM to output a grounded, accurate response.
 
-**morphological features**
+*morphological features*
 
 In the context of the Iris dataset, morphological refers to the *physical form and structure of the flowers*.
 
@@ -93,7 +93,7 @@ These measurements describe the physical appearance of each flower and are used 
 
 Therefore, the sentence:
 
-*Morphological characteristics of Iris *virginica*
+*Morphological characteristics of Iris virginica*
 
 means:
 
