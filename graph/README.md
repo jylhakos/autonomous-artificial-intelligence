@@ -244,7 +244,7 @@ Assess your **Query** complexity:
 
 Are your users asking straightforward questions like, “What are the characteristics of Iris setosa?”
 
--> Start with RAG (enhanced with basic reranking or hybrid search).
+→ Start with RAG (enhanced with basic reranking or hybrid search).
 
 Use a traditional RAG system, optionally enhanced with reranking or hybrid search to improve retrieval accuracy.
 
@@ -252,7 +252,7 @@ Use a traditional RAG system, optionally enhanced with reranking or hybrid searc
 
 Are users asking, “How many Iris species are in the dataset?”
 
--> You need the structural mapping of Graph RAG.
+→ You need the structural mapping of Graph RAG.
 
 Use GraphRAG, which leverages a knowledge graph to retrieve information based on explicit relationships between entities and supports multi-hop reasoning.
 
@@ -260,7 +260,7 @@ Use GraphRAG, which leverages a knowledge graph to retrieve information based on
 
 Are users asking, “What are the main morphological characteristics of Iris virginica?“
 
--> You must implement Agentic RAG.
+→ You should implement Agentic RAG.
 
 Use Agentic RAG, where multiple AI agents collaborate to plan, retrieve, evaluate, reason over multiple information sources, and generate a response.
 
@@ -488,6 +488,43 @@ To create a local GraphRAG (Graph-based retrieval-augmented generation) pipeline
 
 To build a [retrieval agent using LangGraph and Neo4j (GraphRAG)](https://neo4j.com/blog/developer/neo4j-graphrag-workflow-langchain-langgraph/), you construct an agentic system that routes queries between structured Cypher query generation and unstructured vector similarity search, combining the results inside a stateful workflow.
 
+**Architecture**
+
+```mermaid
+graph LR
+    subgraph "Frontend"
+        A[Open WebUI<br/>Web Interface<br/>Port 3000]
+    end
+    
+    subgraph "LLM Layer"
+        B[Ollama Server<br/>localhost:11434]
+        C[Llama 3.2 Model]
+    end
+    
+    subgraph "Integration Layer"
+        D[Python Script<br/>graph_rag_chat.py]
+        E[LangChain<br/>GraphQAChain]
+    end
+    
+    subgraph "Database Layer"
+        F[(Neo4j Database<br/>Port 7687/7474)]
+    end
+    
+    A -->|HTTP API Calls| B
+    B -->|Model Inference| C
+    A -->|Custom Functions| D
+    D -->|Cypher Queries| E
+    E -->|Graph Queries| F
+    F -->|Results| E
+    E -->|Context| C
+    C -->|Answers| A
+    
+    style A fill:#4CAF50,color:#fff
+    style B fill:#2196F3,color:#fff
+    style F fill:#FF9800,color:#fff
+    style D fill:#9C27B0,color:#fff
+```
+
 Steps:
 
 Query analysis and routing:
@@ -510,13 +547,22 @@ source .venv/bin/activate
 
 **Install the required dependencies**
 
+
+```
+
 pip install --upgrade pip
 
 pip install langchain langchain-community langchain-ollama chromadb sentence-transformers ollama
 
+
+```
+
 **Run Neo4j with APOC Plugins via Docker**
 
 Neo4j needs the APOC (Awesome Procedures on Cypher) plugin enabled so LangChain can map and structure the knowledge graph correctly.
+
+
+```
 
 docker run \
     -d \
@@ -526,6 +572,9 @@ docker run \
     -e NEO4J_PLUGINS='["apoc"]' \
     -e NEO4J_dbms_security_procedures_unrestricted=apoc.* \
     neo4j:5.20.0
+
+
+```
 
 Open http://localhost:7474 in your browser to inspect your graph. Log in with username neo4j and password password123.
 
@@ -705,7 +754,6 @@ and virginica.
 
 Setting up Open WebUI with Ollama and Neo4j involves running your LLM locally, connecting Neo4j via an [OpenAPI or MCP Tool Server](https://docs.openwebui.com/features/extensibility/plugin/tools/openapi-servers/open-webui/), and providing a data schema prompt so the LLM can process the Iris dataset relationships.
 
-
 **Install local Ollama and Open WebUI**
 
 Setting up a local AI environment to analyze the Iris dataset involves connecting local Ollama (Llama 3.2) to Open WebUI, and using a Python integration layer to query your Neo4j database. Open WebUI handles the chat inference, while Python translates natural language to Cypher for Neo4j.
@@ -717,7 +765,6 @@ Install and Run Ollama: Download and install Ollama for your OS.
 Start the Server: Open your terminal and run ollama serve.
 
 Download Llama 3.2: In a separate terminal window, pull the model by executing ollama pull llama3.2.
-
 
 **Set Up Open WebUI**
 
@@ -805,44 +852,7 @@ graph TB
     style H fill:#e1e1ff
 ```
 
-Figure: The query system consists of Docker containerized components
-
-**Architecture Overview:**
-
-```mermaid
-graph LR
-    subgraph "Frontend"
-        A[Open WebUI<br/>Web Interface<br/>Port 3000]
-    end
-    
-    subgraph "LLM Layer"
-        B[Ollama Server<br/>localhost:11434]
-        C[Llama 3.2 Model]
-    end
-    
-    subgraph "Integration Layer"
-        D[Python Script<br/>graph_rag_chat.py]
-        E[LangChain<br/>GraphQAChain]
-    end
-    
-    subgraph "Database Layer"
-        F[(Neo4j Database<br/>Port 7687/7474)]
-    end
-    
-    A -->|HTTP API Calls| B
-    B -->|Model Inference| C
-    A -->|Custom Functions| D
-    D -->|Cypher Queries| E
-    E -->|Graph Queries| F
-    F -->|Results| E
-    E -->|Context| C
-    C -->|Answers| A
-    
-    style A fill:#4CAF50,color:#fff
-    style B fill:#2196F3,color:#fff
-    style F fill:#FF9800,color:#fff
-    style D fill:#9C27B0,color:#fff
-```
+Figure: Dockerized GraphRAG system architecture. Open WebUI provides the user interface, Ollama hosts the large language model, and Neo4j stores the knowledge graph. User queries are transformed into graph queries to retrieve interconnected entities and relationships before the LLM generates the final response.
 
 **Step 1: Install and Configure Open WebUI**
 
@@ -1195,14 +1205,22 @@ You can also use [Langflow's](https://www.langflow.org/templates/use-langflow-to
 
 Ensure Ollama is running and download the Llama3.2 and Embedding models.
 
+```
+
 ollama pull llama3.2
 ollama pull nomic-embed-text
+
+```
 
 **ChromaDB:**
 
 Run ChromaDB locally in a Docker container with persistent storage:
 
+```
+
 docker run -d -p 8000:8000 -v chroma-data:/chroma/data -e IS_PERSISTENT=TRUE chromadb/chroma
+
+```
 
 **Document Ingestion**
 
@@ -1210,7 +1228,11 @@ Before the agent can query, your text documents must be embedded and stored.
 
 Install the dependencies:
 
+```
+
 pip install langchain langchain-ollama langchain-chroma langgraph
+
+```
 
 Use this Python script in ./scripts/agentic/rag folder to ingest your documents.
 
@@ -1236,21 +1258,37 @@ The latest Neo4j Cypher procedures now support Ollama models via configuring the
 
 Activate Virtual Environment
 
+```
+
 source .venv/bin/activate
+
+```
 
 Ollama: Ensure you have Ollama installed and a capable model (e.g., llama3.1:8b) pulled via ollama
 
+```
+
 pull llama3.1:8b.
+
+```
 
 Neo4j: Have a Neo4j instance running locally or via Neo4j Aura.
 
 Libraries: Install the necessary Python packages:
 
+```
+
 pip install langgraph langchain-ollama langchain-community neo4j-driver
+
+```
 
 Make sure your local Ollama instance has the model pulled:
 
+```
+
 ollama pull llama3.2
+
+```
 
 **Implementation:**
 
