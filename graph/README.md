@@ -12,9 +12,9 @@ This document presents concepts, architectural components, practical use cases a
 - [Use Cases](#use-cases)
   - [When GraphRAG is useful?](#when-graphrag-is-useful)
   - [Example: Customer Support Assistant](#example-customer-support-assistant)
-- [Architectures](#architectures)
+- [Retrieval and Search](#retrieval-and-search)
   - [GraphRAG Architecture](#graphrag-architecture)
-- [Agentic AI and GraphRAG](#agentic-ai-and-graphrag)
+- [How Agentic AI Leverages GraphRAG?](#how-agentic-ai-leverages-graphrag)
   - [Why make GraphRAG agentic?](#why-make-graphrag-agentic)
   - [GraphRAG vs Agentic GraphRAG](#graphrag-vs-agentic-graphrag)
   - [Building an Agentic GraphRAG](#building-an-agentic-graphrag)
@@ -222,10 +222,17 @@ Given your interests in AI agents, RAG, vector databases, and enterprise deploym
 
 Technical support chatbots that connect products, components, manuals, and error codes.
 
-## Architectures
+## Retrieval and Search
 
-For many enterprise AI systems, a common architecture:
+Modern enterprise architectures combine vector databases and knowledge graphs to enable GraphRAG, which integrates semantic retrieval with graph-based reasoning over interconnected data.
 
+**Vector Database**
+
+Unstructured documents (PDFs, emails, wikis) are chunked into smaller segments and converted into high-dimensional numerical embeddings using an embedding model. These are stored in a vector database like Pinecone to allow for semantic similarity searching.
+
+**Knowledge Graph**
+
+Simultaneously, an LLM or Named Entity Recognition (NER) pipeline extracts specific entities (e.g., people, products, departments) and their exact relationships from the documents. These structured facts and connections are stored in a graph database like Neo4j.
 
 ```
                 Documents
@@ -238,9 +245,19 @@ For many enterprise AI systems, a common architecture:
                              LLM
 
 ```
+Figure: When a user asks a question, the system queries both data sources simultaneously to build a context for the LLM.
 
 ### GraphRAG Architecture
 
+GraphRAG is a Retrieval-Augmented Generation pattern that combines vector search (for semantic similarity) with knowledge graphs (for explicit relationships) to give LLMs structured, high-fidelity context.
+
+**Vector Search**
+
+The query is embedded, and the vector database retrieves the most semantically similar text chunks to the user's intent.
+
+**Graph Traversal**
+
+The knowledge graph finds explicitly defined relationships, multi-hop connections, and rules surrounding the entities mentioned in the query.
 
 ```
                 Documents
@@ -303,7 +320,7 @@ If you are building a real-time customer-facing chatbot, the high latency and to
 
 In these scenarios, highly optimized RAG or Graph RAG architectures are preferable.
 
-## Agentic AI and GraphRAG
+## How Agentic AI Leverages GraphRAG?
 
 Agentic AI utilizes Graph retrieval-augmented generation to move beyond simple question-answering by using the structural connections and entities in a knowledge graph to dynamically plan, trigger, and execute complex workflows.
 
@@ -2509,4 +2526,4 @@ Build a RAG application with LangChain and Local LLMs powered by Ollama https://
 
 **License**: MIT
 
-**Last Updated**: July 1, 2026
+**Last Updated**: July 2, 2026
