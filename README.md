@@ -12,6 +12,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
   - [deployment/](#-deployment)
   - [evaluation/](#-evaluation)
   - [fine-tuning/](#-fine-tuning)
+  - [graph/](#-graph)
   - [memory/](#-memory)
   - [models/](#-models)
   - [multi-modal/](#-multi-modal)
@@ -41,6 +42,7 @@ A tutorial for building and managing autonomous AI agents with advanced capabili
 ├── 📂 deployment/          # Production deployment strategies and guides
 ├── 📂 evaluation/          # Agent performance evaluation system
 ├── 📂 fine-tuning/         # LLM fine-tuning with Unsloth, PEFT, LoRA, and QLoRA
+├── 📂 graph/               # Graph RAG and knowledge graphs for relationship-aware retrieval
 ├── 📂 memory/              # Context windows, short-term and long-term agent memory
 ├── 📂 models/              # Machine learning models, LLMs, and local inference server
 ├── 📂 multi-modal/         # Multi-modal LLMs, vision-language models, and AI agent interactions
@@ -221,6 +223,73 @@ Fine-tuning enables autonomous agents to develop specialized behavior encoded di
 - QLoRA - Combines 4-bit quantization of the base model with LoRA adapters, allowing large models (13B-70B) to be fine-tuned on a single consumer GPU
 - Axolotl and LLaMA-Factory - Alternative fine-tuning frameworks covered in the documentation for production and multi-dataset workflows
 - DeepSpeed - Distributed training integration for scaling fine-tuning across multiple GPUs
+
+### 📂 graph/
+
+**Key Points:**
+- Graph Retrieval-Augmented Generation (GraphRAG) combining knowledge graphs with LLMs for relationship-aware retrieval
+- Multi-hop reasoning capability that traverses connected entities and relationships across documents
+- Integration of vector databases (semantic search) with knowledge graphs (explicit relationships) using Neo4j
+- Agentic GraphRAG with autonomous decision-making through specialized agents for query analysis, retrieval, and reasoning
+- Implementation examples using Iris dataset demonstrating entity extraction, graph construction, and multi-hop query patterns
+- Support for both local search (entity-specific queries) and global search (macro-level questions across communities)
+- Community detection using Leiden algorithm for partitioning interconnected nodes and pre-generating summaries
+- Comparison of traditional RAG (flat text chunks) versus GraphRAG (interconnected nodes and edges) architectures
+
+**Importance for Autonomous AI:**
+GraphRAG extends autonomous agents beyond simple fact retrieval into relationship-aware reasoning over interconnected knowledge. Traditional RAG treats every document chunk as isolated, making it impossible to answer queries that require connecting information across multiple sources — "Which Iris specimens have petal length greater than 5cm and what species classifications do they have?" GraphRAG explicitly models entities (specimens, measurements, characteristics, species) and their relationships (has_measurement, characterizes, belongs_to, classified_as) as a traversable graph structure, enabling agents to follow chains of evidence across multiple hops to construct complete answers. For autonomous systems operating in domains like technical support, healthcare, supply chain, or scientific research — where understanding connections between entities is as important as the entities themselves — GraphRAG provides the structural reasoning layer that makes agents genuinely intelligent rather than merely responsive. The agentic extension adds dynamic tool selection, query classification, and feedback loops, allowing agents to autonomously decide whether to use vector search, graph traversal, or external APIs based on query complexity, dramatically improving precision and reducing hallucinations through verifiable relationship paths rather than black-box vector similarity.
+
+**Key Components:**
+- `scripts/dataset/load_iris.py` — Loads Iris dataset and prepares data for knowledge graph construction
+- `scripts/dataset/load_iris_multihop.py` — Multi-hop reasoning dataset with entity relationships for graph traversal examples
+- `scripts/dataset/generate_dataset_for_vector_database.py` — Converts documents into chunks and embeddings for vector database ingestion
+- `scripts/dataset/generate_summary_report.py` — Generates dataset statistics and relationship summaries
+- `scripts/rag/app.py` — Traditional RAG implementation using vector similarity search
+- `scripts/rag/rag_app.py` — Enhanced RAG application with reranking and hybrid search
+- `scripts/graphrag/graph_rag_chat.py` — GraphRAG chat interface combining graph traversal with vector search
+- `scripts/agentic/rag/ingest.py` — Document ingestion pipeline for agentic RAG workflows
+- `scripts/agentic/rag/agent_with_rag.py` — Autonomous agent orchestrating RAG retrieval and response generation
+- `scripts/agentic/graphrag/chunk_embed_and-populate.py` — Entity extraction, embedding generation, and Neo4j graph population
+- `scripts/agentic/graphrag/vector_search.py` — Semantic search implementation for graph-augmented retrieval
+- `scripts/agentic/graphrag/structured_cypher_query.py` — Cypher query generation for Neo4j graph traversal
+- `scripts/agentic/graphrag/agents.py` — Multi-agent orchestration for query classification, retrieval planning, and reasoning
+- `scripts/agentic/graphrag/tools.py` — Tool definitions for graph search, vector search, and external API integration
+- `scripts/agentic/graphrag/agents_multihop.py` — Multi-hop reasoning agents for complex relationship traversal
+- `scripts/agentic/graphrag/tools_multihop.py` — Multi-hop traversal tools for cross-document reasoning
+- `README.md` — Comprehensive guide covering GraphRAG architecture, agentic workflows, multi-hop reasoning, and implementation patterns
+- `VISUAL_DIAGRAM.md` — Visual diagrams showing entity relationships, graph structures, and query patterns
+
+```
+graph/
+├── 📄 README.md                                   GraphRAG architecture and agentic workflows guide
+├── 📄 VISUAL_DIAGRAM.md                           Entity relationship diagrams and query patterns
+├── 📄 document.txt                                Sample document corpus for graph construction
+└── 📂 scripts/
+    ├── 📂 dataset/
+    │   ├── load_iris.py                           Iris dataset loading and preparation
+    │   ├── load_iris_multihop.py                  Multi-hop reasoning dataset with relationships
+    │   ├── generate_dataset_for_vector_database.py  Document chunking and embedding generation
+    │   └── generate_summary_report.py             Dataset statistics and relationship summaries
+    ├── 📂 rag/
+    │   ├── app.py                                 Traditional RAG with vector similarity
+    │   └── rag_app.py                             Enhanced RAG with reranking and hybrid search
+    ├── 📂 graphrag/
+    │   └── graph_rag_chat.py                      GraphRAG chat interface
+    └── 📂 agentic/
+        ├── 📂 rag/
+        │   ├── ingest.py                          Document ingestion pipeline
+        │   └── agent_with_rag.py                  Autonomous RAG agent
+        └── 📂 graphrag/
+            ├── chunk_embed_and-populate.py        Entity extraction and graph population
+            ├── vector_search.py                   Semantic search implementation
+            ├── structured_cypher_query.py         Neo4j Cypher query generation
+            ├── agents.py                          Multi-agent orchestration
+            ├── tools.py                           Tool definitions for graph/vector search
+            ├── agents_multihop.py                 Multi-hop reasoning agents
+            └── tools_multihop.py                  Multi-hop traversal tools
+```
+
+---
 
 ### 📂 memory/
 

@@ -1,6 +1,6 @@
 # Graph Retrieval-Augmented Generation (GraphRAG)
 
-This document presents concepts, architectural components, practical use cases and implementation technologies associated with Graph retrieval-augmented generation (GraphRAG). By leveraging knowledge graphs alongside large language models, GraphRAG extends retrieval-augmented generation approaches with structured representations of entities and relationships, facilitating improved contextual retrieval and complex reasoning over interconnected information.
+This document explores the principles, architecture, use cases, and implementation technologies of Graph Retrieval-Augmented Generation (GraphRAG). It explains how GraphRAG combines knowledge graphs with large language models (LLMs) to extend traditional retrieval-augmented generation (RAG) systems through graph-structured representations of entities and relationships. The document also demonstrates how GraphRAG supports relationship-aware retrieval, multi-hop reasoning, and context-rich response generation for applications built on interconnected knowledge.
 
 ## Table of Contents
 
@@ -56,7 +56,7 @@ Knowledge Graph (KG) Construction (using an LLM to extract entities/relationship
 
 - Extraction:
 
-The system scans your raw document data. An LLM acts as an extraction mechanism to identity key entities (e.g., "Specimen_042", "Petal Length") and their relationships (e.g., "Petal Length characterizes Specimen_042").
+The system scans your raw document data. An LLM acts as an extraction mechanism to identify key entities (e.g., "Specimen_042", "Petal Length") and their relationships (e.g., "Petal Length characterizes Specimen_042").
 
 - Clustering & Summarization:
 
@@ -116,30 +116,48 @@ RAG indexes unstructured documents using dense embeddings. Graph-based retrieval
 
 **GraphRAG benefits over RAG**
 
-1. Multi-hop reasoning
+- Multi-hop reasoning
 
 Questions such as:
 
-"Which specimens are connected to CharacteristicTypes that define traits of the setosa species?"
+"Which specimens are connected to the characteristics that define the setosa species?"
 
-require several relationship hops.
+```
+Specimen
+   ↓
+Characteristic
+   ↓
+CharacteristicType
+   ↓
+Species (setosa)
+
+```
+Answering this query requires several **relationship** hops, demonstrating GraphRAG's ability to traverse a **knowledge** graph.
 
 Graph traversal naturally supports this. (See [VISUAL_DIAGRAM.md](VISUAL_DIAGRAM.md) for detailed relationship visualization)
 
-2. Better context precision
+- Better context precision
 
 Instead of retrieving large document chunks, GraphRAG can retrieve only the entities and relationships relevant to the query.
 
-3. Explainability
+- Explainability
 
 The system can show:
 
 ```
-      Customer C
-            ← receives
-      Product B
-            ← produced by
-      Factory A
+      User Query:
+
+"Which species has long petals?"
+
+          retrieves
+              │
+              ▼
+      Petal Length
+              │
+      characteristic of
+              │
+              ▼
+      Iris virginica
 
 ```
 
@@ -328,7 +346,7 @@ Agentic AI utilizes Graph retrieval-augmented generation to move beyond simple q
 
 While GraphRAG is great, it has one flaw: rigidity.
 
-Numerous RAG systems rely solely on opens in **vector search** over text embeddings (numerical vector representations) for information retrieval.
+Numerous RAG systems rely solely on **vector search** over text embeddings (numerical vector representations) for information retrieval.
 
 Instead of matching exact keywords, [vector search](https://weaviate.io/blog/vector-search-explained) assesses the conceptual meaning and contextual intent of the query.
 
@@ -593,31 +611,22 @@ To get started, create a project space and python virtual environment to install
 
 **Activate virtual environment**
 
-```
-
-source .venv/bin/activate
-
+```bash
+source venv/bin/activate
 ```
 
 **Install the required dependencies**
 
-
-```
-
+```bash
 pip install --upgrade pip
-
 pip install langchain langchain-community langchain-ollama chromadb sentence-transformers ollama
-
-
 ```
 
 **Run Neo4j with APOC Plugins via Docker**
 
 Neo4j needs the APOC (Awesome Procedures on Cypher) plugin enabled so LangChain can map and structure the knowledge graph correctly.
 
-
-```
-
+```bash
 docker run \
     -d \
     --name neo4j-graphrag \
@@ -626,25 +635,23 @@ docker run \
     -e NEO4J_PLUGINS='["apoc"]' \
     -e NEO4J_dbms_security_procedures_unrestricted=apoc.* \
     neo4j:5.20.0
-
-
 ```
 
 Open http://localhost:7474 in your browser to inspect your graph. Log in with username neo4j and password password123.
 
-Ensure you have the official Neo4j driver and the experimental LangChain graph components installed inside your virtual environment
+Ensure you have the official Neo4j driver and the experimental LangChain graph components installed inside your virtual environment:
 
-```
-
+```bash
 pip install neo4j langchain-experimental
-
 ```
 
 **Install GraphRAG**
 
-Note: If you use Microsoft's GraphRAG package, you will also install it via pip install graphrag
+Note: If you use Microsoft's GraphRAG package, you will also install it via:
 
+```bash
 python -m pip install graphrag
+```
 
 **Initialize GraphRAG**
 
@@ -824,10 +831,8 @@ Download Llama 3.2: In a separate terminal window, pull the model by executing o
 
 Launch via Docker: If you have Docker Desktop installed, launch Open WebUI and link it to your local Ollama port by running:
 
-```
-
+```bash
 docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
-
 ```
 
 Access the Open WebUI: Open your browser and navigate to http://localhost:3000 to create a local admin account.
@@ -840,13 +845,9 @@ Clone the Tool Server:
 
 In your terminal, clone the official reference Open WebUI tool server or use the Neo4j MCP server if available:
 
-```
-
+```bash
 git clone https://github.com/open-webui/openapi-servers
-
 cd openapi-servers/servers/database
-
-
 ```
 
 Install & Run:
@@ -863,10 +864,8 @@ Define the Schema: Provide your Llama 3.2 model with context about the Iris data
 
 In Open WebUI, click your profile, go to Models, and set the System Prompt to something like:
 
-```
-
+```text
 "Translate natural language questions about the Iris dataset into Neo4j Cypher queries. The graph contains nodes for IrisFlower, Species, and their respective properties."
-
 ```
 
 **Query your graph data with natural language:**
@@ -1259,21 +1258,17 @@ You can also use [Langflow's](https://www.langflow.org/templates/use-langflow-to
 
 Ensure Ollama is running and download the Llama3.2 and Embedding models.
 
-```
-
+```bash
 ollama pull llama3.2
 ollama pull nomic-embed-text
-
 ```
 
 **ChromaDB:**
 
 Run ChromaDB locally in a Docker container with persistent storage:
 
-```
-
+```bash
 docker run -d -p 8000:8000 -v chroma-data:/chroma/data -e IS_PERSISTENT=TRUE chromadb/chroma
-
 ```
 
 **Document Ingestion**
@@ -1282,10 +1277,8 @@ Before the agent can query, your text documents must be embedded and stored.
 
 Install the dependencies:
 
-```
-
+```bash
 pip install langchain langchain-ollama langchain-chroma langgraph
-
 ```
 
 Use this Python script in ./scripts/agentic/rag folder to ingest your documents.
@@ -1310,38 +1303,30 @@ The latest Neo4j Cypher procedures now support Ollama models via configuring the
 
 **Prerequisites:**
 
-Activate Virtual Environment
+Activate Virtual Environment:
 
+```bash
+source venv/bin/activate
 ```
 
-source .venv/bin/activate
+Ollama: Ensure you have Ollama installed and a capable model (e.g., llama3.1:8b) pulled via:
 
-```
-
-Ollama: Ensure you have Ollama installed and a capable model (e.g., llama3.1:8b) pulled via ollama
-
-```
-
-pull llama3.1:8b.
-
+```bash
+ollama pull llama3.1:8b
 ```
 
 Neo4j: Have a Neo4j instance running locally or via Neo4j Aura.
 
 Libraries: Install the necessary Python packages:
 
-```
-
+```bash
 pip install langgraph langchain-ollama langchain-community neo4j-driver
-
 ```
 
 Make sure your local Ollama instance has the model pulled:
 
-```
-
+```bash
 ollama pull llama3.2
-
 ```
 
 **Implementation:**
@@ -1395,22 +1380,17 @@ def search_unstructured_text(query: str) -> str:
     """Useful for answering semantic questions..."""
     docs = retriever.invoke(query)
     return "\n\n".join([doc.page_content for doc in docs])
-
-
 ```
 
-Wrapping it inside a LangGraph Agent
+Wrapping it inside a LangGraph Agent:
 
 In Step 4, the create_react_agent function takes that tool, packages it with your LLM, and compiles it into a structured LangGraph state machine:
 
-```
-
+```python
 tools = [search_unstructured_text, query_graph_relationships]
 
 # This compiles the full LangGraph node-and-edge engine
 agent_executor = create_react_agent(llm, tools, state_modifier=system_instructions)
-
-
 ```
 
 6. Build the LangGraph Nodes and Edges
@@ -1425,9 +1405,9 @@ Invoke the agent with a specific question.
 
 Now we can fire separate question variations at the exact same compiled graph executor to see it dynamically adjust its tooling strategy.
 
-See the source code in ./scripts/agentic/graphrag/vector_search.py file.
+See the source code in `scripts/agentic/graphrag/vector_search.py` file.
 
-See the source code in ./scripts/agentic/graphrag/structured_cypher_query.py file.
+See the source code in `scripts/agentic/graphrag/structured_cypher_query.py` file.
 
 **Tips for Local LLMs:**
 
@@ -1435,7 +1415,7 @@ JSON Mode or Prompting: If your local model hallucinates or misses tool-calling 
 
 Schema Injection: For better Cypher generation accuracy, dynamically inject the Neo4j schema (node labels and relationship types) into your system prompt so the local LLM knows exactly what data structure to query.
 
-See the source code in scripts/agentic/graphrag folder.
+See the source code in `scripts/agentic/graphrag` folder.
 
 ### Agentic AI with GraphRAG
 
@@ -2526,4 +2506,4 @@ Build a RAG application with LangChain and Local LLMs powered by Ollama https://
 
 **License**: MIT
 
-**Last Updated**: July 2, 2026
+**Last Updated**: July 3, 2026
